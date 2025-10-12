@@ -12,11 +12,13 @@ export interface ExtractedFields {
   kind_nachname?: string;
   kind_geburtsdatum?: string;
   kind_geburtsort?: string;
+  kind_geschlecht?: string;
   
   // Parent information
   vorname?: string;
   nachname?: string;
   geburtsdatum?: string;
+  geschlecht?: string;
   steuer_identifikationsnummer?: string;
   
   // Address
@@ -68,13 +70,19 @@ function extractFieldsFromText(text: string): ExtractedFields {
   
   // Common patterns for German documents
   const patterns = {
-    // Names - looks for "Vorname:" or "Name:" followed by text
-    vorname: /(?:Vorname[n]?|Rufname)[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:\s[A-ZÄÖÜ][a-zäöüß]+)*)/i,
-    nachname: /(?:Nachname|Familienname|Name)[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)*)/i,
+    // Names - improved patterns for birth certificates
+    kind_vorname: /Vorname\(n\)[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:\s[A-ZÄÖÜ][a-zäöüß]+)*)/i,
+    kind_nachname: /(?:Familienname|Kind.*Familienname)[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)*)/i,
+    vorname: /(?:Vorname[n]?|Rufname)(?!\(n\))[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:\s[A-ZÄÖÜ][a-zäöüß]+)*)/i,
+    nachname: /(?:Nachname|Geburtsname|Familienname)(?!.*Kind)[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)*)/i,
+    
+    // Gender
+    geschlecht: /Geschlecht[:\s]+(männlich|weiblich|divers)/i,
     
     // Birth date - DD.MM.YYYY or similar
+    kind_geburtsdatum: /Geburtstag[:\s]+(\d{1,2}\.\d{1,2}\.\d{4})/i,
     geburtsdatum: /(?:Geburtsdatum|geboren am|geb\.?)[:\s]+(\d{1,2}\.\d{1,2}\.\d{4})/i,
-    geburtsort: /(?:Geburtsort|geboren in)[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:\s[A-ZÄÖÜ][a-zäöüß]+)*)/i,
+    geburtsort: /Geburtsort[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:\s[A-ZÄÖÜ][a-zäöüß]+)*)/i,
     
     // Tax ID - 11 digits
     steuer_id: /(?:Steuer-?(?:ID|identifikationsnummer))[:\s]+(\d{11})/i,
@@ -86,15 +94,43 @@ function extractFieldsFromText(text: string): ExtractedFields {
     ort: /(?:Ort|Wohnort)[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:\s[A-ZÄÖÜ][a-zäöüß]+)*)/i,
   };
 
-  // Extract using patterns
+  // Extract using patterns - prioritize child-specific patterns for birth certificates
+  const kindVornameMatch = text.match(patterns.kind_vorname);
+  if (kindVornameMatch) fields.kind_vorname = kindVornameMatch[1].trim();
+  
+  const kindNachnameMatch = text.match(patterns.kind_nachname);
+  if (kindNachnameMatch) fields.kind_nachname = kindNachnameMatch[1].trim();
+  
+  const kindGeburtsdatumMatch = text.match(patterns.kind_geburtsdatum);
+  if (kindGeburtsdatumMatch) {
+    // Convert DD.MM.YYYY to YYYY-MM-DD
+    const dateParts = kindGeburtsdatumMatch[1].split('.');
+    if (dateParts.length === 3) {
+      fields.kind_geburtsdatum = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
+    } else {
+      fields.kind_geburtsdatum = kindGeburtsdatumMatch[1].trim();
+    }
+  }
+  
+  const geschlechtMatch = text.match(patterns.geschlecht);
+  if (geschlechtMatch) fields.kind_geschlecht = geschlechtMatch[1].trim();
+  
   const vornameMatch = text.match(patterns.vorname);
-  if (vornameMatch) fields.vorname = vornameMatch[1].trim();
+  if (vornameMatch && !fields.kind_vorname) fields.vorname = vornameMatch[1].trim();
   
   const nachnameMatch = text.match(patterns.nachname);
-  if (nachnameMatch) fields.nachname = nachnameMatch[1].trim();
+  if (nachnameMatch && !fields.kind_nachname) fields.nachname = nachnameMatch[1].trim();
   
   const geburtsdatumMatch = text.match(patterns.geburtsdatum);
-  if (geburtsdatumMatch) fields.geburtsdatum = geburtsdatumMatch[1].trim();
+  if (geburtsdatumMatch && !fields.kind_geburtsdatum) {
+    // Convert DD.MM.YYYY to YYYY-MM-DD
+    const dateParts = geburtsdatumMatch[1].split('.');
+    if (dateParts.length === 3) {
+      fields.geburtsdatum = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
+    } else {
+      fields.geburtsdatum = geburtsdatumMatch[1].trim();
+    }
+  }
   
   const geburtsortMatch = text.match(patterns.geburtsort);
   if (geburtsortMatch) fields.kind_geburtsort = geburtsortMatch[1].trim();
