@@ -70,10 +70,10 @@ function extractFieldsFromText(text: string): ExtractedFields {
   
   // Common patterns for German documents
   const patterns = {
-    // Names - improved patterns for birth certificates
-    kind_vorname: /Vorname\(n\)[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:\s[A-ZÄÖÜ][a-zäöüß]+)*)/i,
+    // Names - improved patterns with negative lookaheads to stop at next field
+    kind_vorname: /Vorname\(n\)[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:\s(?!Geschlecht|Geburtstag|Geburtsort|Religion|Familienname)[A-ZÄÖÜ][a-zäöüß]+){0,2})/i,
     kind_nachname: /(?:Familienname|Kind.*Familienname)[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)*)/i,
-    vorname: /(?:Vorname[n]?|Rufname)(?!\(n\))[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:\s[A-ZÄÖÜ][a-zäöüß]+)*)/i,
+    vorname: /(?:Vorname[n]?|Rufname)(?!\(n\))[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:\s(?!Geschlecht|Geburtstag|Geburtsort|Religion|Familienname)[A-ZÄÖÜ][a-zäöüß]+){0,2})/i,
     nachname: /(?:Nachname|Geburtsname|Familienname)(?!.*Kind)[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)*)/i,
     
     // Gender
