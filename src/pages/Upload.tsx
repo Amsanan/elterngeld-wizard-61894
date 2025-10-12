@@ -173,20 +173,66 @@ const Upload = () => {
           .select()
           .single();
 
-        // Save extraction logs
-        if (uploadedFile.ocrResult && fileRecord) {
-          const extractionPromises = Object.entries(uploadedFile.ocrResult.fields).map(
-            ([fieldName, fieldValue]) =>
-              supabase.from('extraction_logs').insert({
-                user_file_id: fileRecord.id,
-                antrag_id: antrag.id,
-                field_name: fieldName,
-                field_value: fieldValue as string,
-                confidence_score: uploadedFile.ocrResult!.confidence,
-              })
-          );
-          
-          await Promise.all(extractionPromises);
+        // Call AI mapping function to intelligently map OCR data
+        if (uploadedFile.ocrResult && uploadedFile.documentType) {
+          try {
+            const { data: mappingResult, error: mappingError } = await supabase.functions.invoke(
+              'map-pdf-fields',
+              {
+                body: {
+                  ocrData: uploadedFile.ocrResult.fields,
+                  documentType: uploadedFile.documentType,
+                  antragId: antrag.id,
+                },
+              }
+            );
+
+            if (mappingError) {
+              console.error('AI Mapping error:', mappingError);
+              // Fallback to basic extraction logs if AI fails
+              const extractionPromises = Object.entries(uploadedFile.ocrResult.fields).map(
+                ([fieldName, fieldValue]) =>
+                  supabase.from('extraction_logs').insert({
+                    user_file_id: fileRecord?.id,
+                    antrag_id: antrag.id,
+                    field_name: fieldName,
+                    field_value: fieldValue as string,
+                    confidence_score: uploadedFile.ocrResult!.confidence,
+                  })
+              );
+              await Promise.all(extractionPromises);
+            } else {
+              console.log('AI Mapping successful:', mappingResult);
+              // Save the AI-mapped fields
+              if (fileRecord && mappingResult.mapped_fields) {
+                const extractionPromises = Object.entries(mappingResult.mapped_fields).map(
+                  ([fieldName, fieldValue]) =>
+                    supabase.from('extraction_logs').insert({
+                      user_file_id: fileRecord.id,
+                      antrag_id: antrag.id,
+                      field_name: fieldName,
+                      field_value: fieldValue as string,
+                      confidence_score: mappingResult.confidence || uploadedFile.ocrResult!.confidence,
+                    })
+                );
+                await Promise.all(extractionPromises);
+              }
+            }
+          } catch (aiError) {
+            console.error('AI mapping failed:', aiError);
+            // Fallback to basic extraction
+            const extractionPromises = Object.entries(uploadedFile.ocrResult.fields).map(
+              ([fieldName, fieldValue]) =>
+                supabase.from('extraction_logs').insert({
+                  user_file_id: fileRecord?.id,
+                  antrag_id: antrag.id,
+                  field_name: fieldName,
+                  field_value: fieldValue as string,
+                  confidence_score: uploadedFile.ocrResult!.confidence,
+                })
+            );
+            await Promise.all(extractionPromises);
+          }
         }
 
       } catch (error) {

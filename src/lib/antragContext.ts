@@ -22,17 +22,18 @@ export async function loadAntragData(antragId: string): Promise<AntragData | nul
     if (antragError) throw antragError;
 
     // Get all related data
-    const [kind, elternteil, wohnsitz, wohnsitzAufenthalt, alleinerziehende, files] = await Promise.all([
+    const [kind, elternteil, wohnsitz, wohnsitzAufenthalt, alleinerziehende, files, extractionLogs] = await Promise.all([
       supabase.from('kind').select('*').eq('antrag_id', antragId).maybeSingle(),
       supabase.from('antrag_2b_elternteil').select('*').eq('antrag_id', antragId).maybeSingle(),
       supabase.from('antrag_2c_wohnsitz').select('*').eq('antrag_id', antragId).maybeSingle(),
       supabase.from('antrag_2c_wohnsitz_aufenthalt').select('*').eq('antrag_id', antragId).maybeSingle(),
       supabase.from('antrag_2a_alleinerziehende').select('*').eq('antrag_id', antragId).maybeSingle(),
       supabase.from('user_files').select('*').eq('antrag_id', antragId),
+      supabase.from('extraction_logs').select('*').eq('antrag_id', antragId),
     ]);
 
-    // Combine all data
-    const extracted_data = {
+    // Combine data from tables
+    let extracted_data: Record<string, any> = {
       ...antrag,
       ...kind.data,
       ...elternteil.data,
@@ -41,6 +42,18 @@ export async function loadAntragData(antragId: string): Promise<AntragData | nul
       ...alleinerziehende.data,
     };
 
+    // Add extraction_logs data as fallback
+    if (extractionLogs.data) {
+      const logsData: Record<string, any> = {};
+      extractionLogs.data.forEach(log => {
+        if (log.field_name && log.field_value) {
+          logsData[log.field_name] = log.field_value;
+        }
+      });
+      // Merge with priority to table data
+      extracted_data = { ...logsData, ...extracted_data };
+    }
+
     // Get uploaded document types
     const uploaded_documents = files.data?.map(f => f.file_type).filter(Boolean) || [];
 
@@ -48,6 +61,8 @@ export async function loadAntragData(antragId: string): Promise<AntragData | nul
     const filled_fields = Object.keys(extracted_data).filter(
       key => extracted_data[key] !== null && extracted_data[key] !== undefined && extracted_data[key] !== ''
     );
+
+    console.log('Loaded antrag data:', { extracted_data, uploaded_documents, filled_fields });
 
     return {
       antrag_id: antragId,

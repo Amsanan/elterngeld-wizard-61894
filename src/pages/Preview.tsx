@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { generateFilledPDF, downloadPDF, FormData } from "@/lib/pdfGenerator";
 import { loadAntragData, getNextRequiredDocument, getDocumentDisplayName, calculateCompletionPercentage } from "@/lib/antragContext";
+import { ensureTemplateUploaded } from "@/lib/templateUploadHelper";
 import { Badge } from "@/components/ui/badge";
 
 const Preview = () => {
@@ -34,7 +35,18 @@ const Preview = () => {
       return;
     }
 
-    loadData();
+    // Ensure template is uploaded before loading data
+    ensureTemplateUploaded().then((success) => {
+      if (success) {
+        loadData();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Template-Fehler",
+          description: "Das PDF-Template konnte nicht geladen werden.",
+        });
+      }
+    });
   }, [antragId]);
 
   const loadData = async () => {
@@ -70,9 +82,10 @@ const Preview = () => {
       // Convert database data to FormData format
       const formData: FormData = {
         // Kind
-        kind_vorname: data.vorname,
-        kind_nachname: data.nachname,
-        kind_geburtsdatum: data.geburtsdatum,
+        kind_vorname: data.kind_vorname,
+        kind_nachname: data.kind_nachname,
+        kind_geburtsdatum: data.kind_geburtsdatum,
+        kind_geschlecht: data.kind_geschlecht,
         
         // Parent
         vorname: data.vorname,
@@ -86,6 +99,8 @@ const Preview = () => {
         plz: data.plz,
         ort: data.ort,
       };
+
+      console.log('Generating PDF with data:', formData);
 
       const bytes = await generateFilledPDF(formData);
       setPdfBytes(bytes);
@@ -104,7 +119,7 @@ const Preview = () => {
       toast({
         variant: "destructive",
         title: "Fehler",
-        description: "PDF konnte nicht generiert werden.",
+        description: error instanceof Error ? error.message : "PDF konnte nicht generiert werden.",
       });
     } finally {
       setGenerating(false);
