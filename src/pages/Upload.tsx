@@ -2,25 +2,84 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileText, Upload as UploadIcon, ArrowLeft } from "lucide-react";
+import { FileText, Upload as UploadIcon, ArrowLeft, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { performOCR, detectDocumentType, type OCRResult } from "@/lib/ocrService";
+
+interface UploadedFile {
+  file: File;
+  ocrResult?: OCRResult;
+  documentType?: string;
+  uploading?: boolean;
+  uploaded?: boolean;
+}
 
 const Upload = () => {
-  const [files, setFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [processing, setProcessing] = useState(false);
+  const [currentFile, setCurrentFile] = useState<string>("");
+  const [ocrProgress, setOcrProgress] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setFiles((prev) => [...prev, ...newFiles]);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+
+    const newFiles = Array.from(e.target.files);
+    const uploadedFiles: UploadedFile[] = newFiles.map(file => ({ file }));
+    
+    setFiles((prev) => [...prev, ...uploadedFiles]);
+
+    // Start OCR processing for each file
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      await processFile(uploadedFiles[i], files.length + i);
     }
   };
 
-  const handleUpload = async () => {
+  const processFile = async (uploadedFile: UploadedFile, index: number) => {
+    setProcessing(true);
+    setCurrentFile(uploadedFile.file.name);
+    setOcrProgress(0);
+
+    try {
+      // Perform OCR
+      const ocrResult = await performOCR(
+        uploadedFile.file,
+        (progress) => setOcrProgress(progress)
+      );
+
+      // Detect document type
+      const docType = detectDocumentType(ocrResult.text);
+
+      // Update file with OCR results
+      setFiles(prev => prev.map((f, i) => 
+        i === index 
+          ? { ...f, ocrResult, documentType: docType }
+          : f
+      ));
+
+      toast({
+        title: "OCR abgeschlossen",
+        description: `${uploadedFile.file.name} wurde erfolgreich analysiert.`,
+      });
+
+    } catch (error) {
+      console.error('OCR error:', error);
+      toast({
+        variant: "destructive",
+        title: "OCR fehlgeschlagen",
+        description: `Fehler bei der Analyse von ${uploadedFile.file.name}`,
+      });
+    } finally {
+      setProcessing(false);
+      setCurrentFile("");
+    }
+  };
+
+  const handleUploadToSupabase = async () => {
     if (files.length === 0) {
       toast({
         variant: "destructive",
@@ -30,36 +89,94 @@ const Upload = () => {
       return;
     }
 
-    setUploading(true);
-    setProgress(0);
-
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(interval);
-          return 90;
-        }
-        return prev + 10;
-      });
-    }, 300);
-
-    // TODO: Implement actual file upload to Supabase storage
-    setTimeout(() => {
-      clearInterval(interval);
-      setProgress(100);
-      setUploading(false);
-      
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       toast({
-        title: "Upload erfolgreich",
-        description: "Ihre Dokumente wurden hochgeladen. Beginne mit der Extraktion...",
+        variant: "destructive",
+        title: "Nicht angemeldet",
+        description: "Bitte melden Sie sich an, um Dateien hochzuladen.",
       });
+      navigate("/auth");
+      return;
+    }
 
-      // Navigate to review page
-      setTimeout(() => {
-        navigate("/review");
-      }, 1000);
-    }, 3000);
+    // Create application record first
+    const { data: antrag, error: antragError } = await supabase
+      .from('antrag')
+      .insert({
+        user_id: user.id,
+        status: 'draft',
+        ort: files[0]?.ocrResult?.fields.ort || null,
+      })
+      .select()
+      .single();
+
+    if (antragError || !antrag) {
+      toast({
+        variant: "destructive",
+        title: "Fehler beim Erstellen",
+        description: "Der Antrag konnte nicht erstellt werden.",
+      });
+      return;
+    }
+
+    // Upload files and save extraction data
+    for (const uploadedFile of files) {
+      try {
+        // Upload to storage
+        const fileName = `${user.id}/${antrag.id}/${uploadedFile.file.name}`;
+        const { error: storageError } = await supabase.storage
+          .from('application-documents')
+          .upload(fileName, uploadedFile.file);
+
+        if (storageError) {
+          console.error('Storage error:', storageError);
+          continue;
+        }
+
+        // Save file metadata
+        const { data: fileRecord } = await supabase
+          .from('user_files')
+          .insert({
+            user_id: user.id,
+            antrag_id: antrag.id,
+            filename: uploadedFile.file.name,
+            file_type: uploadedFile.documentType || 'unbekannt',
+            file_size: uploadedFile.file.size,
+            storage_path: fileName,
+            status: 'extracted',
+          })
+          .select()
+          .single();
+
+        // Save extraction logs
+        if (uploadedFile.ocrResult && fileRecord) {
+          const extractionPromises = Object.entries(uploadedFile.ocrResult.fields).map(
+            ([fieldName, fieldValue]) =>
+              supabase.from('extraction_logs').insert({
+                user_file_id: fileRecord.id,
+                antrag_id: antrag.id,
+                field_name: fieldName,
+                field_value: fieldValue as string,
+                confidence_score: uploadedFile.ocrResult!.confidence,
+              })
+          );
+          
+          await Promise.all(extractionPromises);
+        }
+
+      } catch (error) {
+        console.error('Upload error:', error);
+      }
+    }
+
+    toast({
+      title: "Upload erfolgreich",
+      description: "Alle Dateien wurden hochgeladen und analysiert.",
+    });
+
+    // Navigate to review page with antrag_id
+    navigate(`/review?antrag_id=${antrag.id}`);
   };
 
   const removeFile = (index: number) => {
@@ -76,7 +193,7 @@ const Upload = () => {
               <FileText className="h-8 w-8 text-primary" />
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Dokumente hochladen</h1>
-                <p className="text-sm text-muted-foreground">Schritt 1 von 4</p>
+                <p className="text-sm text-muted-foreground">Schritt 1 von 4 • OCR-Extraktion</p>
               </div>
             </div>
             <Button variant="outline" onClick={() => navigate("/dashboard")}>
@@ -93,8 +210,7 @@ const Upload = () => {
           <Card className="p-8">
             <h2 className="text-2xl font-bold mb-4 text-foreground">Erforderliche Unterlagen</h2>
             <p className="text-muted-foreground mb-6">
-              Bitte laden Sie die folgenden Dokumente hoch. Alle Dateien werden verschlüsselt 
-              und DSGVO-konform gespeichert.
+              Laden Sie Ihre Dokumente hoch. Die KI extrahiert automatisch relevante Informationen.
             </p>
 
             {/* File Upload Area */}
@@ -113,59 +229,94 @@ const Upload = () => {
                 onChange={handleFileChange}
                 className="hidden"
                 id="file-upload"
+                disabled={processing}
               />
               <label htmlFor="file-upload">
-                <Button variant="outline" className="cursor-pointer" asChild>
-                  <span>Dateien auswählen</span>
+                <Button variant="outline" className="cursor-pointer" asChild disabled={processing}>
+                  <span>{processing ? "Wird analysiert..." : "Dateien auswählen"}</span>
                 </Button>
               </label>
             </div>
 
-            {/* File List */}
-            {files.length > 0 && (
-              <div className="space-y-2 mb-6">
-                <h4 className="font-semibold text-foreground">Ausgewählte Dateien:</h4>
-                {files.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-secondary rounded-lg"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-foreground">{file.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(index)}
-                      disabled={uploading}
-                    >
-                      Entfernen
-                    </Button>
-                  </div>
-                ))}
-              </div>
+            {/* OCR Progress */}
+            {processing && currentFile && (
+              <Card className="p-4 mb-6 bg-accent/5">
+                <div className="flex items-center gap-3 mb-2">
+                  <Eye className="h-5 w-5 text-accent" />
+                  <p className="text-sm font-medium text-foreground">
+                    Analysiere: {currentFile}
+                  </p>
+                </div>
+                <Progress value={ocrProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground mt-2">{ocrProgress}% abgeschlossen</p>
+              </Card>
             )}
 
-            {/* Progress */}
-            {uploading && (
-              <div className="mb-6">
-                <p className="text-sm text-muted-foreground mb-2">Upload-Fortschritt</p>
-                <Progress value={progress} className="h-2" />
+            {/* File List with OCR Results */}
+            {files.length > 0 && (
+              <div className="space-y-3 mb-6">
+                <h4 className="font-semibold text-foreground">Hochgeladene Dateien:</h4>
+                {files.map((uploadedFile, index) => (
+                  <Card key={index} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium text-foreground">
+                            {uploadedFile.file.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            ({(uploadedFile.file.size / 1024 / 1024).toFixed(2)} MB)
+                          </span>
+                        </div>
+                        
+                        {uploadedFile.documentType && (
+                          <Badge variant="outline" className="mb-2">
+                            {uploadedFile.documentType}
+                          </Badge>
+                        )}
+
+                        {uploadedFile.ocrResult && (
+                          <div className="mt-2 p-3 bg-secondary/20 rounded-lg">
+                            <p className="text-xs font-semibold text-foreground mb-1">
+                              Extrahierte Daten:
+                            </p>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              {Object.entries(uploadedFile.ocrResult.fields).map(([key, value]) => (
+                                <div key={key}>
+                                  <span className="text-muted-foreground">{key}: </span>
+                                  <span className="text-foreground font-medium">{value}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Konfidenz: {Math.round(uploadedFile.ocrResult.confidence)}%
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                        disabled={processing}
+                      >
+                        Entfernen
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
               </div>
             )}
 
             {/* Action Buttons */}
             <div className="flex gap-4">
               <Button
-                onClick={handleUpload}
-                disabled={uploading || files.length === 0}
+                onClick={handleUploadToSupabase}
+                disabled={processing || files.length === 0}
                 className="flex-1"
               >
-                {uploading ? "Wird hochgeladen..." : "Hochladen und fortfahren"}
+                {processing ? "Wird analysiert..." : "Speichern und fortfahren"}
               </Button>
               <Button variant="outline" onClick={() => navigate("/dashboard")}>
                 Abbrechen
