@@ -206,7 +206,9 @@ export async function generateFilledPDF(formData: FormData): Promise<Uint8Array>
  * Download the generated PDF
  */
 export function downloadPDF(pdfBytes: Uint8Array, filename: string = 'elterngeldantrag_ausgefuellt.pdf') {
-  const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+  // Create a copy to avoid detached buffer issues
+  const pdfCopy = new Uint8Array(pdfBytes);
+  const blob = new Blob([pdfCopy], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
