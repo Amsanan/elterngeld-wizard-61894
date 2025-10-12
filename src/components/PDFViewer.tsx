@@ -3,8 +3,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 
-// Set up the worker - use CDN for reliability
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+// Set up the worker - use jsdelivr CDN for better reliability
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 interface PDFViewerProps {
   pdfData: Uint8Array;
