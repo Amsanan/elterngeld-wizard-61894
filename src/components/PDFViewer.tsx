@@ -3,12 +3,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 
-// Set up the worker using a workaround for Vite
-if (typeof window !== 'undefined' && 'pdfjsWorker' in window === false) {
-  import('pdfjs-dist/build/pdf.worker.mjs').then(() => {
-    // Worker loaded
-  });
-}
+// Set up the worker - use CDN for reliability
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 interface PDFViewerProps {
   pdfData: Uint8Array;
