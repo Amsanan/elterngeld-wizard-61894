@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { generateFilledPDF, downloadPDF, FormData } from "@/lib/pdfGenerator";
 import { loadAntragData, getNextRequiredDocument, getDocumentDisplayName, calculateCompletionPercentage } from "@/lib/antragContext";
 import { Badge } from "@/components/ui/badge";
+import { PDFViewer } from "@/components/PDFViewer";
 
 const Preview = () => {
   const navigate = useNavigate();
@@ -18,7 +19,6 @@ const Preview = () => {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [antragData, setAntragData] = useState<any>(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [nextDocument, setNextDocument] = useState<string | null>(null);
@@ -92,11 +92,6 @@ const Preview = () => {
 
       const bytes = await generateFilledPDF(formData);
       setPdfBytes(bytes);
-
-      // Create blob URL for preview
-      const blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
 
       toast({
         title: "PDF-Vorschau erstellt",
@@ -188,14 +183,8 @@ const Preview = () => {
                     <p className="text-muted-foreground">PDF wird generiert...</p>
                   </div>
                 </div>
-              ) : pdfUrl ? (
-                <div className="border rounded-lg overflow-hidden">
-                  <iframe
-                    src={pdfUrl}
-                    className="w-full h-[600px]"
-                    title="PDF Preview"
-                  />
-                </div>
+              ) : pdfBytes ? (
+                <PDFViewer pdfData={pdfBytes} />
               ) : (
                 <div className="flex items-center justify-center h-[600px] bg-secondary/20 rounded-lg">
                   <p className="text-muted-foreground">Keine Vorschau verfügbar</p>
