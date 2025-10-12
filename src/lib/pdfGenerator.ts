@@ -1,5 +1,4 @@
 import { PDFDocument } from 'pdf-lib';
-import { supabase } from '@/integrations/supabase/client';
 
 export interface FormData {
   // Antrag
@@ -74,30 +73,21 @@ export interface FormData {
  */
 export async function generateFilledPDF(formData: FormData): Promise<Uint8Array> {
   try {
-    // Try to load from Supabase Storage first
-    const { data } = supabase.storage
-      .from('form-templates')
-      .getPublicUrl('templates/elterngeldantrag_bis_Maerz25.pdf');
-
-    console.log('Loading template from Storage:', data.publicUrl);
-    const response = await fetch(data.publicUrl);
+    // Load template PDF directly from public folder
+    console.log('Loading template from public/reference folder');
+    const response = await fetch('/reference/elterngeldantrag_bis_Maerz25.pdf');
     
     if (!response.ok) {
       throw new Error(`Failed to fetch template PDF: ${response.status} ${response.statusText}`);
     }
     
-    const contentType = response.headers.get('content-type');
-    console.log('Response content-type:', contentType);
-    
-    const templateBlob = await response.blob();
-    console.log('Template blob type:', templateBlob.type, 'size:', templateBlob.size);
-    
-    if (!templateBlob.type.includes('pdf') && templateBlob.type !== 'application/octet-stream') {
-      throw new Error(`Invalid file type: ${templateBlob.type}. Expected application/pdf`);
-    }
-    
-    const templateBytes = await templateBlob.arrayBuffer();
+    const templateBytes = await response.arrayBuffer();
     console.log('Template bytes length:', templateBytes.byteLength);
+    
+    // Verify template size (should be > 10KB for a valid PDF)
+    if (templateBytes.byteLength < 10000) {
+      throw new Error(`Template file too small (${templateBytes.byteLength} bytes), might be corrupted`);
+    }
 
     // Load PDF with pdf-lib
     const pdfDoc = await PDFDocument.load(templateBytes);
