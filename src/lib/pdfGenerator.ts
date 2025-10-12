@@ -106,10 +106,10 @@ export async function generateFilledPDF(formData: FormData): Promise<Uint8Array>
       'txt.ortdatum_2': formData.ort && formData.datum ? `${formData.ort}, ${formData.datum}` : '',
       
       // Kind (Child) data
-      'txt.txt.vorname1A 4': formData.kind_vorname || '',
-      'txt.txt.name1A 4': formData.kind_nachname || '',
-      'txt.txt.geburtsdatum1a 3': formData.kind_geburtsdatum || '',
-      'txt.txt.anzahl 4': formData.kind_anzahl_mehrlinge || '',
+      'txt.vorname1A 4': formData.kind_vorname || '',
+      'txt.name1A 4': formData.kind_nachname || '',
+      'txt.geburtsdatum1a 3': formData.kind_geburtsdatum || '',
+      'txt.anzahl 4': formData.kind_anzahl_mehrlinge || '',
       'cb.ja1b 3': formData.kind_fruehgeboren || false,
       'txt.geburtsdatum_frueh1b 3': formData.kind_errechneter_geburtsdatum || '',
       'cb.nein1b 3': formData.kind_behinderung || false,
@@ -126,13 +126,13 @@ export async function generateFilledPDF(formData: FormData): Promise<Uint8Array>
       'txt.vorname2b': formData.vorname || '',
       'txt.name2b': formData.nachname || '',
       'txt.geburt2b': formData.geburtsdatum || '',
-      'txt.txt.steuer2b_1': formData.steuer_identifikationsnummer || '',
+      'txt.steuer2b_1': formData.steuer_identifikationsnummer || '',
       
       // Parent data (Elternteil 2)
       'txt.vorname2b 1': formData.vorname_2 || '',
       'txt.name2b 1': formData.nachname_2 || '',
       'txt.geburt2b 1': formData.geburtsdatum_2 || '',
-      'txt.txt.steuer2b_2': formData.steuer_identifikationsnummer_2 || '',
+      'txt.steuer2b_2': formData.steuer_identifikationsnummer_2 || '',
       
       // Wohnsitz/Aufenthalt
       'cb.ja2c': formData.wohnsitz_in_deutschland || false,
