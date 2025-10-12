@@ -206,15 +206,22 @@ export async function generateFilledPDF(formData: FormData): Promise<Uint8Array>
  * Download the generated PDF
  */
 export function downloadPDF(pdfBytes: Uint8Array, filename: string = 'elterngeldantrag_ausgefuellt.pdf') {
-  // Create a copy to avoid detached buffer issues
-  const pdfCopy = new Uint8Array(pdfBytes);
-  const blob = new Blob([pdfCopy], { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  try {
+    // Convert to regular array to avoid buffer issues
+    const blob = new Blob([pdfBytes.slice()], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
+  } catch (error) {
+    console.error('Download error:', error);
+    throw error;
+  }
 }
