@@ -313,6 +313,51 @@ export type Database = {
           },
         ]
       }
+      form_templates: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          mapping_file_path: string | null
+          storage_path: string
+          template_name: string
+          updated_at: string | null
+          valid_from: string
+          valid_until: string | null
+          version: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          mapping_file_path?: string | null
+          storage_path: string
+          template_name: string
+          updated_at?: string | null
+          valid_from: string
+          valid_until?: string | null
+          version: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          mapping_file_path?: string | null
+          storage_path?: string
+          template_name?: string
+          updated_at?: string | null
+          valid_from?: string
+          valid_until?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       kind: {
         Row: {
           antrag_id: string
@@ -427,6 +472,17 @@ export type Database = {
       delete_expired_data: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_active_template: {
+        Args: { p_template_name: string }
+        Returns: {
+          display_name: string
+          id: string
+          mapping_file_path: string
+          storage_path: string
+          template_name: string
+          version: string
+        }[]
       }
     }
     Enums: {

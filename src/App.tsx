@@ -10,6 +10,7 @@ import Upload from "./pages/Upload";
 import Review from "./pages/Review";
 import Generate from "./pages/Generate";
 import Applications from "./pages/Applications";
+import UploadTemplates from "./pages/UploadTemplates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/review" element={<Review />} />
           <Route path="/generate" element={<Generate />} />
           <Route path="/applications" element={<Applications />} />
+          <Route path="/admin/upload-templates" element={<UploadTemplates />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

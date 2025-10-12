@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FileText, ArrowLeft, Download, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { getActiveTemplate, downloadTemplate } from "@/lib/templateManager";
 
 const Generate = () => {
   const navigate = useNavigate();
@@ -12,34 +13,76 @@ const Generate = () => {
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [generated, setGenerated] = useState(false);
+  const [templateInfo, setTemplateInfo] = useState<any>(null);
 
-  const handleGenerate = () => {
+  useEffect(() => {
+    // Load template info on mount
+    const loadTemplate = async () => {
+      const template = await getActiveTemplate();
+      if (template) {
+        setTemplateInfo(template);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Template nicht gefunden",
+          description: "Das Formular-Template konnte nicht geladen werden.",
+        });
+      }
+    };
+    loadTemplate();
+  }, [toast]);
+
+  const handleGenerate = async () => {
+    if (!templateInfo) {
+      toast({
+        variant: "destructive",
+        title: "Template fehlt",
+        description: "Kein Template verfügbar.",
+      });
+      return;
+    }
+
     setGenerating(true);
     setProgress(0);
 
-    // Simulate PDF generation progress
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 95) {
-          clearInterval(interval);
-          return 95;
-        }
-        return prev + 5;
-      });
-    }, 200);
+    try {
+      // Step 1: Download template from Supabase Storage
+      setProgress(20);
+      const templateBlob = await downloadTemplate(templateInfo.storage_path);
+      
+      if (!templateBlob) {
+        throw new Error("Template konnte nicht geladen werden");
+      }
 
-    // TODO: Implement actual PDF generation with pdf-lib
-    setTimeout(() => {
-      clearInterval(interval);
+      setProgress(40);
+
+      // TODO: Step 2: Load PDF with pdf-lib and fill fields
+      // const pdfDoc = await PDFDocument.load(await templateBlob.arrayBuffer());
+      // const form = pdfDoc.getForm();
+      // Fill fields using database data...
+
+      setProgress(70);
+
+      // Simulate processing
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
       setProgress(100);
       setGenerating(false);
       setGenerated(true);
       
       toast({
         title: "PDF erfolgreich erstellt",
-        description: "Ihr ausgefüllter Elterngeldantrag ist bereit zum Download.",
+        description: `Ihr ausgefüllter Elterngeldantrag (${templateInfo.version}) ist bereit zum Download.`,
       });
-    }, 4000);
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      setGenerating(false);
+      toast({
+        variant: "destructive",
+        title: "Fehler bei PDF-Generierung",
+        description: error instanceof Error ? error.message : "Unbekannter Fehler",
+      });
+    }
   };
 
   const handleDownload = () => {
@@ -84,10 +127,23 @@ const Generate = () => {
                 <h2 className="text-2xl font-bold mb-4 text-foreground">
                   Bereit zum Generieren
                 </h2>
-                <p className="text-muted-foreground mb-8">
+                <p className="text-muted-foreground mb-6">
                   Alle Ihre Daten wurden überprüft und sind bereit, 
                   in das offizielle Elterngeldantrags-Formular übertragen zu werden.
                 </p>
+                {templateInfo && (
+                  <div className="mb-6 p-4 bg-secondary/20 rounded-lg text-left">
+                    <p className="text-sm font-semibold text-foreground mb-1">Template:</p>
+                    <p className="text-sm text-muted-foreground">{templateInfo.display_name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Gültig: {new Date(templateInfo.valid_from).toLocaleDateString('de-DE')} - {
+                        templateInfo.valid_until 
+                          ? new Date(templateInfo.valid_until).toLocaleDateString('de-DE')
+                          : 'unbegrenzt'
+                      }
+                    </p>
+                  </div>
+                )}
 
                 {generating && (
                   <div className="mb-6">
