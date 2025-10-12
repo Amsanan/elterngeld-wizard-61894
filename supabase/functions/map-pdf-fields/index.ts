@@ -13,10 +13,10 @@ serve(async (req) => {
 
   try {
     const { ocrData, documentType, antragId } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+    if (!OPENROUTER_API_KEY) {
+      throw new Error("OPENROUTER_API_KEY not configured");
     }
 
     console.log("Mapping OCR data for document type:", documentType);
@@ -66,15 +66,17 @@ ${JSON.stringify(ocrData, null, 2)}
 
 Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
 
-    // Call Lovable AI Gateway
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Call OpenRouter API
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
+        "HTTP-Referer": "https://lovable.dev",
+        "X-Title": "Elterngeldantrag OCR Mapping"
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "mistralai/mistral-small-3.2-24b-instruct:free",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -92,13 +94,13 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Lovable AI Credits aufgebraucht. Bitte Credits hinzufügen." }),
+          JSON.stringify({ error: "OpenRouter Credits aufgebraucht. Bitte Credits hinzufügen." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      throw new Error("AI Gateway error");
+      console.error("OpenRouter API error:", response.status, errorText);
+      throw new Error("OpenRouter API error");
     }
 
     const aiResponse = await response.json();
