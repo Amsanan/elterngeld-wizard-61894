@@ -208,26 +208,41 @@ export async function generateFilledPDF(formData: FormData): Promise<Uint8Array>
 }
 
 /**
- * Download the generated PDF
+ * Create a Blob URL from PDF bytes - safer for storing in React state
  */
-export function downloadPDF(pdfBytes: Uint8Array, filename: string = 'elterngeldantrag_ausgefuellt.pdf') {
+export function createPDFBlobURL(pdfBytes: Uint8Array): string {
+  const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+  return URL.createObjectURL(blob);
+}
+
+/**
+ * Download PDF from a Blob URL
+ */
+export function downloadPDFFromURL(blobUrl: string, filename: string = 'elterngeldantrag_ausgefuellt.pdf') {
   try {
-    // Create a fresh Uint8Array for blob creation
-    const safeBytes = new Uint8Array(pdfBytes);
-    const blob = new Blob([safeBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
+    link.href = blobUrl;
     link.download = filename;
     link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
+
+    // Cleanup
     setTimeout(() => {
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
     }, 100);
   } catch (error) {
     console.error('Download error:', error);
     throw error;
   }
+}
+
+/**
+ * Download the generated PDF (legacy function - kept for compatibility)
+ */
+export function downloadPDF(pdfBytes: Uint8Array, filename: string = 'elterngeldantrag_ausgefuellt.pdf') {
+  const blobUrl = createPDFBlobURL(pdfBytes);
+  downloadPDFFromURL(blobUrl, filename);
+  // Cleanup after download
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 }

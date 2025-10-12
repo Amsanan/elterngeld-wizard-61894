@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { FileText, ArrowLeft, Upload, CheckCircle2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
-import { generateFilledPDF, downloadPDF, FormData } from "@/lib/pdfGenerator";
+import { generateFilledPDF, createPDFBlobURL, downloadPDFFromURL, FormData } from "@/lib/pdfGenerator";
 import { loadAntragData, getNextRequiredDocument, getDocumentDisplayName, calculateCompletionPercentage } from "@/lib/antragContext";
 import { Badge } from "@/components/ui/badge";
 import { PDFViewer } from "@/components/PDFViewer";
@@ -18,6 +18,7 @@ const Preview = () => {
 
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [antragData, setAntragData] = useState<any>(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
@@ -101,6 +102,10 @@ const Preview = () => {
 
       const bytes = await generateFilledPDF(formData);
       setPdfBytes(bytes);
+      
+      // Create and store Blob URL to prevent buffer detachment issues
+      const blobUrl = createPDFBlobURL(bytes);
+      setPdfBlobUrl(blobUrl);
 
       toast({
         title: "PDF-Vorschau erstellt",
@@ -119,8 +124,8 @@ const Preview = () => {
   };
 
   const handleDownload = () => {
-    if (pdfBytes) {
-      downloadPDF(pdfBytes, `elterngeldantrag_vorschau_${new Date().toISOString().split('T')[0]}.pdf`);
+    if (pdfBlobUrl) {
+      downloadPDFFromURL(pdfBlobUrl, `elterngeldantrag_vorschau_${new Date().toISOString().split('T')[0]}.pdf`);
       toast({
         title: "Download gestartet",
         description: "Die PDF-Datei wird heruntergeladen.",
