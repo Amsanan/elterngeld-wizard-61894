@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FileText, Upload, List, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { TemplateUploader } from "@/components/TemplateUploader";
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -111,8 +112,13 @@ const Dashboard = () => {
             </Card>
           </div>
 
+          {/* Template Upload Component - for initial setup */}
+          <div className="mt-8">
+            <TemplateUploader />
+          </div>
+
           {/* Info Card */}
-          <Card className="mt-8 p-6 bg-secondary/20 border-accent/20">
+          <Card className="mt-6 p-6 bg-secondary/20 border-accent/20">
             <h4 className="font-semibold mb-2 flex items-center gap-2 text-foreground">
               <FileText className="h-5 w-5 text-accent" />
               Datenschutzhinweis

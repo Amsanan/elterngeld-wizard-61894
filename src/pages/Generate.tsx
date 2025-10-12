@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { FileText, ArrowLeft, Download, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
-import { getActiveTemplate, downloadTemplate } from "@/lib/templateManager";
+import { generateFilledPDF, downloadPDF } from "@/lib/pdfGenerator";
+import { getActiveTemplate } from "@/lib/templateStorage";
 
 const Generate = () => {
   const navigate = useNavigate();
@@ -14,18 +15,28 @@ const Generate = () => {
   const [progress, setProgress] = useState(0);
   const [generated, setGenerated] = useState(false);
   const [templateInfo, setTemplateInfo] = useState<any>(null);
+  const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
 
   useEffect(() => {
     // Load template info on mount
     const loadTemplate = async () => {
-      const template = await getActiveTemplate();
-      if (template) {
-        setTemplateInfo(template);
-      } else {
+      try {
+        const template = await getActiveTemplate('elterngeldantrag');
+        if (template) {
+          setTemplateInfo(template);
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Template nicht gefunden",
+            description: "Das Formular-Template konnte nicht geladen werden.",
+          });
+        }
+      } catch (error) {
+        console.error('Error loading template:', error);
         toast({
           variant: "destructive",
-          title: "Template nicht gefunden",
-          description: "Das Formular-Template konnte nicht geladen werden.",
+          title: "Fehler beim Laden",
+          description: "Das Template konnte nicht geladen werden.",
         });
       }
     };
@@ -46,27 +57,31 @@ const Generate = () => {
     setProgress(0);
 
     try {
-      // Step 1: Download template from Supabase Storage
+      // Simulate progress
       setProgress(20);
-      const templateBlob = await downloadTemplate(templateInfo.storage_path);
-      
-      if (!templateBlob) {
-        throw new Error("Template konnte nicht geladen werden");
-      }
+
+      // Mock form data - in production, this would come from the database/context
+      const formData = {
+        kind_vorname: "Max",
+        kind_nachname: "Mustermann",
+        kind_geburtsdatum: "15.01.2024",
+        vorname: "Anna",
+        nachname: "Mustermann",
+        geburtsdatum: "15.01.1990",
+        steuer_identifikationsnummer: "12345678901",
+        strasse: "Musterstraße",
+        hausnr: "123",
+        plz: "12345",
+        ort: "Berlin",
+      };
 
       setProgress(40);
 
-      // TODO: Step 2: Load PDF with pdf-lib and fill fields
-      // const pdfDoc = await PDFDocument.load(await templateBlob.arrayBuffer());
-      // const form = pdfDoc.getForm();
-      // Fill fields using database data...
-
-      setProgress(70);
-
-      // Simulate processing
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
+      // Generate filled PDF from Supabase template
+      const generatedPdfBytes = await generateFilledPDF(formData);
+      
       setProgress(100);
+      setPdfBytes(generatedPdfBytes);
       setGenerating(false);
       setGenerated(true);
       
@@ -86,11 +101,19 @@ const Generate = () => {
   };
 
   const handleDownload = () => {
-    // TODO: Implement actual PDF download
-    toast({
-      title: "Download gestartet",
-      description: "Die PDF-Datei wird heruntergeladen.",
-    });
+    if (pdfBytes) {
+      downloadPDF(pdfBytes, 'elterngeldantrag_ausgefuellt.pdf');
+      toast({
+        title: "Download gestartet",
+        description: "Die PDF-Datei wird heruntergeladen.",
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Fehler",
+        description: "PDF nicht gefunden. Bitte generieren Sie das PDF erneut.",
+      });
+    }
   };
 
   return (
@@ -148,7 +171,7 @@ const Generate = () => {
                 {generating && (
                   <div className="mb-6">
                     <p className="text-sm text-muted-foreground mb-3">
-                      PDF wird generiert... {progress}%
+                      PDF wird aus Supabase Template generiert... {progress}%
                     </p>
                     <Progress value={progress} className="h-2" />
                   </div>
@@ -157,7 +180,7 @@ const Generate = () => {
                 <Button
                   size="lg"
                   onClick={handleGenerate}
-                  disabled={generating}
+                  disabled={generating || !templateInfo}
                   className="w-full sm:w-auto"
                 >
                   {generating ? "Wird generiert..." : "PDF jetzt generieren"}
@@ -204,11 +227,11 @@ const Generate = () => {
           <Card className="mt-6 p-6 bg-accent/5 border-accent/20">
             <h4 className="font-semibold mb-2 flex items-center gap-2 text-foreground">
               <FileText className="h-5 w-5 text-accent" />
-              Datenschutz
+              Datenschutz & Storage
             </h4>
             <p className="text-sm text-muted-foreground">
-              Alle Ihre Daten werden nach dem Download automatisch nach 30 Tagen 
-              von unseren Servern gelöscht. Die PDF-Datei verbleibt nur auf Ihrem Gerät.
+              Das Template wird sicher aus Supabase Storage geladen. Alle Ihre Daten werden nach dem Download 
+              automatisch nach 30 Tagen von unseren Servern gelöscht. Die PDF-Datei verbleibt nur auf Ihrem Gerät.
             </p>
           </Card>
         </div>
