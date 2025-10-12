@@ -195,7 +195,12 @@ export async function generateFilledPDF(formData: FormData): Promise<Uint8Array>
 
     // Save the PDF
     const pdfBytes = await pdfDoc.save();
-    return pdfBytes;
+    
+    // Create a deep copy immediately to prevent detached buffer issues
+    const pdfBytesCopy = new Uint8Array(pdfBytes.length);
+    pdfBytesCopy.set(pdfBytes);
+    
+    return pdfBytesCopy;
   } catch (error) {
     console.error('Error generating PDF:', error);
     throw error;
@@ -207,8 +212,9 @@ export async function generateFilledPDF(formData: FormData): Promise<Uint8Array>
  */
 export function downloadPDF(pdfBytes: Uint8Array, filename: string = 'elterngeldantrag_ausgefuellt.pdf') {
   try {
-    // Convert to regular array to avoid buffer issues
-    const blob = new Blob([pdfBytes.slice()], { type: 'application/pdf' });
+    // Create a fresh Uint8Array for blob creation
+    const safeBytes = new Uint8Array(pdfBytes);
+    const blob = new Blob([safeBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
