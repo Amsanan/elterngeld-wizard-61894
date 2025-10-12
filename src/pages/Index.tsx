@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FileText, Upload, CheckCircle2, Download, Shield, Clock } from "lucide-react";
@@ -17,9 +16,9 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">KI-gestützte Formularausfüllung</p>
               </div>
             </div>
-            <Link to="/auth">
+            <a href="/auth">
               <Button variant="outline">Anmelden</Button>
-            </Link>
+            </a>
           </div>
         </div>
       </header>
@@ -34,11 +33,11 @@ const Index = () => {
             Sparen Sie Zeit mit unserer KI-gestützten Lösung. Laden Sie Ihre Dokumente hoch, 
             und wir füllen Ihren Elterngeldantrag automatisch und DSGVO-konform aus.
           </p>
-          <Link to="/auth">
+          <a href="/auth">
             <Button size="lg" className="text-lg px-8">
               Jetzt kostenlos starten
             </Button>
-          </Link>
+          </a>
         </div>
       </section>
 
