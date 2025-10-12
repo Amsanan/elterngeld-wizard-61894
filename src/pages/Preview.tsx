@@ -36,8 +36,8 @@ const Preview = () => {
     }
 
     // Ensure template is uploaded before loading data
-    ensureTemplateUploaded().then((success) => {
-      if (success) {
+    ensureTemplateUploaded().then((storagePath) => {
+      if (storagePath) {
         loadData();
       } else {
         toast({

@@ -83,7 +83,12 @@ export async function generateFilledPDF(formData: FormData): Promise<Uint8Array>
     // Download template PDF from storage
     console.log('Loading template:', template.storage_path);
     const templateBlob = await downloadTemplatePDF(template.storage_path);
+    
+    // Log blob details for debugging
+    console.log('Template blob type:', templateBlob.type, 'size:', templateBlob.size);
+    
     const templateBytes = await templateBlob.arrayBuffer();
+    console.log('Template bytes length:', templateBytes.byteLength);
 
     // Load PDF with pdf-lib
     const pdfDoc = await PDFDocument.load(templateBytes);
