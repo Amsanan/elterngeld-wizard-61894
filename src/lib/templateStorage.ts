@@ -32,16 +32,18 @@ export async function getActiveTemplate(templateName: string = 'elterngeldantrag
  * Download template PDF from storage
  */
 export async function downloadTemplatePDF(storagePath: string): Promise<Blob> {
-  const { data, error } = await supabase.storage
+  // Use public URL to download the template
+  const { data: { publicUrl } } = supabase.storage
     .from('form-templates')
-    .download(storagePath);
+    .getPublicUrl(storagePath);
 
-  if (error) {
-    console.error('Error downloading template:', error);
-    throw error;
+  const response = await fetch(publicUrl);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to download template: ${response.statusText}`);
   }
 
-  return data;
+  return await response.blob();
 }
 
 /**
