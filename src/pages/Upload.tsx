@@ -100,24 +100,48 @@ const Upload = () => {
       return;
     }
 
-    // Create application record first
-    const { data: antrag, error: antragError } = await supabase
-      .from('antrag')
-      .insert({
-        user_id: user.id,
-        status: 'draft',
-        ort: files[0]?.ocrResult?.fields.ort || null,
-      })
-      .select()
-      .single();
+    // Check if we have an existing antrag from sessionStorage
+    const existingAntragId = sessionStorage.getItem('current_antrag_id');
+    let antrag;
 
-    if (antragError || !antrag) {
-      toast({
-        variant: "destructive",
-        title: "Fehler beim Erstellen",
-        description: "Der Antrag konnte nicht erstellt werden.",
-      });
-      return;
+    if (existingAntragId) {
+      // Use existing antrag
+      const { data, error } = await supabase
+        .from('antrag')
+        .select('*')
+        .eq('id', existingAntragId)
+        .single();
+
+      if (error || !data) {
+        // Create new if existing not found
+        sessionStorage.removeItem('current_antrag_id');
+      } else {
+        antrag = data;
+      }
+    }
+
+    // Create new application record if needed
+    if (!antrag) {
+      const { data: newAntrag, error: antragError } = await supabase
+        .from('antrag')
+        .insert({
+          user_id: user.id,
+          status: 'draft',
+          ort: files[0]?.ocrResult?.fields.ort || null,
+        })
+        .select()
+        .single();
+
+      if (antragError || !newAntrag) {
+        toast({
+          variant: "destructive",
+          title: "Fehler beim Erstellen",
+          description: "Der Antrag konnte nicht erstellt werden.",
+        });
+        return;
+      }
+      antrag = newAntrag;
+      sessionStorage.setItem('current_antrag_id', antrag.id);
     }
 
     // Upload files and save extraction data
@@ -172,11 +196,11 @@ const Upload = () => {
 
     toast({
       title: "Upload erfolgreich",
-      description: "Alle Dateien wurden hochgeladen und analysiert.",
+      description: "Dokumente werden verarbeitet. PDF-Vorschau wird generiert...",
     });
 
-    // Navigate to review page with antrag_id
-    navigate(`/review?antrag_id=${antrag.id}`);
+    // Navigate to review/preview page with antrag ID
+    navigate(`/review?antrag=${antrag.id}`);
   };
 
   const removeFile = (index: number) => {
