@@ -7,7 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { generateFilledPDF, downloadPDF, FormData } from "@/lib/pdfGenerator";
 import { loadAntragData, getNextRequiredDocument, getDocumentDisplayName, calculateCompletionPercentage } from "@/lib/antragContext";
-import { ensureTemplateUploaded } from "@/lib/templateUploadHelper";
 import { Badge } from "@/components/ui/badge";
 
 const Preview = () => {
@@ -35,18 +34,7 @@ const Preview = () => {
       return;
     }
 
-    // Ensure template is uploaded before loading data
-    ensureTemplateUploaded().then((storagePath) => {
-      if (storagePath) {
-        loadData();
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Template-Fehler",
-          description: "Das PDF-Template konnte nicht geladen werden.",
-        });
-      }
-    });
+    loadData();
   }, [antragId]);
 
   const loadData = async () => {

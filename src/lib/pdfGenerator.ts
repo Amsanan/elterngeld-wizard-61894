@@ -1,5 +1,4 @@
 import { PDFDocument } from 'pdf-lib';
-import { getActiveTemplate, downloadTemplatePDF } from './templateStorage';
 
 export interface FormData {
   // Antrag
@@ -74,18 +73,20 @@ export interface FormData {
  */
 export async function generateFilledPDF(formData: FormData): Promise<Uint8Array> {
   try {
-    // Get active template metadata
-    const template = await getActiveTemplate('elterngeldantrag');
-    if (!template) {
-      throw new Error('Kein aktives Template gefunden');
-    }
-
-    // Download template PDF from storage
-    console.log('Loading template:', template.storage_path);
-    const templateBlob = await downloadTemplatePDF(template.storage_path);
+    // Load template PDF directly from public folder
+    console.log('Loading template from public folder');
+    const response = await fetch('/reference/elterngeldantrag_bis_Maerz25.pdf');
     
-    // Log blob details for debugging
+    if (!response.ok) {
+      throw new Error(`Failed to fetch template PDF: ${response.statusText}`);
+    }
+    
+    const templateBlob = await response.blob();
     console.log('Template blob type:', templateBlob.type, 'size:', templateBlob.size);
+    
+    if (templateBlob.type !== 'application/pdf') {
+      throw new Error(`Invalid file type: ${templateBlob.type}. Expected application/pdf`);
+    }
     
     const templateBytes = await templateBlob.arrayBuffer();
     console.log('Template bytes length:', templateBytes.byteLength);
