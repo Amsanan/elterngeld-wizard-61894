@@ -73,9 +73,9 @@ export interface FormData {
  */
 export async function generateFilledPDF(formData: FormData): Promise<Uint8Array> {
   try {
-    // Load template PDF directly from public folder
-    console.log('Loading template from public/reference folder');
-    const response = await fetch('/reference/elterngeldantrag_bis_Maerz25.pdf');
+    // Load template PDF directly from public folder (root level for Vite to serve correctly)
+    console.log('Loading template from public folder');
+    const response = await fetch('/elterngeldantrag_bis_Maerz25.pdf');
     
     if (!response.ok) {
       throw new Error(`Failed to fetch template PDF: ${response.status} ${response.statusText}`);
