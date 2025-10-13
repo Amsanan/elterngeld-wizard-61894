@@ -16,43 +16,54 @@ serve(async (req) => {
     
     console.log("Mapping OCR data for document type:", documentType);
 
+    // Field mapping reference from Mapping032025_1.xlsx
+    const mappingReference = `
+KRITISCHE MAPPING-REGELN basierend auf Mapping032025_1.xlsx:
+
+KIND-TABELLE (aus Geburtsurkunde):
+- vorname → txt.txt.vorname1A (Kind Vorname)
+- nachname → txt.txt.name1A (Kind Nachname)
+- geburtsdatum → txt.txt.geburtsdatum1a (Geburtsdatum, Format: DD.MM.YYYY oder YYYY-MM-DD)
+- anzahl_mehrlinge → txt.txt.anzahl (Anzahl Mehrlinge)
+- fruehgeboren → cb.ja1b (BOOLEAN: mindestens 6 Wochen früh)
+- errechneter_geburtsdatum → txt.geburtsdatum_frueh1b (Falls frühgeboren)
+- behinderung → cb.nein1b (BOOLEAN: Kind hat Behinderung)
+- anzahl_weitere_kinder → txt.anzahl1c (Anzahl weitere Kinder)
+
+ANTRAG_2B_ELTERNTEIL-TABELLE (aus Personalausweis/ID):
+- vorname → txt.vorname2b (Elternteil Vorname)
+- nachname → txt.name2b (Elternteil Nachname)  
+- geburtsdatum → txt.geburt2b (Geburtsdatum)
+- geschlecht → cb.weiblich2b, cb.männlich2b, cb.divers2b, cb.ohneAngabe2b
+- steuer_identifikationsnummer → txt.txt.steuer2b_1 (11-stellige Steuer-ID)
+
+ANTRAG_2C_WOHNSITZ-TABELLE (aus Adressdokumenten):
+- strasse → txt.strasse2c (Straßenname)
+- hausnr → txt.nummer2c (Hausnummer)
+- plz → txt.plz2c (5-stellige PLZ)
+- ort → txt.ort2c (Wohnort)
+- adresszusatz → txt.adresszusatz2c (Optional)
+
+WICHTIG:
+- Ignoriere "Geburtsort" - wir brauchen nur aktuellen Wohnsitz
+- Extrahiere KEINE Daten die nicht in den Tabellen existieren
+- Wenn unsicher, setze confidence niedriger
+`;
+
     // System prompt for intelligent field mapping
-    const systemPrompt = `Du bist ein Experte für das Ausfüllen deutscher Elterngeldanträge.
-    
-Deine Aufgabe ist es, OCR-extrahierte Daten aus verschiedenen Dokumenten (Geburtsurkunde, Gehaltsnachweis, Personalausweis, etc.) 
-intelligent den richtigen PDF-Formularfeldern zuzuordnen.
+    const systemPrompt = `Du bist ein Experte für das Ausfüllen deutscher Elterngeldanträge mit Zugriff auf die offizielle Mapping-Referenz.
 
-Wichtige Mapping-Regeln:
-1. Kind-Daten (aus Geburtsurkunde):
-   - kind_vorname → Vorname des Kindes
-   - kind_nachname → Familienname des Kindes
-   - kind_geburtsdatum → Geburtsdatum im Format DD.MM.YYYY oder YYYY-MM-DD
-   - kind_geschlecht → "männlich" oder "weiblich"
-   - WICHTIG: Ignoriere "Geburtsort" - dies wird nicht benötigt
+${mappingReference}
 
-2. Eltern-Daten (aus Personalausweis):
-   - vorname → Vorname des Antragstellers
-   - nachname → Nachname des Antragstellers
-   - geburtsdatum → Geburtsdatum des Antragstellers
-   - steuer_identifikationsnummer → 11-stellige Steuer-ID
+Deine Aufgabe: Analysiere die OCR-Daten und mappe sie PRÄZISE zu den SQL-Tabellen basierend auf der Mapping-Referenz oben.
 
-3. Adresse-Daten (NUR aktueller Wohnsitz, NICHT Geburtsort):
-   - strasse → Straßenname
-   - hausnr → Hausnummer
-   - plz → 5-stellige Postleitzahl
-   - ort → Aktueller Wohnort
-
-4. Gehaltsnachweis-Daten:
-   - Extrahiere Brutto-Gehalt, Netto-Gehalt, Arbeitgeber-Name
-
-Antworte NUR mit einem JSON-Objekt ohne zusätzlichen Text. Das Format muss exakt so sein:
+Antworte NUR mit einem JSON-Objekt ohne zusätzlichen Text:
 {
   "mapped_fields": {
-    "field_name": "value",
-    ...
+    "field_name": "value"
   },
   "confidence": 0.95,
-  "suggestions": ["Optional: Hinweise zu unsicheren Feldern"]
+  "suggestions": ["Optional: Hinweise"]
 }`;
 
     const userPrompt = `Dokumenttyp: ${documentType}
@@ -62,20 +73,20 @@ ${JSON.stringify(ocrData, null, 2)}
 
 Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
 
-    // Call Lovable AI Gateway
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+    // Call OpenRouter API with Gemini Thinking model
+    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+    if (!OPENROUTER_API_KEY) {
+      throw new Error("OPENROUTER_API_KEY not configured");
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.0-flash-thinking-exp-01-21:free",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
