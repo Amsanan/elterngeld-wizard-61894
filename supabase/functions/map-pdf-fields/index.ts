@@ -21,49 +21,46 @@ serve(async (req) => {
 
     console.log("Mapping OCR data for document type:", documentType);
 
-    // System prompt for intelligent field mapping
+    // System prompt for intelligent field mapping - use exact database schema field names
     const systemPrompt = `Du bist ein Experte für das Ausfüllen deutscher Elterngeldanträge.
     
 Deine Aufgabe ist es, OCR-extrahierte Daten aus verschiedenen Dokumenten (Geburtsurkunde, Gehaltsnachweis, Personalausweis, etc.) 
-intelligent den richtigen PDF-Formularfeldern zuzuordnen.
+intelligent den richtigen Datenbank-Feldern zuzuordnen.
 
-Wichtige Mapping-Regeln:
-1. Kind-Daten (aus Geburtsurkunde):
-   - kind_vorname (Vorname des Kindes)
-   - kind_nachname (Familienname des Kindes)
-   - kind_geburtsdatum (Geburtsdatum im Format DD.MM.YYYY)
-   - kind_geschlecht ("männlich" oder "weiblich")
-   - kind_geburtsort (Geburtsort)
+WICHTIG: Verwende EXAKT diese Datenbank-Feldnamen (entsprechend der SQL-Tabellen):
 
-2. Eltern-Daten (aus Personalausweis):
-   - vorname (Vorname des Antragstellers)
-   - nachname (Nachname des Antragstellers)
-   - geburtsdatum (Geburtsdatum des Antragstellers im Format DD.MM.YYYY)
+1. Kind-Daten (Tabelle: kind):
+   - vorname (Vorname des Kindes)
+   - nachname (Familienname des Kindes)  
+   - geburtsdatum (Geburtsdatum im Format YYYY-MM-DD)
+
+2. Eltern-Daten (Tabelle: antrag_2b_elternteil):
+   - vorname (Vorname Elternteil 1)
+   - nachname (Nachname Elternteil 1)
+   - geburtsdatum (Geburtsdatum Elternteil 1 im Format YYYY-MM-DD)
+   - geschlecht (männlich/weiblich/divers)
    - steuer_identifikationsnummer (11-stellige Steuer-ID)
 
-3. Adresse-Daten:
+3. Adresse-Daten (Tabelle: antrag_2c_wohnsitz):
    - strasse (Straßenname)
    - hausnr (Hausnummer)
    - plz (5-stellige Postleitzahl)
    - ort (Wohnort)
 
-4. Gehaltsnachweis-Daten:
-   - brutto_gehalt (Brutto-Gehalt)
-   - netto_gehalt (Netto-Gehalt)
-   - arbeitgeber (Arbeitgeber-Name)
+KRITISCH: 
+- Verwende NUR die oben genannten Feldnamen EXAKT wie angegeben
+- Datumsangaben IMMER im Format YYYY-MM-DD (nicht DD.MM.YYYY)
+- Geschlecht als "männlich" oder "weiblich" (nicht "m" oder "w")
 
-WICHTIG: Verwende EXAKT diese Feldnamen (z.B. "kind_vorname", nicht "Vorname des Kindes")!
-Datumsangaben immer im Format DD.MM.YYYY ausgeben.
-
-Antworte NUR mit einem JSON-Objekt ohne zusätzlichen Text. Das Format muss exakt so sein:
+Antworte NUR mit einem JSON-Objekt ohne zusätzlichen Text:
 {
   "mapped_fields": {
-    "kind_vorname": "Max",
-    "kind_nachname": "Mustermann",
-    ...
+    "vorname": "Max",
+    "nachname": "Mustermann",
+    "geburtsdatum": "2024-01-15"
   },
   "confidence": 0.95,
-  "suggestions": ["Optional: Hinweise zu unsicheren Feldern"]
+  "suggestions": []
 }`;
 
     const userPrompt = `Dokumenttyp: ${documentType}
@@ -136,9 +133,9 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
       if (documentType === "geburtsurkunde") {
         await supabase.from("kind").upsert({
           antrag_id: antragId,
-          vorname: fields.kind_vorname,
-          nachname: fields.kind_nachname,
-          geburtsdatum: fields.kind_geburtsdatum,
+          vorname: fields.vorname,
+          nachname: fields.nachname,
+          geburtsdatum: fields.geburtsdatum,
         }, { onConflict: "antrag_id" });
       }
 

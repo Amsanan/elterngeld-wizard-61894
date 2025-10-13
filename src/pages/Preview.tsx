@@ -78,24 +78,64 @@ const Preview = () => {
       };
 
       // Convert database data to FormData format
+      // Note: antragContext merges all table data, so field names come directly from DB tables
       const formData: FormData = {
-        // Kind
-        kind_vorname: getValue(data.kind_vorname),
-        kind_nachname: getValue(data.kind_nachname),
-        kind_geburtsdatum: getValue(data.kind_geburtsdatum),
-        kind_geschlecht: getValue(data.kind_geschlecht),
+        // Kind (comes from kind table - uses simple field names)
+        vorname: getValue(data.vorname),  // not kind_vorname!
+        nachname: getValue(data.nachname),  // not kind_nachname!
+        geburtsdatum: getValue(data.geburtsdatum),  // not kind_geburtsdatum!
+        anzahl_mehrlinge: data.anzahl_mehrlinge,
+        fruehgeboren: data.fruehgeboren,
+        errechneter_geburtsdatum: getValue(data.errechneter_geburtsdatum),
+        behinderung: data.behinderung,
+        keine_weitere_kinder: data.keine_weitere_kinder,
+        insgesamt: data.insgesamt,
+        anzahl_weitere_kinder: data.anzahl_weitere_kinder,
         
-        // Parent
-        vorname: getValue(data.vorname),
-        nachname: getValue(data.nachname),
-        geburtsdatum: getValue(data.geburtsdatum),
+        // Parent (from antrag_2b_elternteil table - may have conflicts with kind table)
+        // We'll use prefixed versions for parents when needed
         steuer_identifikationsnummer: getValue(data.steuer_identifikationsnummer),
+        vorname_2: getValue(data.vorname_2),
+        nachname_2: getValue(data.nachname_2),
+        geburtsdatum_2: getValue(data.geburtsdatum_2),
+        steuer_identifikationsnummer_2: getValue(data.steuer_identifikationsnummer_2),
         
-        // Address
+        // Address (from antrag_2c_wohnsitz table)
         strasse: getValue(data.strasse),
         hausnr: getValue(data.hausnr),
         plz: getValue(data.plz),
         ort: getValue(data.ort),
+        adresszusatz: getValue(data.adresszusatz),
+        
+        // Residence status (from antrag_2c_wohnsitz_aufenthalt table)
+        wohnsitz_in_deutschland: data.wohnsitz_in_deutschland,
+        seit_meiner_geburt: data.seit_meiner_geburt,
+        seit_in_deutschland: data.seit_in_deutschland,
+        seit_datum_deutschland: getValue(data.seit_datum_deutschland),
+        
+        // Single parent (from antrag_2a_alleinerziehende table)
+        ist_alleinerziehend: data.ist_alleinerziehend,
+        anderer_unmoeglich_betreuung: data.anderer_unmoeglich_betreuung,
+        betreuung_gefaehrdet_wohl: data.betreuung_gefaehrdet_wohl,
+        
+        // Foreign residence (from antrag_2c_wohnsitz table)
+        wohnsitz_ausland: data.wohnsitz_ausland,
+        ausland_staat: getValue(data.ausland_staat),
+        ausland_strasse: getValue(data.ausland_strasse),
+        ausland_aufenthaltsgrund: getValue(data.ausland_aufenthaltsgrund),
+        aufenthalt_befristet: data.aufenthalt_befristet,
+        aufenthalt_befristet_von: getValue(data.aufenthalt_befristet_von),
+        aufenthalt_befristet_bis: getValue(data.aufenthalt_befristet_bis),
+        aufenthalt_unbefristet: data.aufenthalt_unbefristet,
+        aufenthalt_unbefristet_seit: getValue(data.aufenthalt_unbefristet_seit),
+        arbeitsvertrag_deutsches_recht_ja: data.arbeitsvertrag_deutsches_recht_ja,
+        arbeitsvertrag_deutsches_recht_nein: data.arbeitsvertrag_deutsches_recht_nein,
+        ausland_arbeitgeber_sitz_plz: getValue(data.ausland_arbeitgeber_sitz_plz),
+        ausland_arbeitgeber_sitz_ort: getValue(data.ausland_arbeitgeber_sitz_ort),
+        
+        // Application info (from antrag table)
+        adresse_elterngeldstelle: getValue(data.adresse_elterngeldstelle),
+        datum: getValue(data.datum),
       };
 
       console.log('Generating PDF with data:', formData);
