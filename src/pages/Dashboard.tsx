@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
+  const [isCreatingAntrag, setIsCreatingAntrag] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -33,6 +34,61 @@ const Dashboard = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const handleCreateAntrag = async () => {
+    setIsCreatingAntrag(true);
+    try {
+      // Check if user exists in profiles
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        toast({
+          title: "Fehler",
+          description: "Benutzerprofil nicht gefunden.",
+          variant: "destructive",
+        });
+        setIsCreatingAntrag(false);
+        return;
+      }
+
+      // Create new antrag entry
+      const { data: antrag, error: antragError } = await supabase
+        .from('antrag')
+        .insert({
+          user_id: profile.user_id,
+          antrag_timestamp: new Date().toISOString(),
+          status: 'draft'
+        })
+        .select()
+        .single();
+
+      if (antragError) {
+        toast({
+          title: "Fehler",
+          description: "Antrag konnte nicht erstellt werden.",
+          variant: "destructive",
+        });
+        setIsCreatingAntrag(false);
+        return;
+      }
+
+      // Navigate to upload page
+      navigate("/upload");
+    } catch (error) {
+      console.error("Error creating antrag:", error);
+      toast({
+        title: "Fehler",
+        description: "Ein unerwarteter Fehler ist aufgetreten.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingAntrag(false);
+    }
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -76,7 +132,7 @@ const Dashboard = () => {
           <div className="grid md:grid-cols-2 gap-6">
             <Card 
               className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => navigate("/upload")}
+              onClick={handleCreateAntrag}
             >
               <div className="flex flex-col items-center text-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -88,7 +144,9 @@ const Dashboard = () => {
                     Dokumente hochladen und neuen Elterngeldantrag erstellen
                   </p>
                 </div>
-                <Button className="mt-4">Jetzt starten</Button>
+                <Button className="mt-4" disabled={isCreatingAntrag}>
+                  {isCreatingAntrag ? "Wird erstellt..." : "Jetzt starten"}
+                </Button>
               </div>
             </Card>
 
