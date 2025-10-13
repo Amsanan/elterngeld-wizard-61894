@@ -56,6 +56,92 @@ export type Database = {
         }
         Relationships: []
       }
+      antrag_10_mutterschafts_leistungen: {
+        Row: {
+          anspruch_krankentage_geld: boolean | null
+          anspruch_mutterschaftsgeld_krankenkasse: boolean | null
+          anspruch_mutterschaftsgeld_von_arbeitgeber: boolean | null
+          anspruch_zuschuss_beamter: boolean | null
+          anspruch_zuschuss_beamter_dienst_anwaerter: boolean | null
+          antrag_id: string
+          bis_beamt: string | null
+          bis_beamt_dienst_anwaerter: string | null
+          bis_krankentage_geld: string | null
+          bis_mutterschaftsgeld_arbeit: string | null
+          bis_mutterschaftsgeld_kk: string | null
+          bis_mutterschaftsgeld_mg_ausland: string | null
+          created_at: string | null
+          id: string
+          kein_anspruch_mutterschaftsgeld: boolean | null
+          rufe_online_kk_bescheinigung_ab: boolean | null
+          vergleichbare_mutterschaftsgeld_ausland: boolean | null
+          von_beamt: string | null
+          von_beamt_dienst_anwaerter: string | null
+          von_krankentage_geld: string | null
+          von_mutterschaftsgeld_arbeit: string | null
+          von_mutterschaftsgeld_kk: string | null
+          von_mutterschaftsgeld_mg_ausland: string | null
+        }
+        Insert: {
+          anspruch_krankentage_geld?: boolean | null
+          anspruch_mutterschaftsgeld_krankenkasse?: boolean | null
+          anspruch_mutterschaftsgeld_von_arbeitgeber?: boolean | null
+          anspruch_zuschuss_beamter?: boolean | null
+          anspruch_zuschuss_beamter_dienst_anwaerter?: boolean | null
+          antrag_id: string
+          bis_beamt?: string | null
+          bis_beamt_dienst_anwaerter?: string | null
+          bis_krankentage_geld?: string | null
+          bis_mutterschaftsgeld_arbeit?: string | null
+          bis_mutterschaftsgeld_kk?: string | null
+          bis_mutterschaftsgeld_mg_ausland?: string | null
+          created_at?: string | null
+          id?: string
+          kein_anspruch_mutterschaftsgeld?: boolean | null
+          rufe_online_kk_bescheinigung_ab?: boolean | null
+          vergleichbare_mutterschaftsgeld_ausland?: boolean | null
+          von_beamt?: string | null
+          von_beamt_dienst_anwaerter?: string | null
+          von_krankentage_geld?: string | null
+          von_mutterschaftsgeld_arbeit?: string | null
+          von_mutterschaftsgeld_kk?: string | null
+          von_mutterschaftsgeld_mg_ausland?: string | null
+        }
+        Update: {
+          anspruch_krankentage_geld?: boolean | null
+          anspruch_mutterschaftsgeld_krankenkasse?: boolean | null
+          anspruch_mutterschaftsgeld_von_arbeitgeber?: boolean | null
+          anspruch_zuschuss_beamter?: boolean | null
+          anspruch_zuschuss_beamter_dienst_anwaerter?: boolean | null
+          antrag_id?: string
+          bis_beamt?: string | null
+          bis_beamt_dienst_anwaerter?: string | null
+          bis_krankentage_geld?: string | null
+          bis_mutterschaftsgeld_arbeit?: string | null
+          bis_mutterschaftsgeld_kk?: string | null
+          bis_mutterschaftsgeld_mg_ausland?: string | null
+          created_at?: string | null
+          id?: string
+          kein_anspruch_mutterschaftsgeld?: boolean | null
+          rufe_online_kk_bescheinigung_ab?: boolean | null
+          vergleichbare_mutterschaftsgeld_ausland?: boolean | null
+          von_beamt?: string | null
+          von_beamt_dienst_anwaerter?: string | null
+          von_krankentage_geld?: string | null
+          von_mutterschaftsgeld_arbeit?: string | null
+          von_mutterschaftsgeld_kk?: string | null
+          von_mutterschaftsgeld_mg_ausland?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_10_mutterschafts_leistungen_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       antrag_2a_alleinerziehende: {
         Row: {
           anderer_unmoeglich_betreuung: boolean | null
@@ -932,6 +1018,327 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "antrag_5_krankenversicherung_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      antrag_6a_gesamteinkommen: {
+        Row: {
+          antrag_id: string
+          created_at: string | null
+          id: string
+          ueber_200_tausend: boolean | null
+          unter_200_tausend: boolean | null
+          vorraus_200_tausend: boolean | null
+        }
+        Insert: {
+          antrag_id: string
+          created_at?: string | null
+          id?: string
+          ueber_200_tausend?: boolean | null
+          unter_200_tausend?: boolean | null
+          vorraus_200_tausend?: boolean | null
+        }
+        Update: {
+          antrag_id?: string
+          created_at?: string | null
+          id?: string
+          ueber_200_tausend?: boolean | null
+          unter_200_tausend?: boolean | null
+          vorraus_200_tausend?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_6a_gesamteinkommen_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      antrag_6b_mindestbetrag: {
+        Row: {
+          antrag_id: string
+          beantrage_mindest: boolean | null
+          beantrage_mindest_2: boolean | null
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          antrag_id: string
+          beantrage_mindest?: boolean | null
+          beantrage_mindest_2?: boolean | null
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          antrag_id?: string
+          beantrage_mindest?: boolean | null
+          beantrage_mindest_2?: boolean | null
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_6b_mindestbetrag_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      antrag_7a_bisherige_erwerbstaetigkeit: {
+        Row: {
+          antrag_id: string
+          created_at: string | null
+          einkuenfte_nicht_selbststaendig: boolean | null
+          einkuenfte_nicht_selbststaendig_2: boolean | null
+          gewerbe_einkuenfte: boolean | null
+          gewerbe_einkuenfte_2: boolean | null
+          gewinn_einkunft_vorhanden: boolean | null
+          gewinn_einkunft_vorhanden_2: boolean | null
+          id: string
+          keine_einkuenfte: boolean | null
+          keine_einkuenfte_2: boolean | null
+          landwirtschaft_einkuenfte: boolean | null
+          landwirtschaft_einkuenfte_2: boolean | null
+          selbststaendig_einkuenfte: boolean | null
+          selbststaendig_einkuenfte_2: boolean | null
+        }
+        Insert: {
+          antrag_id: string
+          created_at?: string | null
+          einkuenfte_nicht_selbststaendig?: boolean | null
+          einkuenfte_nicht_selbststaendig_2?: boolean | null
+          gewerbe_einkuenfte?: boolean | null
+          gewerbe_einkuenfte_2?: boolean | null
+          gewinn_einkunft_vorhanden?: boolean | null
+          gewinn_einkunft_vorhanden_2?: boolean | null
+          id?: string
+          keine_einkuenfte?: boolean | null
+          keine_einkuenfte_2?: boolean | null
+          landwirtschaft_einkuenfte?: boolean | null
+          landwirtschaft_einkuenfte_2?: boolean | null
+          selbststaendig_einkuenfte?: boolean | null
+          selbststaendig_einkuenfte_2?: boolean | null
+        }
+        Update: {
+          antrag_id?: string
+          created_at?: string | null
+          einkuenfte_nicht_selbststaendig?: boolean | null
+          einkuenfte_nicht_selbststaendig_2?: boolean | null
+          gewerbe_einkuenfte?: boolean | null
+          gewerbe_einkuenfte_2?: boolean | null
+          gewinn_einkunft_vorhanden?: boolean | null
+          gewinn_einkunft_vorhanden_2?: boolean | null
+          id?: string
+          keine_einkuenfte?: boolean | null
+          keine_einkuenfte_2?: boolean | null
+          landwirtschaft_einkuenfte?: boolean | null
+          landwirtschaft_einkuenfte_2?: boolean | null
+          selbststaendig_einkuenfte?: boolean | null
+          selbststaendig_einkuenfte_2?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_7a_bisherige_erwerbstaetigkeit_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      antrag_8a_einkomen_vor_geburt_bestimmt: {
+        Row: {
+          antrag_id: string
+          berufsausbildung: boolean | null
+          berufsausbildung_2: boolean | null
+          created_at: string | null
+          id: string
+          keine_der_bestimmten: boolean | null
+          keine_der_bestimmten_2: boolean | null
+          midijob: boolean | null
+          midijob_2: boolean | null
+          minijob: boolean | null
+          minijob_2: boolean | null
+        }
+        Insert: {
+          antrag_id: string
+          berufsausbildung?: boolean | null
+          berufsausbildung_2?: boolean | null
+          created_at?: string | null
+          id?: string
+          keine_der_bestimmten?: boolean | null
+          keine_der_bestimmten_2?: boolean | null
+          midijob?: boolean | null
+          midijob_2?: boolean | null
+          minijob?: boolean | null
+          minijob_2?: boolean | null
+        }
+        Update: {
+          antrag_id?: string
+          berufsausbildung?: boolean | null
+          berufsausbildung_2?: boolean | null
+          created_at?: string | null
+          id?: string
+          keine_der_bestimmten?: boolean | null
+          keine_der_bestimmten_2?: boolean | null
+          midijob?: boolean | null
+          midijob_2?: boolean | null
+          minijob?: boolean | null
+          minijob_2?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_8a_einkomen_vor_geburt_bestimmt_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      antrag_8b_steuern_und_abgaben: {
+        Row: {
+          antrag_id: string
+          arbeitslosenversicherung: boolean | null
+          arbeitslosenversicherung_2: boolean | null
+          created_at: string | null
+          id: string
+          keine_abgaben: boolean | null
+          keine_abgaben_2: boolean | null
+          kirchensteuer: boolean | null
+          kirchensteuer_2: boolean | null
+          pflichtbeitrag_krankenkasse: boolean | null
+          pflichtbeitrag_krankenkasse_2: boolean | null
+          rentenversicherung: boolean | null
+          rentenversicherung_2: boolean | null
+        }
+        Insert: {
+          antrag_id: string
+          arbeitslosenversicherung?: boolean | null
+          arbeitslosenversicherung_2?: boolean | null
+          created_at?: string | null
+          id?: string
+          keine_abgaben?: boolean | null
+          keine_abgaben_2?: boolean | null
+          kirchensteuer?: boolean | null
+          kirchensteuer_2?: boolean | null
+          pflichtbeitrag_krankenkasse?: boolean | null
+          pflichtbeitrag_krankenkasse_2?: boolean | null
+          rentenversicherung?: boolean | null
+          rentenversicherung_2?: boolean | null
+        }
+        Update: {
+          antrag_id?: string
+          arbeitslosenversicherung?: boolean | null
+          arbeitslosenversicherung_2?: boolean | null
+          created_at?: string | null
+          id?: string
+          keine_abgaben?: boolean | null
+          keine_abgaben_2?: boolean | null
+          kirchensteuer?: boolean | null
+          kirchensteuer_2?: boolean | null
+          pflichtbeitrag_krankenkasse?: boolean | null
+          pflichtbeitrag_krankenkasse_2?: boolean | null
+          rentenversicherung?: boolean | null
+          rentenversicherung_2?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_8b_steuern_und_abgaben_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      antrag_9_einkommen_ersatz_leistungen: {
+        Row: {
+          andere_einkommen_ersatz_leistung: boolean | null
+          andere_einkommen_ersatz_leistung_2: boolean | null
+          antrag_id: string
+          arbeitslosengeld_i: boolean | null
+          arbeitslosengeld_i_2: boolean | null
+          art_ersatz_leistung1: string | null
+          art_ersatz_leistung1_2: string | null
+          art_ersatz_leistung2: string | null
+          art_ersatz_leistung2_2: string | null
+          art_rente1: string | null
+          art_rente1_2: string | null
+          art_rente2: string | null
+          art_rente2_2: string | null
+          created_at: string | null
+          elterngeld_fuer_aelteres: boolean | null
+          elterngeld_fuer_aelteres_2: boolean | null
+          id: string
+          krankengeld: boolean | null
+          krankengeld_2: boolean | null
+          krankentage_geld: boolean | null
+          krankentage_geld_2: boolean | null
+          rente: boolean | null
+          rente_2: boolean | null
+        }
+        Insert: {
+          andere_einkommen_ersatz_leistung?: boolean | null
+          andere_einkommen_ersatz_leistung_2?: boolean | null
+          antrag_id: string
+          arbeitslosengeld_i?: boolean | null
+          arbeitslosengeld_i_2?: boolean | null
+          art_ersatz_leistung1?: string | null
+          art_ersatz_leistung1_2?: string | null
+          art_ersatz_leistung2?: string | null
+          art_ersatz_leistung2_2?: string | null
+          art_rente1?: string | null
+          art_rente1_2?: string | null
+          art_rente2?: string | null
+          art_rente2_2?: string | null
+          created_at?: string | null
+          elterngeld_fuer_aelteres?: boolean | null
+          elterngeld_fuer_aelteres_2?: boolean | null
+          id?: string
+          krankengeld?: boolean | null
+          krankengeld_2?: boolean | null
+          krankentage_geld?: boolean | null
+          krankentage_geld_2?: boolean | null
+          rente?: boolean | null
+          rente_2?: boolean | null
+        }
+        Update: {
+          andere_einkommen_ersatz_leistung?: boolean | null
+          andere_einkommen_ersatz_leistung_2?: boolean | null
+          antrag_id?: string
+          arbeitslosengeld_i?: boolean | null
+          arbeitslosengeld_i_2?: boolean | null
+          art_ersatz_leistung1?: string | null
+          art_ersatz_leistung1_2?: string | null
+          art_ersatz_leistung2?: string | null
+          art_ersatz_leistung2_2?: string | null
+          art_rente1?: string | null
+          art_rente1_2?: string | null
+          art_rente2?: string | null
+          art_rente2_2?: string | null
+          created_at?: string | null
+          elterngeld_fuer_aelteres?: boolean | null
+          elterngeld_fuer_aelteres_2?: boolean | null
+          id?: string
+          krankengeld?: boolean | null
+          krankengeld_2?: boolean | null
+          krankentage_geld?: boolean | null
+          krankentage_geld_2?: boolean | null
+          rente?: boolean | null
+          rente_2?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_9_einkommen_ersatz_leistungen_antrag_id_fkey"
             columns: ["antrag_id"]
             isOneToOne: true
             referencedRelation: "antrag"
