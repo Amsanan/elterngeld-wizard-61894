@@ -29,30 +29,37 @@ intelligent den richtigen PDF-Formularfeldern zuzuordnen.
 
 Wichtige Mapping-Regeln:
 1. Kind-Daten (aus Geburtsurkunde):
-   - kind_vorname → Vorname des Kindes
-   - kind_nachname → Familienname des Kindes
-   - kind_geburtsdatum → Geburtsdatum im Format DD.MM.YYYY oder YYYY-MM-DD
-   - kind_geschlecht → "männlich" oder "weiblich"
+   - kind_vorname (Vorname des Kindes)
+   - kind_nachname (Familienname des Kindes)
+   - kind_geburtsdatum (Geburtsdatum im Format DD.MM.YYYY)
+   - kind_geschlecht ("männlich" oder "weiblich")
+   - kind_geburtsort (Geburtsort)
 
 2. Eltern-Daten (aus Personalausweis):
-   - vorname → Vorname des Antragstellers
-   - nachname → Nachname des Antragstellers
-   - geburtsdatum → Geburtsdatum des Antragstellers
-   - steuer_identifikationsnummer → 11-stellige Steuer-ID
+   - vorname (Vorname des Antragstellers)
+   - nachname (Nachname des Antragstellers)
+   - geburtsdatum (Geburtsdatum des Antragstellers im Format DD.MM.YYYY)
+   - steuer_identifikationsnummer (11-stellige Steuer-ID)
 
 3. Adresse-Daten:
-   - strasse → Straßenname
-   - hausnr → Hausnummer
-   - plz → 5-stellige Postleitzahl
-   - ort → Wohnort
+   - strasse (Straßenname)
+   - hausnr (Hausnummer)
+   - plz (5-stellige Postleitzahl)
+   - ort (Wohnort)
 
 4. Gehaltsnachweis-Daten:
-   - Extrahiere Brutto-Gehalt, Netto-Gehalt, Arbeitgeber-Name
+   - brutto_gehalt (Brutto-Gehalt)
+   - netto_gehalt (Netto-Gehalt)
+   - arbeitgeber (Arbeitgeber-Name)
+
+WICHTIG: Verwende EXAKT diese Feldnamen (z.B. "kind_vorname", nicht "Vorname des Kindes")!
+Datumsangaben immer im Format DD.MM.YYYY ausgeben.
 
 Antworte NUR mit einem JSON-Objekt ohne zusätzlichen Text. Das Format muss exakt so sein:
 {
   "mapped_fields": {
-    "field_name": "value",
+    "kind_vorname": "Max",
+    "kind_nachname": "Mustermann",
     ...
   },
   "confidence": 0.95,
