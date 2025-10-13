@@ -11,7 +11,6 @@ export interface ExtractedFields {
   kind_vorname?: string;
   kind_nachname?: string;
   kind_geburtsdatum?: string;
-  kind_geburtsort?: string;
   kind_geschlecht?: string;
   
   // Parent information
@@ -82,7 +81,6 @@ function extractFieldsFromText(text: string): ExtractedFields {
     // Birth date - DD.MM.YYYY or similar
     kind_geburtsdatum: /Geburtstag[:\s]+(\d{1,2}\.\d{1,2}\.\d{4})/i,
     geburtsdatum: /(?:Geburtsdatum|geboren am|geb\.?)[:\s]+(\d{1,2}\.\d{1,2}\.\d{4})/i,
-    geburtsort: /Geburtsort[:\s]+([A-ZÄÖÜ][a-zäöüß]+(?:\s[A-ZÄÖÜ][a-zäöüß]+)*)/i,
     
     // Tax ID - 11 digits
     steuer_id: /(?:Steuer-?(?:ID|identifikationsnummer))[:\s]+(\d{11})/i,
@@ -131,9 +129,6 @@ function extractFieldsFromText(text: string): ExtractedFields {
       fields.geburtsdatum = geburtsdatumMatch[1].trim();
     }
   }
-  
-  const geburtsortMatch = text.match(patterns.geburtsort);
-  if (geburtsortMatch) fields.kind_geburtsort = geburtsortMatch[1].trim();
   
   const steuerIdMatch = text.match(patterns.steuer_id);
   if (steuerIdMatch) fields.steuer_identifikationsnummer = steuerIdMatch[1].trim();
