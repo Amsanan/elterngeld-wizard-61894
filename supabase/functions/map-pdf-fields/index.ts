@@ -33,6 +33,7 @@ Wichtige Mapping-Regeln:
    - kind_nachname → Familienname des Kindes
    - kind_geburtsdatum → Geburtsdatum im Format DD.MM.YYYY oder YYYY-MM-DD
    - kind_geschlecht → "männlich" oder "weiblich"
+   - WICHTIG: Ignoriere "Geburtsort" - dies wird nicht benötigt
 
 2. Eltern-Daten (aus Personalausweis):
    - vorname → Vorname des Antragstellers
@@ -40,11 +41,11 @@ Wichtige Mapping-Regeln:
    - geburtsdatum → Geburtsdatum des Antragstellers
    - steuer_identifikationsnummer → 11-stellige Steuer-ID
 
-3. Adresse-Daten:
+3. Adresse-Daten (NUR aktueller Wohnsitz, NICHT Geburtsort):
    - strasse → Straßenname
    - hausnr → Hausnummer
    - plz → 5-stellige Postleitzahl
-   - ort → Wohnort
+   - ort → Aktueller Wohnort
 
 4. Gehaltsnachweis-Daten:
    - Extrahiere Brutto-Gehalt, Netto-Gehalt, Arbeitgeber-Name
