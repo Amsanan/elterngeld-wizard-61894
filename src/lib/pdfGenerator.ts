@@ -6,19 +6,23 @@ export interface FormData {
   ort?: string;
   datum?: string;
   
-  // Kind data (from kind table - no prefix)
+  // Kind data
+  kind_vorname?: string;
+  kind_nachname?: string;
+  kind_geburtsdatum?: string;
+  kind_anzahl_mehrlinge?: string;
+  kind_fruehgeboren?: boolean;
+  kind_errechneter_geburtsdatum?: string;
+  kind_behinderung?: boolean;
+  kind_keine_weitere_kinder?: boolean;
+  kind_insgesamt?: boolean;
+  kind_anzahl_weitere_kinder?: string;
+  
+  // Parent data (Elternteil 1)
   vorname?: string;
   nachname?: string;
   geburtsdatum?: string;
-  anzahl_mehrlinge?: number;
-  fruehgeboren?: boolean;
-  errechneter_geburtsdatum?: string;
-  behinderung?: boolean;
-  keine_weitere_kinder?: boolean;
-  insgesamt?: boolean;
-  anzahl_weitere_kinder?: number;
-  
-  // Parent data (Elternteil 1 conflicts with kind, Elternteil 2 uses _2 suffix)
+  geschlecht?: string;
   steuer_identifikationsnummer?: string;
   
   // Parent data (Elternteil 2)
@@ -61,7 +65,7 @@ export interface FormData {
   ausland_arbeitgeber_sitz_ort?: string;
   
   // Additional fields from database
-  [key: string]: string | boolean | number | undefined;
+  [key: string]: string | boolean | undefined;
 }
 
 /**
@@ -101,32 +105,34 @@ export async function generateFilledPDF(formData: FormData): Promise<Uint8Array>
       'txt.ortdatum_1': formData.ort && formData.datum ? `${formData.ort}, ${formData.datum}` : '',
       'txt.ortdatum_2': formData.ort && formData.datum ? `${formData.ort}, ${formData.datum}` : '',
       
-      // Kind (Child) data - using correct AcroForm field names from mapping file
-      'txt.txt.vorname1A 4': formData.vorname || '',
-      'txt.txt.name1A 4': formData.nachname || '',
-      'txt.txt.geburtsdatum1a 3': formData.geburtsdatum || '',
-      'txt.txt.anzahl 4': formData.anzahl_mehrlinge?.toString() || '',
-      'cb.ja1b 3': formData.fruehgeboren || false,
-      'txt.geburtsdatum_frueh1b 3': formData.errechneter_geburtsdatum || '',
-      'cb.nein1b 3': formData.behinderung || false,
-      'cb.keine1c 3': formData.keine_weitere_kinder || false,
-      'cb.insgesamt1c 3': formData.insgesamt || false,
-      'txt.anzahl1c 3': formData.anzahl_weitere_kinder?.toString() || '',
+      // Kind (Child) data
+      'txt.vorname1A 4': formData.kind_vorname || '',
+      'txt.name1A 4': formData.kind_nachname || '',
+      'txt.geburtsdatum1a 3': formData.kind_geburtsdatum || '',
+      'txt.anzahl 4': formData.kind_anzahl_mehrlinge || '',
+      'cb.ja1b 3': formData.kind_fruehgeboren || false,
+      'txt.geburtsdatum_frueh1b 3': formData.kind_errechneter_geburtsdatum || '',
+      'cb.nein1b 3': formData.kind_behinderung || false,
+      'cb.keine1c 3': formData.kind_keine_weitere_kinder || false,
+      'cb.insgesamt1c 3': formData.kind_insgesamt || false,
+      'txt.anzahl1c 3': formData.kind_anzahl_weitere_kinder || '',
       
       // Alleinerziehende
       'cb.allein2a': formData.ist_alleinerziehend || false,
       'cb.nichtbetreuung2a': formData.anderer_unmoeglich_betreuung || false,
       'cb.kindeswohl2a': formData.betreuung_gefaehrdet_wohl || false,
       
-      // Parent data (Elternteil 1) - Note: conflicts with Kind fields, using steuer_identifikationsnummer only
-      // Vorname/Nachname/Geburtsdatum come from Kind table since they are merged
-      'txt.txt.steuer2b_1': formData.steuer_identifikationsnummer || '',
+      // Parent data (Elternteil 1)
+      'txt.vorname2b': formData.vorname || '',
+      'txt.name2b': formData.nachname || '',
+      'txt.geburt2b': formData.geburtsdatum || '',
+      'txt.steuer2b_1': formData.steuer_identifikationsnummer || '',
       
       // Parent data (Elternteil 2)
       'txt.vorname2b 1': formData.vorname_2 || '',
       'txt.name2b 1': formData.nachname_2 || '',
       'txt.geburt2b 1': formData.geburtsdatum_2 || '',
-      'txt.txt.steuer2b_2': formData.steuer_identifikationsnummer_2 || '',
+      'txt.steuer2b_2': formData.steuer_identifikationsnummer_2 || '',
       
       // Wohnsitz/Aufenthalt
       'cb.ja2c': formData.wohnsitz_in_deutschland || false,

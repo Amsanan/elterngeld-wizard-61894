@@ -13,54 +13,50 @@ serve(async (req) => {
 
   try {
     const { ocrData, documentType, antragId } = await req.json();
-    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
-    if (!OPENROUTER_API_KEY) {
-      throw new Error("OPENROUTER_API_KEY not configured");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY not configured");
     }
 
     console.log("Mapping OCR data for document type:", documentType);
 
-    // System prompt for intelligent field mapping - use exact database schema field names
+    // System prompt for intelligent field mapping
     const systemPrompt = `Du bist ein Experte für das Ausfüllen deutscher Elterngeldanträge.
     
 Deine Aufgabe ist es, OCR-extrahierte Daten aus verschiedenen Dokumenten (Geburtsurkunde, Gehaltsnachweis, Personalausweis, etc.) 
-intelligent den richtigen Datenbank-Feldern zuzuordnen.
+intelligent den richtigen PDF-Formularfeldern zuzuordnen.
 
-WICHTIG: Verwende EXAKT diese Datenbank-Feldnamen (entsprechend der SQL-Tabellen):
+Wichtige Mapping-Regeln:
+1. Kind-Daten (aus Geburtsurkunde):
+   - kind_vorname → Vorname des Kindes
+   - kind_nachname → Familienname des Kindes
+   - kind_geburtsdatum → Geburtsdatum im Format DD.MM.YYYY oder YYYY-MM-DD
+   - kind_geschlecht → "männlich" oder "weiblich"
 
-1. Kind-Daten (Tabelle: kind):
-   - vorname (Vorname des Kindes)
-   - nachname (Familienname des Kindes)  
-   - geburtsdatum (Geburtsdatum im Format YYYY-MM-DD)
+2. Eltern-Daten (aus Personalausweis):
+   - vorname → Vorname des Antragstellers
+   - nachname → Nachname des Antragstellers
+   - geburtsdatum → Geburtsdatum des Antragstellers
+   - steuer_identifikationsnummer → 11-stellige Steuer-ID
 
-2. Eltern-Daten (Tabelle: antrag_2b_elternteil):
-   - vorname (Vorname Elternteil 1)
-   - nachname (Nachname Elternteil 1)
-   - geburtsdatum (Geburtsdatum Elternteil 1 im Format YYYY-MM-DD)
-   - geschlecht (männlich/weiblich/divers)
-   - steuer_identifikationsnummer (11-stellige Steuer-ID)
+3. Adresse-Daten:
+   - strasse → Straßenname
+   - hausnr → Hausnummer
+   - plz → 5-stellige Postleitzahl
+   - ort → Wohnort
 
-3. Adresse-Daten (Tabelle: antrag_2c_wohnsitz):
-   - strasse (Straßenname)
-   - hausnr (Hausnummer)
-   - plz (5-stellige Postleitzahl)
-   - ort (Wohnort)
+4. Gehaltsnachweis-Daten:
+   - Extrahiere Brutto-Gehalt, Netto-Gehalt, Arbeitgeber-Name
 
-KRITISCH: 
-- Verwende NUR die oben genannten Feldnamen EXAKT wie angegeben
-- Datumsangaben IMMER im Format YYYY-MM-DD (nicht DD.MM.YYYY)
-- Geschlecht als "männlich" oder "weiblich" (nicht "m" oder "w")
-
-Antworte NUR mit einem JSON-Objekt ohne zusätzlichen Text:
+Antworte NUR mit einem JSON-Objekt ohne zusätzlichen Text. Das Format muss exakt so sein:
 {
   "mapped_fields": {
-    "vorname": "Max",
-    "nachname": "Mustermann",
-    "geburtsdatum": "2024-01-15"
+    "field_name": "value",
+    ...
   },
   "confidence": 0.95,
-  "suggestions": []
+  "suggestions": ["Optional: Hinweise zu unsicheren Feldern"]
 }`;
 
     const userPrompt = `Dokumenttyp: ${documentType}
@@ -70,17 +66,15 @@ ${JSON.stringify(ocrData, null, 2)}
 
 Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
 
-    // Call OpenRouter API
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    // Call Lovable AI Gateway
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://lovable.dev",
-        "X-Title": "Elterngeldantrag OCR Mapping"
       },
       body: JSON.stringify({
-        model: "mistralai/mistral-small-3.2-24b-instruct:free",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -98,13 +92,13 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "OpenRouter Credits aufgebraucht. Bitte Credits hinzufügen." }),
+          JSON.stringify({ error: "Lovable AI Credits aufgebraucht. Bitte Credits hinzufügen." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       const errorText = await response.text();
-      console.error("OpenRouter API error:", response.status, errorText);
-      throw new Error("OpenRouter API error");
+      console.error("AI Gateway error:", response.status, errorText);
+      throw new Error("AI Gateway error");
     }
 
     const aiResponse = await response.json();
@@ -133,9 +127,9 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
       if (documentType === "geburtsurkunde") {
         await supabase.from("kind").upsert({
           antrag_id: antragId,
-          vorname: fields.vorname,
-          nachname: fields.nachname,
-          geburtsdatum: fields.geburtsdatum,
+          vorname: fields.kind_vorname,
+          nachname: fields.kind_nachname,
+          geburtsdatum: fields.kind_geburtsdatum,
         }, { onConflict: "antrag_id" });
       }
 
