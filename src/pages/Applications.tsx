@@ -1,21 +1,90 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileText, ArrowLeft, Download, Eye } from "lucide-react";
+import { FileText, ArrowLeft, Download, Eye, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Applications = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedAntragId, setSelectedAntragId] = useState<string | null>(null);
 
-  // Mock data - will be replaced with actual database queries
-  const applications = [
-    {
-      id: 1,
-      date: "2025-10-10",
-      status: "completed",
-      childName: "Max Mustermann",
+  // Fetch applications from database
+  const { data: applications, isLoading } = useQuery({
+    queryKey: ['applications'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from('antrag')
+        .select(`
+          id,
+          created_at,
+          status,
+          kind (
+            vorname,
+            nachname
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
     },
-  ];
+  });
+
+  const handleDeleteClick = (antragId: string) => {
+    setSelectedAntragId(antragId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedAntragId) return;
+
+    try {
+      const { error } = await supabase
+        .from('antrag')
+        .delete()
+        .eq('id', selectedAntragId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Antrag gelöscht",
+        description: "Der Antrag wurde erfolgreich gelöscht.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+    } catch (error) {
+      console.error('Error deleting application:', error);
+      toast({
+        title: "Fehler",
+        description: "Der Antrag konnte nicht gelöscht werden.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setSelectedAntragId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,7 +110,11 @@ const Applications = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
-          {applications.length === 0 ? (
+          {isLoading ? (
+            <Card className="p-12 text-center">
+              <p className="text-muted-foreground">Lade Anträge...</p>
+            </Card>
+          ) : !applications || applications.length === 0 ? (
             <Card className="p-12 text-center">
               <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2 text-foreground">Keine Anträge vorhanden</h3>
@@ -60,14 +133,20 @@ const Applications = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-semibold text-foreground">
-                          Antrag für {app.childName}
+                          Antrag für {app.kind?.[0]?.vorname} {app.kind?.[0]?.nachname}
                         </h3>
-                        <Badge className="bg-success/10 text-success border-success/20">
-                          Abgeschlossen
+                        <Badge 
+                          className={
+                            app.status === 'completed' 
+                              ? "bg-success/10 text-success border-success/20"
+                              : "bg-secondary/10 text-secondary border-secondary/20"
+                          }
+                        >
+                          {app.status === 'completed' ? 'Abgeschlossen' : 'Entwurf'}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Erstellt am: {new Date(app.date).toLocaleDateString("de-DE")}
+                        Erstellt am: {new Date(app.created_at).toLocaleDateString("de-DE")}
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -78,6 +157,13 @@ const Applications = () => {
                       <Button size="sm">
                         <Download className="h-4 w-4 mr-2" />
                         Herunterladen
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleDeleteClick(app.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -96,6 +182,23 @@ const Applications = () => {
           </Card>
         </div>
       </main>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Antrag löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie diesen Antrag wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
+              Löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
