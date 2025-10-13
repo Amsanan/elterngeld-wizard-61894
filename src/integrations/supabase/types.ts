@@ -142,6 +142,140 @@ export type Database = {
           },
         ]
       }
+      antrag_16a_bankverbindung: {
+        Row: {
+          antrag_id: string
+          bic: string | null
+          created_at: string | null
+          iban: string | null
+          id: string
+          kontoinhaber: string | null
+          kreditinstitut: string | null
+        }
+        Insert: {
+          antrag_id: string
+          bic?: string | null
+          created_at?: string | null
+          iban?: string | null
+          id?: string
+          kontoinhaber?: string | null
+          kreditinstitut?: string | null
+        }
+        Update: {
+          antrag_id?: string
+          bic?: string | null
+          created_at?: string | null
+          iban?: string | null
+          id?: string
+          kontoinhaber?: string | null
+          kreditinstitut?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_16a_bankverbindung_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      antrag_16b_kontakt: {
+        Row: {
+          antrag_id: string
+          created_at: string | null
+          email: string | null
+          id: string
+          telefon: string | null
+        }
+        Insert: {
+          antrag_id: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          telefon?: string | null
+        }
+        Update: {
+          antrag_id?: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          telefon?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_16b_kontakt_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      antrag_16c_mitteilung: {
+        Row: {
+          antrag_id: string
+          created_at: string | null
+          id: string
+          mitteilung_text: string | null
+        }
+        Insert: {
+          antrag_id: string
+          created_at?: string | null
+          id?: string
+          mitteilung_text?: string | null
+        }
+        Update: {
+          antrag_id?: string
+          created_at?: string | null
+          id?: string
+          mitteilung_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_16c_mitteilung_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      antrag_16d_unterschrift: {
+        Row: {
+          antrag_id: string
+          created_at: string | null
+          id: string
+          ort_datum: string | null
+          unterschrift_2_vorhanden: boolean | null
+          unterschrift_vorhanden: boolean | null
+        }
+        Insert: {
+          antrag_id: string
+          created_at?: string | null
+          id?: string
+          ort_datum?: string | null
+          unterschrift_2_vorhanden?: boolean | null
+          unterschrift_vorhanden?: boolean | null
+        }
+        Update: {
+          antrag_id?: string
+          created_at?: string | null
+          id?: string
+          ort_datum?: string | null
+          unterschrift_2_vorhanden?: boolean | null
+          unterschrift_vorhanden?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_16d_unterschrift_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       antrag_2a_alleinerziehende: {
         Row: {
           anderer_unmoeglich_betreuung: boolean | null
