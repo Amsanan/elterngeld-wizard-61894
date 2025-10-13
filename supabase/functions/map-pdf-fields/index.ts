@@ -13,12 +13,7 @@ serve(async (req) => {
 
   try {
     const { ocrData, documentType, antragId } = await req.json();
-    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
     
-    if (!OPENROUTER_API_KEY) {
-      throw new Error("OPENROUTER_API_KEY not configured");
-    }
-
     console.log("Mapping OCR data for document type:", documentType);
 
     // System prompt for intelligent field mapping
@@ -67,20 +62,25 @@ ${JSON.stringify(ocrData, null, 2)}
 
 Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
 
-    // Call OpenRouter API with free Gemini model
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    // Call Lovable AI Gateway
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY not configured");
+    }
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp:free",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        temperature: 0.1, // Low temperature for consistent mapping
+        temperature: 0.1,
       }),
     });
 
@@ -93,7 +93,7 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "OpenRouter API Fehler. Bitte versuchen Sie es später erneut." }),
+          JSON.stringify({ error: "API Fehler. Bitte versuchen Sie es später erneut." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }

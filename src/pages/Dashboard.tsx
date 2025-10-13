@@ -76,7 +76,8 @@ const Dashboard = () => {
         return;
       }
 
-      // Navigate to upload page
+      // Navigate to upload page with antrag ID
+      sessionStorage.setItem('current_antrag_id', antrag.id);
       navigate("/upload");
     } catch (error) {
       console.error("Error creating antrag:", error);
