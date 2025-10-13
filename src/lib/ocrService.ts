@@ -47,8 +47,11 @@ export async function performOCR(
 
     console.log('OCR completed. Confidence:', result.data.confidence);
     
-    // Extract structured fields from raw text
-    const fields = extractFieldsFromText(result.data.text);
+    // Detect document type first
+    const documentType = detectDocumentType(result.data.text);
+    
+    // Extract structured fields from raw text with document type context
+    const fields = extractFieldsFromText(result.data.text, documentType);
     
     return {
       text: result.data.text,
@@ -64,7 +67,7 @@ export async function performOCR(
 /**
  * Extract structured fields from OCR text using pattern matching
  */
-function extractFieldsFromText(text: string): ExtractedFields {
+function extractFieldsFromText(text: string, documentType?: string): ExtractedFields {
   const fields: ExtractedFields = {};
   
   // Common patterns for German documents
@@ -142,8 +145,11 @@ function extractFieldsFromText(text: string): ExtractedFields {
   const plzMatch = text.match(patterns.plz);
   if (plzMatch) fields.plz = plzMatch[1].trim();
   
-  const ortMatch = text.match(patterns.ort);
-  if (ortMatch) fields.ort = ortMatch[1].trim();
+  // Only extract "ort" if NOT a birth certificate (where it would be birthplace, not residence)
+  if (documentType !== 'geburtsurkunde') {
+    const ortMatch = text.match(patterns.ort);
+    if (ortMatch) fields.ort = ortMatch[1].trim();
+  }
 
   console.log('Extracted fields:', fields);
   
