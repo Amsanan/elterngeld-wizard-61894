@@ -21,33 +21,57 @@ serve(async (req) => {
 KRITISCHE MAPPING-REGELN basierend auf Mapping032025_1.xlsx:
 
 KIND-TABELLE (aus Geburtsurkunde):
-- vorname → txt.txt.vorname1A (Kind Vorname)
-- nachname → txt.txt.name1A (Kind Nachname)
-- geburtsdatum → txt.txt.geburtsdatum1a (Geburtsdatum, Format: DD.MM.YYYY oder YYYY-MM-DD)
-- anzahl_mehrlinge → txt.txt.anzahl (Anzahl Mehrlinge)
-- fruehgeboren → cb.ja1b (BOOLEAN: mindestens 6 Wochen früh)
-- errechneter_geburtsdatum → txt.geburtsdatum_frueh1b (Falls frühgeboren)
-- behinderung → cb.nein1b (BOOLEAN: Kind hat Behinderung)
-- anzahl_weitere_kinder → txt.anzahl1c (Anzahl weitere Kinder)
+- vorname → Kind Vorname
+- nachname → Kind Nachname
+- geburtsdatum → Geburtsdatum (Format: DD.MM.YYYY oder YYYY-MM-DD)
+- anzahl_mehrlinge → Anzahl Mehrlinge/Zwillinge
+- fruehgeboren → BOOLEAN (mindestens 6 Wochen früh geboren)
+- errechneter_geburtsdatum → Errechnetes Geburtsdatum falls frühgeboren
+- behinderung → BOOLEAN (Kind hat Behinderung)
+- anzahl_weitere_kinder → Anzahl weitere Kinder
+- keine_weitere_kinder → BOOLEAN (keine weiteren Kinder)
+- insgesamt → BOOLEAN (Gesamtzahl Kinder)
 
 ANTRAG_2B_ELTERNTEIL-TABELLE (aus Personalausweis/ID):
-- vorname → txt.vorname2b (Elternteil Vorname)
-- nachname → txt.name2b (Elternteil Nachname)  
-- geburtsdatum → txt.geburt2b (Geburtsdatum)
-- geschlecht → cb.weiblich2b, cb.männlich2b, cb.divers2b, cb.ohneAngabe2b
-- steuer_identifikationsnummer → txt.txt.steuer2b_1 (11-stellige Steuer-ID)
+- vorname → Elternteil Vorname
+- nachname → Elternteil Nachname
+- geburtsdatum → Geburtsdatum (Format: DD.MM.YYYY oder YYYY-MM-DD)
+- geschlecht → "weiblich", "maennlich", "divers", "ohne_angabe"
+- steuer_identifikationsnummer → 11-stellige Steuer-ID
+- vorname_2 → Zweiter Elternteil Vorname
+- nachname_2 → Zweiter Elternteil Nachname
+- geburtsdatum_2 → Zweiter Elternteil Geburtsdatum
+- geschlecht_2 → Zweiter Elternteil Geschlecht
+- steuer_identifikationsnummer_2 → Zweiter Elternteil Steuer-ID
 
-ANTRAG_2C_WOHNSITZ-TABELLE (aus Adressdokumenten):
-- strasse → txt.strasse2c (Straßenname)
-- hausnr → txt.nummer2c (Hausnummer)
-- plz → txt.plz2c (5-stellige PLZ)
-- ort → txt.ort2c (Wohnort)
-- adresszusatz → txt.adresszusatz2c (Optional)
+ANTRAG_2C_WOHNSITZ-TABELLE (aus Adressdokumenten/Personalausweis):
+- strasse → Straßenname
+- hausnr → Hausnummer
+- plz → 5-stellige Postleitzahl
+- ort → Wohnort
+- adresszusatz → Adresszusatz (optional)
+- wohnsitz_ausland → BOOLEAN (Wohnsitz im Ausland)
+- ausland_staat → Staat des Auslandswohnsitzes
+- ausland_strasse → Auslandsadresse
+- ausland_aufenthaltsgrund → Grund für Auslandsaufenthalt
+
+ANTRAG_2C_WOHNSITZAUFENTHALT-TABELLE:
+- wohnsitz_in_deutschland → BOOLEAN (Wohnsitz in Deutschland)
+- seit_meiner_geburt → BOOLEAN (seit Geburt in Deutschland)
+- seit_in_deutschland → BOOLEAN (seit bestimmtem Datum)
+- seit_datum_deutschland → Datum seit wann in Deutschland
+
+ANTRAG_2A_ALLEINERZIEHENDE-TABELLE:
+- ist_alleinerziehend → BOOLEAN (ist alleinerziehend)
+- anderer_unmoeglich_betreuung → BOOLEAN (andere Person kann nicht betreuen)
+- betreuung_gefaehrdet_wohl → BOOLEAN (Betreuung gefährdet Kindeswohl)
 
 WICHTIG:
-- Ignoriere "Geburtsort" - wir brauchen nur aktuellen Wohnsitz
-- Extrahiere KEINE Daten die nicht in den Tabellen existieren
+- Extrahiere NUR Daten die tatsächlich im OCR-Text vorhanden sind
+- Verwende NULL für fehlende optionale Felder
+- Beachte Datentypen: BOOLEAN, DATE, INT, VARCHAR
 - Wenn unsicher, setze confidence niedriger
+- Ignoriere "Geburtsort" - wir brauchen nur aktuellen Wohnsitz
 `;
 
     // System prompt for intelligent field mapping
@@ -137,32 +161,79 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
       const fields = mappedData.mapped_fields;
       
       if (documentType === "geburtsurkunde") {
-        await supabase.from("kind").upsert({
-          antrag_id: antragId,
-          vorname: fields.kind_vorname,
-          nachname: fields.kind_nachname,
-          geburtsdatum: fields.kind_geburtsdatum,
-        }, { onConflict: "antrag_id" });
+        const kindData: any = { antrag_id: antragId };
+        if (fields.vorname) kindData.vorname = fields.vorname;
+        if (fields.nachname) kindData.nachname = fields.nachname;
+        if (fields.geburtsdatum) kindData.geburtsdatum = fields.geburtsdatum;
+        if (fields.anzahl_mehrlinge) kindData.anzahl_mehrlinge = fields.anzahl_mehrlinge;
+        if (fields.fruehgeboren !== undefined) kindData.fruehgeboren = fields.fruehgeboren;
+        if (fields.errechneter_geburtsdatum) kindData.errechneter_geburtsdatum = fields.errechneter_geburtsdatum;
+        if (fields.behinderung !== undefined) kindData.behinderung = fields.behinderung;
+        if (fields.anzahl_weitere_kinder) kindData.anzahl_weitere_kinder = fields.anzahl_weitere_kinder;
+        if (fields.keine_weitere_kinder !== undefined) kindData.keine_weitere_kinder = fields.keine_weitere_kinder;
+        if (fields.insgesamt !== undefined) kindData.insgesamt = fields.insgesamt;
+
+        const { error: kindError } = await supabase.from("kind").upsert(kindData, { onConflict: "antrag_id" });
+        if (kindError) console.error("Error upserting kind:", kindError);
       }
 
-      if (documentType === "personalausweis") {
-        await supabase.from("antrag_2b_elternteil").upsert({
-          antrag_id: antragId,
-          vorname: fields.vorname,
-          nachname: fields.nachname,
-          geburtsdatum: fields.geburtsdatum,
-          steuer_identifikationsnummer: fields.steuer_identifikationsnummer,
-        }, { onConflict: "antrag_id" });
+      if (documentType === "personalausweis" || documentType === "adresse") {
+        const elternteilData: any = { antrag_id: antragId };
+        if (fields.vorname) elternteilData.vorname = fields.vorname;
+        if (fields.nachname) elternteilData.nachname = fields.nachname;
+        if (fields.geburtsdatum) elternteilData.geburtsdatum = fields.geburtsdatum;
+        if (fields.geschlecht) elternteilData.geschlecht = fields.geschlecht;
+        if (fields.steuer_identifikationsnummer) elternteilData.steuer_identifikationsnummer = fields.steuer_identifikationsnummer;
+        if (fields.vorname_2) elternteilData.vorname_2 = fields.vorname_2;
+        if (fields.nachname_2) elternteilData.nachname_2 = fields.nachname_2;
+        if (fields.geburtsdatum_2) elternteilData.geburtsdatum_2 = fields.geburtsdatum_2;
+        if (fields.geschlecht_2) elternteilData.geschlecht_2 = fields.geschlecht_2;
+        if (fields.steuer_identifikationsnummer_2) elternteilData.steuer_identifikationsnummer_2 = fields.steuer_identifikationsnummer_2;
 
-        if (fields.strasse || fields.ort) {
-          await supabase.from("antrag_2c_wohnsitz").upsert({
-            antrag_id: antragId,
-            strasse: fields.strasse,
-            hausnr: fields.hausnr,
-            plz: fields.plz,
-            ort: fields.ort,
-          }, { onConflict: "antrag_id" });
+        if (Object.keys(elternteilData).length > 1) {
+          const { error: elternteilError } = await supabase.from("antrag_2b_elternteil").upsert(elternteilData, { onConflict: "antrag_id" });
+          if (elternteilError) console.error("Error upserting elternteil:", elternteilError);
         }
+
+        // Insert address data if present
+        const wohnsitzData: any = { antrag_id: antragId };
+        if (fields.strasse) wohnsitzData.strasse = fields.strasse;
+        if (fields.hausnr) wohnsitzData.hausnr = fields.hausnr;
+        if (fields.plz) wohnsitzData.plz = fields.plz;
+        if (fields.ort) wohnsitzData.ort = fields.ort;
+        if (fields.adresszusatz) wohnsitzData.adresszusatz = fields.adresszusatz;
+        if (fields.wohnsitz_ausland !== undefined) wohnsitzData.wohnsitz_ausland = fields.wohnsitz_ausland;
+        if (fields.ausland_staat) wohnsitzData.ausland_staat = fields.ausland_staat;
+        if (fields.ausland_strasse) wohnsitzData.ausland_strasse = fields.ausland_strasse;
+        if (fields.ausland_aufenthaltsgrund) wohnsitzData.ausland_aufenthaltsgrund = fields.ausland_aufenthaltsgrund;
+
+        if (Object.keys(wohnsitzData).length > 1) {
+          const { error: wohnsitzError } = await supabase.from("antrag_2c_wohnsitz").upsert(wohnsitzData, { onConflict: "antrag_id" });
+          if (wohnsitzError) console.error("Error upserting wohnsitz:", wohnsitzError);
+        }
+
+        // Insert residence status data if present
+        const aufenthaltData: any = { antrag_id: antragId };
+        if (fields.wohnsitz_in_deutschland !== undefined) aufenthaltData.wohnsitz_in_deutschland = fields.wohnsitz_in_deutschland;
+        if (fields.seit_meiner_geburt !== undefined) aufenthaltData.seit_meiner_geburt = fields.seit_meiner_geburt;
+        if (fields.seit_in_deutschland !== undefined) aufenthaltData.seit_in_deutschland = fields.seit_in_deutschland;
+        if (fields.seit_datum_deutschland) aufenthaltData.seit_datum_deutschland = fields.seit_datum_deutschland;
+
+        if (Object.keys(aufenthaltData).length > 1) {
+          const { error: aufenthaltError } = await supabase.from("antrag_2c_wohnsitz_aufenthalt").upsert(aufenthaltData, { onConflict: "antrag_id" });
+          if (aufenthaltError) console.error("Error upserting aufenthalt:", aufenthaltError);
+        }
+      }
+
+      // Handle single parent data if detected
+      if (fields.ist_alleinerziehend !== undefined) {
+        const alleinerziehendData: any = { antrag_id: antragId };
+        alleinerziehendData.ist_alleinerziehend = fields.ist_alleinerziehend;
+        if (fields.anderer_unmoeglich_betreuung !== undefined) alleinerziehendData.anderer_unmoeglich_betreuung = fields.anderer_unmoeglich_betreuung;
+        if (fields.betreuung_gefaehrdet_wohl !== undefined) alleinerziehendData.betreuung_gefaehrdet_wohl = fields.betreuung_gefaehrdet_wohl;
+
+        const { error: alleinerziehendError } = await supabase.from("antrag_2a_alleinerziehende").upsert(alleinerziehendData, { onConflict: "antrag_id" });
+        if (alleinerziehendError) console.error("Error upserting alleinerziehend:", alleinerziehendError);
       }
     }
 
