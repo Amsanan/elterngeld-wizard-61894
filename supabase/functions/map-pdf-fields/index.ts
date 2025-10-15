@@ -20,51 +20,53 @@ serve(async (req) => {
     const mappingReference = `
 KRITISCHE MAPPING-REGELN basierend auf Mapping032025_1.xlsx:
 
-KIND-TABELLE (aus Geburtsurkunde):
-- vorname → Kind Vorname
-- nachname → Kind Nachname
-- geburtsdatum → Geburtsdatum (Format: DD.MM.YYYY oder YYYY-MM-DD)
-- anzahl_mehrlinge → Anzahl Mehrlinge/Zwillinge
-- fruehgeboren → BOOLEAN (mindestens 6 Wochen früh geboren)
-- errechneter_geburtsdatum → Errechnetes Geburtsdatum falls frühgeboren
-- behinderung → BOOLEAN (Kind hat Behinderung)
-- anzahl_weitere_kinder → Anzahl weitere Kinder
-- keine_weitere_kinder → BOOLEAN (keine weiteren Kinder)
-- insgesamt → BOOLEAN (Gesamtzahl Kinder)
+WICHTIG: Verwende immer die DATABASE COLUMN NAMES (links vom →), NICHT die Display-Namen!
 
-ANTRAG_2B_ELTERNTEIL-TABELLE (aus Personalausweis/ID):
-- vorname → Elternteil Vorname
-- nachname → Elternteil Nachname
-- geburtsdatum → Geburtsdatum (Format: DD.MM.YYYY oder YYYY-MM-DD)
-- geschlecht → "weiblich", "maennlich", "divers", "ohne_angabe"
-- steuer_identifikationsnummer → 11-stellige Steuer-ID
-- vorname_2 → Zweiter Elternteil Vorname
-- nachname_2 → Zweiter Elternteil Nachname
-- geburtsdatum_2 → Zweiter Elternteil Geburtsdatum
-- geschlecht_2 → Zweiter Elternteil Geschlecht
-- steuer_identifikationsnummer_2 → Zweiter Elternteil Steuer-ID
+KIND-TABELLE (aus Geburtsurkunde) - DATABASE COLUMN NAMES:
+- vorname (extrahiere aus: Kind Vorname)
+- nachname (extrahiere aus: Kind Nachname)
+- geburtsdatum (extrahiere aus: Geburtsdatum, Format: YYYY-MM-DD)
+- anzahl_mehrlinge (extrahiere aus: Anzahl Mehrlinge/Zwillinge)
+- fruehgeboren (extrahiere aus: Frühgeboren, BOOLEAN)
+- errechneter_geburtsdatum (extrahiere aus: Errechnetes Geburtsdatum, Format: YYYY-MM-DD)
+- behinderung (extrahiere aus: Behinderung, BOOLEAN)
+- anzahl_weitere_kinder (extrahiere aus: Anzahl weitere Kinder, INTEGER)
+- keine_weitere_kinder (extrahiere aus: Keine weiteren Kinder, BOOLEAN)
+- insgesamt (extrahiere aus: Gesamtzahl Kinder, BOOLEAN)
 
-ANTRAG_2C_WOHNSITZ-TABELLE (aus Adressdokumenten/Personalausweis):
-- strasse → Straßenname
-- hausnr → Hausnummer
-- plz → 5-stellige Postleitzahl
-- ort → Wohnort
-- adresszusatz → Adresszusatz (optional)
-- wohnsitz_ausland → BOOLEAN (Wohnsitz im Ausland)
-- ausland_staat → Staat des Auslandswohnsitzes
-- ausland_strasse → Auslandsadresse
-- ausland_aufenthaltsgrund → Grund für Auslandsaufenthalt
+ANTRAG_2B_ELTERNTEIL-TABELLE (aus Personalausweis/ID) - DATABASE COLUMN NAMES:
+- vorname (extrahiere aus: Elternteil Vorname)
+- nachname (extrahiere aus: Elternteil Nachname)
+- geburtsdatum (extrahiere aus: Geburtsdatum, Format: YYYY-MM-DD)
+- geschlecht (extrahiere aus: Geschlecht, Werte: "weiblich", "maennlich", "divers", "ohne_angabe")
+- steuer_identifikationsnummer (extrahiere aus: Steuer-ID, 11-stellig)
+- vorname_2 (extrahiere aus: Zweiter Elternteil Vorname)
+- nachname_2 (extrahiere aus: Zweiter Elternteil Nachname)
+- geburtsdatum_2 (extrahiere aus: Zweiter Elternteil Geburtsdatum, Format: YYYY-MM-DD)
+- geschlecht_2 (extrahiere aus: Zweiter Elternteil Geschlecht)
+- steuer_identifikationsnummer_2 (extrahiere aus: Zweiter Elternteil Steuer-ID)
 
-ANTRAG_2C_WOHNSITZAUFENTHALT-TABELLE:
-- wohnsitz_in_deutschland → BOOLEAN (Wohnsitz in Deutschland)
-- seit_meiner_geburt → BOOLEAN (seit Geburt in Deutschland)
-- seit_in_deutschland → BOOLEAN (seit bestimmtem Datum)
-- seit_datum_deutschland → Datum seit wann in Deutschland
+ANTRAG_2C_WOHNSITZ-TABELLE (aus Adressdokumenten/Personalausweis) - DATABASE COLUMN NAMES:
+- strasse (extrahiere aus: Straßenname)
+- hausnr (extrahiere aus: Hausnummer)
+- plz (extrahiere aus: Postleitzahl, 5-stellig)
+- ort (extrahiere aus: Wohnort)
+- adresszusatz (extrahiere aus: Adresszusatz, optional)
+- wohnsitz_ausland (extrahiere aus: Wohnsitz im Ausland, BOOLEAN)
+- ausland_staat (extrahiere aus: Staat des Auslandswohnsitzes)
+- ausland_strasse (extrahiere aus: Auslandsadresse)
+- ausland_aufenthaltsgrund (extrahiere aus: Grund für Auslandsaufenthalt)
 
-ANTRAG_2A_ALLEINERZIEHENDE-TABELLE:
-- ist_alleinerziehend → BOOLEAN (ist alleinerziehend)
-- anderer_unmoeglich_betreuung → BOOLEAN (andere Person kann nicht betreuen)
-- betreuung_gefaehrdet_wohl → BOOLEAN (Betreuung gefährdet Kindeswohl)
+ANTRAG_2C_WOHNSITZAUFENTHALT-TABELLE - DATABASE COLUMN NAMES:
+- wohnsitz_in_deutschland (extrahiere aus: Wohnsitz in Deutschland, BOOLEAN)
+- seit_meiner_geburt (extrahiere aus: Seit Geburt in Deutschland, BOOLEAN)
+- seit_in_deutschland (extrahiere aus: Seit bestimmtem Datum, BOOLEAN)
+- seit_datum_deutschland (extrahiere aus: Datum seit wann in Deutschland, Format: YYYY-MM-DD)
+
+ANTRAG_2A_ALLEINERZIEHENDE-TABELLE - DATABASE COLUMN NAMES:
+- ist_alleinerziehend (extrahiere aus: Alleinerziehend, BOOLEAN)
+- anderer_unmoeglich_betreuung (extrahiere aus: Andere Person kann nicht betreuen, BOOLEAN)
+- betreuung_gefaehrdet_wohl (extrahiere aus: Betreuung gefährdet Kindeswohl, BOOLEAN)
 
 WICHTIG:
 - Extrahiere NUR Daten die tatsächlich im OCR-Text vorhanden sind
@@ -79,12 +81,17 @@ WICHTIG:
 
 ${mappingReference}
 
+KRITISCH: Deine Antwort MUSS die exakten DATABASE COLUMN NAMES verwenden!
+Beispiel für kind-Tabelle:
+- RICHTIG: "vorname": "Max"
+- FALSCH: "Kind Vorname": "Max"
+
 Deine Aufgabe: Analysiere die OCR-Daten und mappe sie PRÄZISE zu den SQL-Tabellen basierend auf der Mapping-Referenz oben.
 
 Antworte NUR mit einem JSON-Objekt ohne zusätzlichen Text:
 {
   "mapped_fields": {
-    "field_name": "value"
+    "database_column_name": "value"
   },
   "confidence": 0.95,
   "suggestions": ["Optional: Hinweise"]
@@ -146,6 +153,8 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
       // Remove markdown code blocks if present
       const cleanContent = content.replace(/```json\n?|\n?```/g, "").trim();
       mappedData = JSON.parse(cleanContent);
+      console.log("AI returned field names:", Object.keys(mappedData.mapped_fields || {}));
+      console.log("AI mapped data:", JSON.stringify(mappedData, null, 2));
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);
       throw new Error("Invalid AI response format");
