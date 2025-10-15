@@ -110,7 +110,7 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-thinking-exp-01-21:free",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
