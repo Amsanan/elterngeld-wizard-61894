@@ -7,6 +7,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { generateFilledPDF, downloadPDF } from "@/lib/pdfGenerator";
+import { loadAntragData } from "@/lib/antragContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +52,43 @@ const Applications = () => {
       return data;
     },
   });
+
+  const handleView = (antragId: string) => {
+    sessionStorage.setItem('current_antrag_id', antragId);
+    navigate(`/preview?antrag=${antragId}`);
+  };
+
+  const handleDownload = async (antragId: string) => {
+    try {
+      toast({
+        title: "PDF wird generiert",
+        description: "Bitte warten Sie einen Moment...",
+      });
+
+      const antragData = await loadAntragData(antragId);
+      if (!antragData) {
+        throw new Error("Antragdaten konnten nicht geladen werden");
+      }
+
+      const pdfBytes = await generateFilledPDF(antragData.extracted_data);
+      const app = applications?.find(a => a.id === antragId);
+      const filename = `Elterngeldantrag_${app?.kind?.[0]?.vorname}_${app?.kind?.[0]?.nachname}_${new Date().toISOString().split('T')[0]}.pdf`;
+      
+      downloadPDF(pdfBytes, filename);
+
+      toast({
+        title: "PDF heruntergeladen",
+        description: "Das PDF wurde erfolgreich heruntergeladen.",
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast({
+        title: "Fehler",
+        description: "Das PDF konnte nicht generiert werden.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleDeleteClick = (antragId: string) => {
     setSelectedAntragId(antragId);
@@ -150,11 +189,18 @@ const Applications = () => {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleView(app.id)}
+                      >
                         <Eye className="h-4 w-4 mr-2" />
                         Ansehen
                       </Button>
-                      <Button size="sm">
+                      <Button 
+                        size="sm"
+                        onClick={() => handleDownload(app.id)}
+                      >
                         <Download className="h-4 w-4 mr-2" />
                         Herunterladen
                       </Button>
