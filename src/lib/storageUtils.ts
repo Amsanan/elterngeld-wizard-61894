@@ -1,6 +1,45 @@
 import { supabase } from '@/integrations/supabase/client';
 
 /**
+ * Delete all files in entire bucket
+ */
+export async function deleteAllFilesInBucket(bucketName: string): Promise<{ success: boolean; error?: Error; deletedCount?: number }> {
+  try {
+    // List all files in the bucket recursively
+    const { data: files, error: listError } = await supabase.storage
+      .from(bucketName)
+      .list('', {
+        limit: 1000,
+        offset: 0,
+      });
+
+    if (listError) {
+      return { success: false, error: listError };
+    }
+
+    if (!files || files.length === 0) {
+      return { success: true, deletedCount: 0 };
+    }
+
+    // Build paths for all files
+    const filePaths = files.map(file => file.name);
+
+    // Delete all files
+    const { error: deleteError } = await supabase.storage
+      .from(bucketName)
+      .remove(filePaths);
+
+    if (deleteError) {
+      return { success: false, error: deleteError };
+    }
+
+    return { success: true, deletedCount: files.length };
+  } catch (error) {
+    return { success: false, error: error as Error };
+  }
+}
+
+/**
  * Delete all files in a folder (path prefix) from a storage bucket
  */
 export async function deleteFolder(bucketName: string, folderPath: string): Promise<{ success: boolean; error?: Error; deletedCount?: number }> {
