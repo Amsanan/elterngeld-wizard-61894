@@ -173,8 +173,36 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
         if (fields.keine_weitere_kinder !== undefined) kindData.keine_weitere_kinder = fields.keine_weitere_kinder;
         if (fields.insgesamt !== undefined) kindData.insgesamt = fields.insgesamt;
 
-        const { error: kindError } = await supabase.from("kind").upsert(kindData, { onConflict: "antrag_id" });
-        if (kindError) console.error("Error upserting kind:", kindError);
+        console.log("Saving kind data:", kindData);
+
+        // Check if kind entry already exists for this antrag
+        const { data: existingKind } = await supabase
+          .from("kind")
+          .select("id")
+          .eq("antrag_id", antragId)
+          .maybeSingle();
+
+        let kindError;
+        if (existingKind) {
+          // Update existing
+          const { error } = await supabase
+            .from("kind")
+            .update(kindData)
+            .eq("id", existingKind.id);
+          kindError = error;
+        } else {
+          // Insert new
+          const { error } = await supabase
+            .from("kind")
+            .insert(kindData);
+          kindError = error;
+        }
+
+        if (kindError) {
+          console.error("Error saving kind:", kindError);
+        } else {
+          console.log("Kind data saved successfully");
+        }
       }
 
       if (documentType === "personalausweis" || documentType === "adresse") {
@@ -191,8 +219,30 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
         if (fields.steuer_identifikationsnummer_2) elternteilData.steuer_identifikationsnummer_2 = fields.steuer_identifikationsnummer_2;
 
         if (Object.keys(elternteilData).length > 1) {
-          const { error: elternteilError } = await supabase.from("antrag_2b_elternteil").upsert(elternteilData, { onConflict: "antrag_id" });
-          if (elternteilError) console.error("Error upserting elternteil:", elternteilError);
+          console.log("Saving elternteil data:", elternteilData);
+
+          const { data: existingElternteil } = await supabase
+            .from("antrag_2b_elternteil")
+            .select("id")
+            .eq("antrag_id", antragId)
+            .maybeSingle();
+
+          let elternteilError;
+          if (existingElternteil) {
+            const { error } = await supabase
+              .from("antrag_2b_elternteil")
+              .update(elternteilData)
+              .eq("id", existingElternteil.id);
+            elternteilError = error;
+          } else {
+            const { error } = await supabase
+              .from("antrag_2b_elternteil")
+              .insert(elternteilData);
+            elternteilError = error;
+          }
+
+          if (elternteilError) console.error("Error saving elternteil:", elternteilError);
+          else console.log("Elternteil data saved successfully");
         }
 
         // Insert address data if present
@@ -208,8 +258,30 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
         if (fields.ausland_aufenthaltsgrund) wohnsitzData.ausland_aufenthaltsgrund = fields.ausland_aufenthaltsgrund;
 
         if (Object.keys(wohnsitzData).length > 1) {
-          const { error: wohnsitzError } = await supabase.from("antrag_2c_wohnsitz").upsert(wohnsitzData, { onConflict: "antrag_id" });
-          if (wohnsitzError) console.error("Error upserting wohnsitz:", wohnsitzError);
+          console.log("Saving wohnsitz data:", wohnsitzData);
+
+          const { data: existingWohnsitz } = await supabase
+            .from("antrag_2c_wohnsitz")
+            .select("id")
+            .eq("antrag_id", antragId)
+            .maybeSingle();
+
+          let wohnsitzError;
+          if (existingWohnsitz) {
+            const { error } = await supabase
+              .from("antrag_2c_wohnsitz")
+              .update(wohnsitzData)
+              .eq("id", existingWohnsitz.id);
+            wohnsitzError = error;
+          } else {
+            const { error } = await supabase
+              .from("antrag_2c_wohnsitz")
+              .insert(wohnsitzData);
+            wohnsitzError = error;
+          }
+
+          if (wohnsitzError) console.error("Error saving wohnsitz:", wohnsitzError);
+          else console.log("Wohnsitz data saved successfully");
         }
 
         // Insert residence status data if present
@@ -220,8 +292,30 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
         if (fields.seit_datum_deutschland) aufenthaltData.seit_datum_deutschland = fields.seit_datum_deutschland;
 
         if (Object.keys(aufenthaltData).length > 1) {
-          const { error: aufenthaltError } = await supabase.from("antrag_2c_wohnsitz_aufenthalt").upsert(aufenthaltData, { onConflict: "antrag_id" });
-          if (aufenthaltError) console.error("Error upserting aufenthalt:", aufenthaltError);
+          console.log("Saving aufenthalt data:", aufenthaltData);
+
+          const { data: existingAufenthalt } = await supabase
+            .from("antrag_2c_wohnsitz_aufenthalt")
+            .select("id")
+            .eq("antrag_id", antragId)
+            .maybeSingle();
+
+          let aufenthaltError;
+          if (existingAufenthalt) {
+            const { error } = await supabase
+              .from("antrag_2c_wohnsitz_aufenthalt")
+              .update(aufenthaltData)
+              .eq("id", existingAufenthalt.id);
+            aufenthaltError = error;
+          } else {
+            const { error } = await supabase
+              .from("antrag_2c_wohnsitz_aufenthalt")
+              .insert(aufenthaltData);
+            aufenthaltError = error;
+          }
+
+          if (aufenthaltError) console.error("Error saving aufenthalt:", aufenthaltError);
+          else console.log("Aufenthalt data saved successfully");
         }
       }
 
@@ -232,8 +326,30 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
         if (fields.anderer_unmoeglich_betreuung !== undefined) alleinerziehendData.anderer_unmoeglich_betreuung = fields.anderer_unmoeglich_betreuung;
         if (fields.betreuung_gefaehrdet_wohl !== undefined) alleinerziehendData.betreuung_gefaehrdet_wohl = fields.betreuung_gefaehrdet_wohl;
 
-        const { error: alleinerziehendError } = await supabase.from("antrag_2a_alleinerziehende").upsert(alleinerziehendData, { onConflict: "antrag_id" });
-        if (alleinerziehendError) console.error("Error upserting alleinerziehend:", alleinerziehendError);
+        console.log("Saving alleinerziehend data:", alleinerziehendData);
+
+        const { data: existingAlleinerziehend } = await supabase
+          .from("antrag_2a_alleinerziehende")
+          .select("id")
+          .eq("antrag_id", antragId)
+          .maybeSingle();
+
+        let alleinerziehendError;
+        if (existingAlleinerziehend) {
+          const { error } = await supabase
+            .from("antrag_2a_alleinerziehende")
+            .update(alleinerziehendData)
+            .eq("id", existingAlleinerziehend.id);
+          alleinerziehendError = error;
+        } else {
+          const { error } = await supabase
+            .from("antrag_2a_alleinerziehende")
+            .insert(alleinerziehendData);
+          alleinerziehendError = error;
+        }
+
+        if (alleinerziehendError) console.error("Error saving alleinerziehend:", alleinerziehendError);
+        else console.log("Alleinerziehend data saved successfully");
       }
     }
 

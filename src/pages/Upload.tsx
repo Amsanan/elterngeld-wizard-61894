@@ -176,6 +176,12 @@ const Upload = () => {
         // Call AI mapping function to intelligently map OCR data
         if (uploadedFile.ocrResult && uploadedFile.documentType) {
           try {
+            console.log('Calling map-pdf-fields with:', {
+              documentType: uploadedFile.documentType,
+              antragId: antrag.id,
+              fieldsCount: Object.keys(uploadedFile.ocrResult.fields).length,
+            });
+
             const { data: mappingResult, error: mappingError } = await supabase.functions.invoke(
               'map-pdf-fields',
               {
@@ -189,6 +195,11 @@ const Upload = () => {
 
             if (mappingError) {
               console.error('AI Mapping error:', mappingError);
+              toast({
+                variant: "destructive",
+                title: "KI-Mapping Fehler",
+                description: `Fehler beim intelligenten Mapping: ${mappingError.message}`,
+              });
               // Fallback to basic extraction logs if AI fails
               const extractionPromises = Object.entries(uploadedFile.ocrResult.fields).map(
                 ([fieldName, fieldValue]) =>
@@ -203,6 +214,27 @@ const Upload = () => {
               await Promise.all(extractionPromises);
             } else {
               console.log('AI Mapping successful:', mappingResult);
+              
+              // Check if data was actually saved to kind table
+              if (uploadedFile.documentType === 'geburtsurkunde') {
+                const { data: kindCheck } = await supabase
+                  .from('kind')
+                  .select('*')
+                  .eq('antrag_id', antrag.id)
+                  .maybeSingle();
+                
+                console.log('Kind table check after mapping:', kindCheck);
+                
+                if (!kindCheck) {
+                  console.warn('Kind data was NOT saved to database despite successful mapping');
+                  toast({
+                    variant: "destructive",
+                    title: "Warnung",
+                    description: "Kinddaten wurden nicht gespeichert. Bitte überprüfen Sie die Daten manuell.",
+                  });
+                }
+              }
+              
               // Save the AI-mapped fields
               if (fileRecord && mappingResult.mapped_fields) {
                 const extractionPromises = Object.entries(mappingResult.mapped_fields).map(
