@@ -15,72 +15,51 @@ interface UploadedFile {
   documentType?: string;
   uploading?: boolean;
   uploaded?: boolean;
-  parentNumber?: 1 | 2; // For parent documents
 }
 
 const Upload = () => {
-  const [birthCertificate, setBirthCertificate] = useState<UploadedFile | null>(null);
-  const [parent1Files, setParent1Files] = useState<UploadedFile[]>([]);
-  const [parent2Files, setParent2Files] = useState<UploadedFile[]>([]);
+  const [files, setFiles] = useState<UploadedFile[]>([]);
   const [processing, setProcessing] = useState(false);
   const [currentFile, setCurrentFile] = useState<string>("");
   const [ocrProgress, setOcrProgress] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleBirthCertificateChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    const uploadedFile: UploadedFile = { file };
-    setBirthCertificate(uploadedFile);
-    await processFile(uploadedFile, 'birth');
-  };
-
-  const handleParent1FileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
+
     const newFiles = Array.from(e.target.files);
-    const uploadedFiles: UploadedFile[] = newFiles.map(file => ({ file, parentNumber: 1 as const }));
-    setParent1Files(prev => [...prev, ...uploadedFiles]);
-    for (const uploadedFile of uploadedFiles) {
-      await processFile(uploadedFile, 'parent1');
+    const uploadedFiles: UploadedFile[] = newFiles.map(file => ({ file }));
+    
+    setFiles((prev) => [...prev, ...uploadedFiles]);
+
+    // Start OCR processing for each file
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      await processFile(uploadedFiles[i], files.length + i);
     }
   };
 
-  const handleParent2FileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const newFiles = Array.from(e.target.files);
-    const uploadedFiles: UploadedFile[] = newFiles.map(file => ({ file, parentNumber: 2 as const }));
-    setParent2Files(prev => [...prev, ...uploadedFiles]);
-    for (const uploadedFile of uploadedFiles) {
-      await processFile(uploadedFile, 'parent2');
-    }
-  };
-
-  const processFile = async (uploadedFile: UploadedFile, type: 'birth' | 'parent1' | 'parent2') => {
+  const processFile = async (uploadedFile: UploadedFile, index: number) => {
     setProcessing(true);
     setCurrentFile(uploadedFile.file.name);
     setOcrProgress(0);
 
     try {
+      // Perform OCR
       const ocrResult = await performOCR(
         uploadedFile.file,
         (progress) => setOcrProgress(progress)
       );
 
+      // Detect document type
       const docType = detectDocumentType(ocrResult.text);
 
-      // Update the appropriate state based on type
-      if (type === 'birth') {
-        setBirthCertificate(prev => prev ? { ...prev, ocrResult, documentType: docType } : null);
-      } else if (type === 'parent1') {
-        setParent1Files(prev => prev.map(f => 
-          f.file === uploadedFile.file ? { ...f, ocrResult, documentType: docType } : f
-        ));
-      } else if (type === 'parent2') {
-        setParent2Files(prev => prev.map(f => 
-          f.file === uploadedFile.file ? { ...f, ocrResult, documentType: docType } : f
-        ));
-      }
+      // Update file with OCR results
+      setFiles(prev => prev.map((f, i) => 
+        i === index 
+          ? { ...f, ocrResult, documentType: docType }
+          : f
+      ));
 
       toast({
         title: "OCR abgeschlossen",
@@ -101,11 +80,11 @@ const Upload = () => {
   };
 
   const handleUploadToSupabase = async () => {
-    if (!birthCertificate) {
+    if (files.length === 0) {
       toast({
         variant: "destructive",
-        title: "Geburtsurkunde fehlt",
-        description: "Bitte laden Sie zuerst die Geburtsurkunde hoch.",
+        title: "Keine Dateien ausgewählt",
+        description: "Bitte wählen Sie mindestens eine Datei zum Hochladen aus.",
       });
       return;
     }
@@ -148,7 +127,7 @@ const Upload = () => {
         .insert({
           user_id: user.id,
           status: 'draft',
-          ort: birthCertificate?.ocrResult?.fields.ort || null,
+          ort: files[0]?.ocrResult?.fields.ort || null,
         })
         .select()
         .single();
@@ -165,15 +144,8 @@ const Upload = () => {
       sessionStorage.setItem('current_antrag_id', antrag.id);
     }
 
-    // Combine all files with their parent numbers
-    const allFiles = [
-      birthCertificate,
-      ...parent1Files,
-      ...parent2Files,
-    ].filter(Boolean) as UploadedFile[];
-
     // Upload files and save extraction data
-    for (const uploadedFile of allFiles) {
+    for (const uploadedFile of files) {
       try {
         // Upload to storage
         const fileName = `${user.id}/${antrag.id}/${uploadedFile.file.name}`;
@@ -217,7 +189,6 @@ const Upload = () => {
                   ocrData: uploadedFile.ocrResult.fields,
                   documentType: uploadedFile.documentType,
                   antragId: antrag.id,
-                  parentNumber: uploadedFile.parentNumber, // Pass parent number for proper mapping
                 },
               }
             );
@@ -310,16 +281,8 @@ const Upload = () => {
     navigate(`/review?antrag=${antrag.id}`);
   };
 
-  const removeBirthCertificate = () => {
-    setBirthCertificate(null);
-  };
-
-  const removeParent1File = (index: number) => {
-    setParent1Files(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const removeParent2File = (index: number) => {
-    setParent2Files(prev => prev.filter((_, i) => i !== index));
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -345,278 +308,114 @@ const Upload = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12">
-        <div className="max-w-3xl mx-auto space-y-6">
-          
-          {/* Step 1: Birth Certificate */}
+        <div className="max-w-3xl mx-auto">
           <Card className="p-8">
-            <h2 className="text-2xl font-bold mb-2 text-foreground">Schritt 1: Geburtsurkunde</h2>
+            <h2 className="text-2xl font-bold mb-4 text-foreground">Erforderliche Unterlagen</h2>
             <p className="text-muted-foreground mb-6">
-              Laden Sie zuerst die Geburtsurkunde des Kindes hoch.
+              Laden Sie Ihre Dokumente hoch. Die KI extrahiert automatisch relevante Informationen.
             </p>
 
-            {!birthCertificate ? (
-              <div className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-primary/50 transition-colors">
-                <UploadIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2 text-foreground">
-                  Geburtsurkunde hochladen
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Unterstützte Formate: PDF, JPG, PNG (max. 20MB)
-                </p>
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={handleBirthCertificateChange}
-                  className="hidden"
-                  id="birth-cert-upload"
-                  disabled={processing}
-                />
-                <label htmlFor="birth-cert-upload">
-                  <Button variant="outline" className="cursor-pointer" asChild disabled={processing}>
-                    <span>{processing ? "Wird analysiert..." : "Datei auswählen"}</span>
-                  </Button>
-                </label>
-              </div>
-            ) : (
-              <Card className="p-4 bg-accent/5">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium text-foreground">
-                        {birthCertificate.file.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        ({(birthCertificate.file.size / 1024 / 1024).toFixed(2)} MB)
-                      </span>
-                    </div>
-                    
-                    {birthCertificate.documentType && (
-                      <Badge variant="outline" className="mb-2">
-                        {birthCertificate.documentType}
-                      </Badge>
-                    )}
+            {/* File Upload Area */}
+            <div className="border-2 border-dashed border-border rounded-lg p-12 text-center mb-6 hover:border-primary/50 transition-colors">
+              <UploadIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2 text-foreground">
+                Dateien hier ablegen oder klicken
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Unterstützte Formate: PDF, JPG, PNG (max. 20MB pro Datei)
+              </p>
+              <input
+                type="file"
+                multiple
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleFileChange}
+                className="hidden"
+                id="file-upload"
+                disabled={processing}
+              />
+              <label htmlFor="file-upload">
+                <Button variant="outline" className="cursor-pointer" asChild disabled={processing}>
+                  <span>{processing ? "Wird analysiert..." : "Dateien auswählen"}</span>
+                </Button>
+              </label>
+            </div>
 
-                    {birthCertificate.ocrResult && (
-                      <div className="mt-2 p-3 bg-secondary/20 rounded-lg">
-                        <p className="text-xs font-semibold text-foreground mb-1">
-                          Extrahierte Daten:
-                        </p>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          {Object.entries(birthCertificate.ocrResult.fields).map(([key, value]) => (
-                            <div key={key}>
-                              <span className="text-muted-foreground">{key}: </span>
-                              <span className="text-foreground font-medium">{value}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Konfidenz: {Math.round(birthCertificate.ocrResult.confidence)}%
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={removeBirthCertificate}
-                    disabled={processing}
-                  >
-                    Entfernen
-                  </Button>
+            {/* OCR Progress */}
+            {processing && currentFile && (
+              <Card className="p-4 mb-6 bg-accent/5">
+                <div className="flex items-center gap-3 mb-2">
+                  <Eye className="h-5 w-5 text-accent" />
+                  <p className="text-sm font-medium text-foreground">
+                    Analysiere: {currentFile}
+                  </p>
                 </div>
+                <Progress value={ocrProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground mt-2">{ocrProgress}% abgeschlossen</p>
               </Card>
             )}
-          </Card>
 
-          {/* Step 2: Parent 1 Documents */}
-          {birthCertificate && (
-            <Card className="p-8">
-              <h2 className="text-2xl font-bold mb-2 text-foreground">Schritt 2: Elternteil 1 Dokumente</h2>
-              <p className="text-muted-foreground mb-6">
-                Laden Sie die Dokumente von Elternteil 1 hoch (z.B. Personalausweis).
-              </p>
-
-              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center mb-4 hover:border-primary/50 transition-colors">
-                <UploadIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                <h3 className="text-lg font-semibold mb-2 text-foreground">
-                  Elternteil 1 Dokumente
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Mehrere Dateien möglich
-                </p>
-                <input
-                  type="file"
-                  multiple
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={handleParent1FileChange}
-                  className="hidden"
-                  id="parent1-upload"
-                  disabled={processing}
-                />
-                <label htmlFor="parent1-upload">
-                  <Button variant="outline" className="cursor-pointer" asChild disabled={processing}>
-                    <span>{processing ? "Wird analysiert..." : "Dateien auswählen"}</span>
-                  </Button>
-                </label>
-              </div>
-
-              {parent1Files.length > 0 && (
-                <div className="space-y-3">
-                  {parent1Files.map((file, index) => (
-                    <Card key={index} className="p-4 bg-accent/5">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium text-foreground">
-                              {file.file.name}
-                            </span>
-                            <Badge variant="secondary" className="text-xs">Elternteil 1</Badge>
-                          </div>
-                          
-                          {file.documentType && (
-                            <Badge variant="outline" className="mb-2">
-                              {file.documentType}
-                            </Badge>
-                          )}
-
-                          {file.ocrResult && (
-                            <div className="mt-2 p-3 bg-secondary/20 rounded-lg">
-                              <p className="text-xs font-semibold text-foreground mb-1">
-                                Extrahierte Daten:
-                              </p>
-                              <div className="grid grid-cols-2 gap-2 text-xs">
-                                {Object.entries(file.ocrResult.fields).map(([key, value]) => (
-                                  <div key={key}>
-                                    <span className="text-muted-foreground">{key}: </span>
-                                    <span className="text-foreground font-medium">{value}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+            {/* File List with OCR Results */}
+            {files.length > 0 && (
+              <div className="space-y-3 mb-6">
+                <h4 className="font-semibold text-foreground">Hochgeladene Dateien:</h4>
+                {files.map((uploadedFile, index) => (
+                  <Card key={index} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium text-foreground">
+                            {uploadedFile.file.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            ({(uploadedFile.file.size / 1024 / 1024).toFixed(2)} MB)
+                          </span>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeParent1File(index)}
-                          disabled={processing}
-                        >
-                          Entfernen
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </Card>
-          )}
+                        
+                        {uploadedFile.documentType && (
+                          <Badge variant="outline" className="mb-2">
+                            {uploadedFile.documentType}
+                          </Badge>
+                        )}
 
-          {/* Step 3: Parent 2 Documents */}
-          {birthCertificate && (
-            <Card className="p-8">
-              <h2 className="text-2xl font-bold mb-2 text-foreground">Schritt 3: Elternteil 2 Dokumente</h2>
-              <p className="text-muted-foreground mb-6">
-                Laden Sie die Dokumente von Elternteil 2 hoch (z.B. Personalausweis).
-              </p>
-
-              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center mb-4 hover:border-primary/50 transition-colors">
-                <UploadIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                <h3 className="text-lg font-semibold mb-2 text-foreground">
-                  Elternteil 2 Dokumente
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Mehrere Dateien möglich
-                </p>
-                <input
-                  type="file"
-                  multiple
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={handleParent2FileChange}
-                  className="hidden"
-                  id="parent2-upload"
-                  disabled={processing}
-                />
-                <label htmlFor="parent2-upload">
-                  <Button variant="outline" className="cursor-pointer" asChild disabled={processing}>
-                    <span>{processing ? "Wird analysiert..." : "Dateien auswählen"}</span>
-                  </Button>
-                </label>
-              </div>
-
-              {parent2Files.length > 0 && (
-                <div className="space-y-3">
-                  {parent2Files.map((file, index) => (
-                    <Card key={index} className="p-4 bg-accent/5">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium text-foreground">
-                              {file.file.name}
-                            </span>
-                            <Badge variant="secondary" className="text-xs">Elternteil 2</Badge>
-                          </div>
-                          
-                          {file.documentType && (
-                            <Badge variant="outline" className="mb-2">
-                              {file.documentType}
-                            </Badge>
-                          )}
-
-                          {file.ocrResult && (
-                            <div className="mt-2 p-3 bg-secondary/20 rounded-lg">
-                              <p className="text-xs font-semibold text-foreground mb-1">
-                                Extrahierte Daten:
-                              </p>
-                              <div className="grid grid-cols-2 gap-2 text-xs">
-                                {Object.entries(file.ocrResult.fields).map(([key, value]) => (
-                                  <div key={key}>
-                                    <span className="text-muted-foreground">{key}: </span>
-                                    <span className="text-foreground font-medium">{value}</span>
-                                  </div>
-                                ))}
-                              </div>
+                        {uploadedFile.ocrResult && (
+                          <div className="mt-2 p-3 bg-secondary/20 rounded-lg">
+                            <p className="text-xs font-semibold text-foreground mb-1">
+                              Extrahierte Daten:
+                            </p>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              {Object.entries(uploadedFile.ocrResult.fields).map(([key, value]) => (
+                                <div key={key}>
+                                  <span className="text-muted-foreground">{key}: </span>
+                                  <span className="text-foreground font-medium">{value}</span>
+                                </div>
+                              ))}
                             </div>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeParent2File(index)}
-                          disabled={processing}
-                        >
-                          Entfernen
-                        </Button>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Konfidenz: {Math.round(uploadedFile.ocrResult.confidence)}%
+                            </p>
+                          </div>
+                        )}
                       </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </Card>
-          )}
-
-          {/* OCR Progress */}
-          {processing && currentFile && (
-            <Card className="p-4 bg-accent/5">
-              <div className="flex items-center gap-3 mb-2">
-                <Eye className="h-5 w-5 text-accent" />
-                <p className="text-sm font-medium text-foreground">
-                  Analysiere: {currentFile}
-                </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                        disabled={processing}
+                      >
+                        Entfernen
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
               </div>
-              <Progress value={ocrProgress} className="h-2" />
-              <p className="text-xs text-muted-foreground mt-2">{ocrProgress}% abgeschlossen</p>
-            </Card>
-          )}
+            )}
 
-          {/* Action Buttons */}
-          <Card className="p-6">
+            {/* Action Buttons */}
             <div className="flex gap-4">
               <Button
                 onClick={handleUploadToSupabase}
-                disabled={processing || !birthCertificate}
+                disabled={processing || files.length === 0}
                 className="flex-1"
               >
                 {processing ? "Wird analysiert..." : "Speichern und fortfahren"}
@@ -628,12 +427,13 @@ const Upload = () => {
           </Card>
 
           {/* Required Documents Info */}
-          <Card className="p-6 bg-secondary/20">
+          <Card className="mt-6 p-6 bg-secondary/20">
             <h4 className="font-semibold mb-3 text-foreground">Benötigte Dokumente:</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>• Geburtsurkunde des Kindes (Schritt 1)</li>
-              <li>• Personalausweis Elternteil 1 (Schritt 2)</li>
-              <li>• Personalausweis Elternteil 2 (Schritt 3)</li>
+              <li>• Geburtsurkunde des Kindes</li>
+              <li>• Einkommensnachweise (z.B. Lohnabrechnungen)</li>
+              <li>• Bescheinigung der Krankenversicherung</li>
+              <li>• Personalausweis oder Reisepass</li>
               <li>• Ggf. weitere relevante Unterlagen</li>
             </ul>
           </Card>

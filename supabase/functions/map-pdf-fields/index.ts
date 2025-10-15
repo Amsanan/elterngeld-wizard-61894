@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { ocrData, documentType, antragId, parentNumber } = await req.json();
+    const { ocrData, documentType, antragId } = await req.json();
     
     console.log("Mapping OCR data for document type:", documentType);
 
@@ -216,23 +216,16 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
 
       if (documentType === "personalausweis" || documentType === "adresse") {
         const elternteilData: any = { antrag_id: antragId };
-        
-        // Map fields to correct columns based on parentNumber
-        if (parentNumber === 2) {
-          // For parent 2, use _2 columns
-          if (fields.vorname) elternteilData.vorname_2 = fields.vorname;
-          if (fields.nachname) elternteilData.nachname_2 = fields.nachname;
-          if (fields.geburtsdatum) elternteilData.geburtsdatum_2 = fields.geburtsdatum;
-          if (fields.geschlecht) elternteilData.geschlecht_2 = fields.geschlecht;
-          if (fields.steuer_identifikationsnummer) elternteilData.steuer_identifikationsnummer_2 = fields.steuer_identifikationsnummer;
-        } else {
-          // For parent 1 (or default), use regular columns
-          if (fields.vorname) elternteilData.vorname = fields.vorname;
-          if (fields.nachname) elternteilData.nachname = fields.nachname;
-          if (fields.geburtsdatum) elternteilData.geburtsdatum = fields.geburtsdatum;
-          if (fields.geschlecht) elternteilData.geschlecht = fields.geschlecht;
-          if (fields.steuer_identifikationsnummer) elternteilData.steuer_identifikationsnummer = fields.steuer_identifikationsnummer;
-        }
+        if (fields.vorname) elternteilData.vorname = fields.vorname;
+        if (fields.nachname) elternteilData.nachname = fields.nachname;
+        if (fields.geburtsdatum) elternteilData.geburtsdatum = fields.geburtsdatum;
+        if (fields.geschlecht) elternteilData.geschlecht = fields.geschlecht;
+        if (fields.steuer_identifikationsnummer) elternteilData.steuer_identifikationsnummer = fields.steuer_identifikationsnummer;
+        if (fields.vorname_2) elternteilData.vorname_2 = fields.vorname_2;
+        if (fields.nachname_2) elternteilData.nachname_2 = fields.nachname_2;
+        if (fields.geburtsdatum_2) elternteilData.geburtsdatum_2 = fields.geburtsdatum_2;
+        if (fields.geschlecht_2) elternteilData.geschlecht_2 = fields.geschlecht_2;
+        if (fields.steuer_identifikationsnummer_2) elternteilData.steuer_identifikationsnummer_2 = fields.steuer_identifikationsnummer_2;
 
         if (Object.keys(elternteilData).length > 1) {
           console.log("Saving elternteil data:", elternteilData);
