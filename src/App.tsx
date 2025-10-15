@@ -7,6 +7,7 @@ import Review from "./pages/Review";
 import Preview from "./pages/Preview";
 import Generate from "./pages/Generate";
 import Applications from "./pages/Applications";
+import StorageManager from "./pages/StorageManager";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
         <Route path="/preview" element={<Preview />} />
         <Route path="/generate" element={<Generate />} />
         <Route path="/applications" element={<Applications />} />
+        <Route path="/storage-manager" element={<StorageManager />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
