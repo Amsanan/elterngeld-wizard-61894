@@ -32,10 +32,23 @@ export async function loadAntragData(antragId: string): Promise<AntragData | nul
       supabase.from('extraction_logs').select('*').eq('antrag_id', antragId),
     ]);
 
-    // Combine data from tables
+    // Combine data from tables with prefixes to avoid field name conflicts
     let extracted_data: Record<string, any> = {
       ...antrag,
-      ...kind.data,
+    };
+
+    // Add kind data with 'kind_' prefix to avoid conflicts with parent data
+    if (kind.data) {
+      Object.entries(kind.data).forEach(([key, value]) => {
+        if (key !== 'id' && key !== 'antrag_id' && key !== 'created_at') {
+          extracted_data[`kind_${key}`] = value;
+        }
+      });
+    }
+
+    // Add other table data
+    extracted_data = {
+      ...extracted_data,
       ...elternteil.data,
       ...wohnsitz.data,
       ...wohnsitzAufenthalt.data,
