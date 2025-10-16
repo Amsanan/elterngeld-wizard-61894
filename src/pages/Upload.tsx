@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { performOCR, detectDocumentType, type OCRResult } from "@/lib/ocrService";
+import { performOCR, detectDocumentType, type OCRResult } from "@/lib/documents";
 
 interface UploadedFile {
   file: File;
@@ -127,7 +127,7 @@ const Upload = () => {
         .insert({
           user_id: user.id,
           status: 'draft',
-          ort: files[0]?.ocrResult?.fields.ort || null,
+          ort: files[0]?.ocrResult?.extractedFields.ort || null,
         })
         .select()
         .single();
@@ -179,14 +179,14 @@ const Upload = () => {
             console.log('Calling map-pdf-fields with:', {
               documentType: uploadedFile.documentType,
               antragId: antrag.id,
-              fieldsCount: Object.keys(uploadedFile.ocrResult.fields).length,
+              fieldsCount: Object.keys(uploadedFile.ocrResult.extractedFields).length,
             });
 
             const { data: mappingResult, error: mappingError } = await supabase.functions.invoke(
               'map-pdf-fields',
               {
                 body: {
-                  ocrData: uploadedFile.ocrResult.fields,
+                  ocrData: uploadedFile.ocrResult.extractedFields,
                   documentType: uploadedFile.documentType,
                   antragId: antrag.id,
                 },
@@ -201,7 +201,7 @@ const Upload = () => {
                 description: `Fehler beim intelligenten Mapping: ${mappingError.message}`,
               });
               // Fallback to basic extraction logs if AI fails
-              const extractionPromises = Object.entries(uploadedFile.ocrResult.fields).map(
+              const extractionPromises = Object.entries(uploadedFile.ocrResult.extractedFields).map(
                 ([fieldName, fieldValue]) =>
                   supabase.from('extraction_logs').insert({
                     user_file_id: fileRecord?.id,
@@ -253,7 +253,7 @@ const Upload = () => {
           } catch (aiError) {
             console.error('AI mapping failed:', aiError);
             // Fallback to basic extraction
-            const extractionPromises = Object.entries(uploadedFile.ocrResult.fields).map(
+            const extractionPromises = Object.entries(uploadedFile.ocrResult.extractedFields).map(
               ([fieldName, fieldValue]) =>
                 supabase.from('extraction_logs').insert({
                   user_file_id: fileRecord?.id,
@@ -384,10 +384,10 @@ const Upload = () => {
                               Extrahierte Daten:
                             </p>
                             <div className="grid grid-cols-2 gap-2 text-xs">
-                              {Object.entries(uploadedFile.ocrResult.fields).map(([key, value]) => (
+                              {Object.entries(uploadedFile.ocrResult.extractedFields).map(([key, value]) => (
                                 <div key={key}>
                                   <span className="text-muted-foreground">{key}: </span>
-                                  <span className="text-foreground font-medium">{value}</span>
+                                  <span className="text-foreground font-medium">{value as string}</span>
                                 </div>
                               ))}
                             </div>
