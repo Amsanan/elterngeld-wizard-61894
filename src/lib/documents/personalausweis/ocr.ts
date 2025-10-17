@@ -15,99 +15,68 @@ export const personalausweisProcessor: DocumentProcessor = {
   extractFields: (text: string): ExtractedFields => {
     const fields: ExtractedFields = {};
     
-    // Split text into lines for better parsing
-    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+    // Clean up text - remove extra spaces and normalize
+    const cleanText = text.replace(/\s+/g, ' ').trim();
 
-    // Helper function to find value after a label across multiple lines
-    const findValueAfterLabel = (labelPattern: RegExp, lines: string[]): string | null => {
-      for (let i = 0; i < lines.length; i++) {
-        if (labelPattern.test(lines[i])) {
-          // Check if value is on the same line
-          const sameLine = lines[i].match(labelPattern);
-          if (sameLine && sameLine[1] && sameLine[1].length > 3) {
-            return sameLine[1].trim();
-          }
-          // Check next line for the value
-          if (i + 1 < lines.length && lines[i + 1] && !isLabel(lines[i + 1])) {
-            return lines[i + 1].trim();
-          }
-        }
-      }
-      return null;
-    };
-
-    // Helper to detect if a line is a label (contains common label keywords)
-    const isLabel = (line: string): boolean => {
-      const labelKeywords = /^(vornamen?|given names?|prénoms|nachname|surname|name|geburtstag|date of birth|staatsangehörigkeit|nationality|geburtsort|place of birth|anschrift|adresse|address|straße|street|rue|gültig|expiry|expiration)/i;
-      return labelKeywords.test(line);
-    };
-
-    // Extract Vorname (First Name) - look for value after label
-    const vornameValue = findValueAfterLabel(/(?:vornamen?|given\s*names?|prénoms)/i, lines);
-    if (vornameValue && /^[A-ZÄÖÜ]/.test(vornameValue)) {
-      fields.vorname = vornameValue.split(' ').map(n => 
+    // Extract Nachname (Last Name) - look for all-caps word after the label, before "GEB."
+    const nachnameMatch = cleanText.match(/(?:PERSONALAUSWEIS|IDENTITY CARD|CARTE D'IDENTITE)[\s\S]*?([A-ZÄÖÜ]{3,}(?:\s+[A-ZÄÖÜ]{3,})?)\s*(?:GEB\.|Vornamen|Given names)/i);
+    if (nachnameMatch) {
+      const nachname = nachnameMatch[1].trim().replace(/\s+/g, ' ');
+      fields.nachname = nachname.split(/[\s-]+/).map(n => 
         n.charAt(0) + n.slice(1).toLowerCase()
       ).join(' ');
     }
 
-    // Extract Nachname (Last Name) - handle "GEB." for maiden names
-    const nachnameValue = findValueAfterLabel(/(?:nachname|surname|familienname)(?!.*\/)/i, lines);
-    if (nachnameValue && /^[A-ZÄÖÜ]/.test(nachnameValue)) {
-      // Handle maiden name format: "MUSTERMANN GEB. GABLER" -> extract "MUSTERMANN"
-      const mainName = nachnameValue.split(/\s+GEB\./i)[0].trim();
-      fields.nachname = mainName.split(/[\s-]+/).map(n => 
+    // Extract Vorname (First Name) - look for all-caps word(s) after "Vornamen/Given names/Prénoms"
+    const vornameMatch = cleanText.match(/(?:Vornamen|Given names|Prénoms)[\s\/]*([A-ZÄÖÜ]{2,}(?:\s+[A-ZÄÖÜ]{2,})?)\s*(?:Geburtstag|Date of birth|Geburtsort)/i);
+    if (vornameMatch) {
+      const vorname = vornameMatch[1].trim().replace(/\s+/g, ' ');
+      fields.vorname = vorname.split(' ').map(n => 
         n.charAt(0) + n.slice(1).toLowerCase()
       ).join(' ');
     }
 
-    // Extract Geburtsdatum (Date of Birth)
-    const geburtsdatumValue = findValueAfterLabel(/(?:geburtstag|date\s*of\s*birth|date\s*de\s*naissance)/i, lines);
-    if (geburtsdatumValue && /\d/.test(geburtsdatumValue)) {
-      const dateMatch = geburtsdatumValue.match(/(\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4})/);
-      if (dateMatch) fields.geburtsdatum = dateMatch[1];
+    // Extract Geburtsdatum (Date of Birth) - look for DD.MM.YYYY pattern after "Geburtstag"
+    const geburtsdatumMatch = cleanText.match(/(?:Geburtstag|Date of birth|Date de naissance)[\s\/\-:]*(\d{1,2}\.\d{1,2}\.\d{4})/i);
+    if (geburtsdatumMatch) {
+      fields.geburtsdatum = geburtsdatumMatch[1].trim();
     }
 
-    // Extract Geburtsort (Place of Birth)
-    const geburtsortValue = findValueAfterLabel(/(?:geburtsort|place\s*of\s*birth|lieu\s*de\s*naissance)/i, lines);
-    if (geburtsortValue && /^[A-ZÄÖÜ]/.test(geburtsortValue)) {
-      fields.geburtsort = geburtsortValue.split(' ').map(word => 
-        word.charAt(0) + word.slice(1).toLowerCase()
-      ).join(' ');
-    }
-
-    // Extract Staatsangehörigkeit (Nationality)
-    const staatsangValue = findValueAfterLabel(/(?:staatsangehörigkeit|nationality|nationalite)/i, lines);
-    if (staatsangValue && /^[A-ZÄÖÜ]/.test(staatsangValue)) {
-      fields.staatsangehoerigkeit = staatsangValue.toUpperCase() === 'DEUTSCH' || staatsangValue.toUpperCase() === 'DEUTSCHLAND' 
-        ? 'DEUTSCH' 
-        : staatsangValue;
-    }
-
-    // Extract Anschrift/Adresse (Address) - look for street, PLZ, city pattern
-    for (let i = 0; i < lines.length; i++) {
-      if (/(?:anschrift|adresse|address|rue)/i.test(lines[i])) {
-        // Address might be on next lines
-        for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-          const line = lines[j];
-          if (isLabel(line)) break;
-          
-          // Try to match PLZ + City pattern
-          const plzOrtMatch = line.match(/(\d{5})\s+([A-ZÄÖÜ][A-Za-zäöüß\s\-]+)/);
-          if (plzOrtMatch) {
-            fields.plz = plzOrtMatch[1];
-            fields.ort = plzOrtMatch[2].trim().split(' ').map(w => 
-              w.charAt(0) + w.slice(1).toLowerCase()
-            ).join(' ');
-          }
-          
-          // Try to match street + house number
-          const strasseMatch = line.match(/^([A-ZÄÖÜ][A-Za-zäöüß\s\-]+?)\s+(\d+[a-zA-Z]?)$/);
-          if (strasseMatch && !fields.strasse) {
-            fields.strasse = strasseMatch[1].trim();
-            fields.hausnummer = strasseMatch[2].trim();
-          }
-        }
+    // Extract Staatsangehörigkeit (Nationality) - look for "DEUTSCH" or other nationality after the label
+    const staatsangMatch = cleanText.match(/(?:Staatsangehörigkeit|Nationality|Nationalite)[\s\/\-:]*([A-ZÄÖÜ]{5,})/i);
+    if (staatsangMatch) {
+      const nationality = staatsangMatch[1].trim().toUpperCase();
+      // Only accept if it's a valid nationality word (not numbers or garbage)
+      if (!/\d/.test(nationality) && nationality.length >= 5) {
+        fields.staatsangehoerigkeit = nationality === 'DEUTSCH' || nationality === 'DEUTSCHLAND' ? 'DEUTSCH' : nationality;
       }
+    }
+
+    // Extract Geburtsort (Place of Birth) - look for city name after "Geburtsort"
+    const geburtsortMatch = cleanText.match(/(?:Geburtsort|Place of birth|Lieu de naissance)[\s\/\-:]*([A-ZÄÖÜ]{3,}(?:\s+[A-ZÄÖÜ]{3,})?)\s*(?:Gültig|Date of expiry|$)/i);
+    if (geburtsortMatch) {
+      const geburtsort = geburtsortMatch[1].trim().replace(/\s+/g, ' ');
+      // Only accept if it doesn't contain numbers
+      if (!/\d/.test(geburtsort)) {
+        fields.geburtsort = geburtsort.split(' ').map(word => 
+          word.charAt(0) + word.slice(1).toLowerCase()
+        ).join(' ');
+      }
+    }
+
+    // For address fields, look for PLZ (postal code) + city pattern anywhere in text
+    const plzOrtMatch = cleanText.match(/(\d{5})\s+([A-ZÄÖÜ][A-Za-zäöüß\s\-]{2,})/);
+    if (plzOrtMatch) {
+      fields.plz = plzOrtMatch[1];
+      const ort = plzOrtMatch[2].trim().split(/\s+/)[0]; // Take first word only
+      fields.ort = ort.charAt(0) + ort.slice(1).toLowerCase();
+    }
+
+    // Look for street + house number pattern
+    const strasseMatch = cleanText.match(/([A-ZÄÖÜ][a-zäöüß]+(?:straße|str\.?))\s+(\d+[a-zA-Z]?)/i);
+    if (strasseMatch) {
+      fields.strasse = strasseMatch[1].trim();
+      fields.hausnummer = strasseMatch[2].trim();
     }
 
     return fields;
