@@ -1,12 +1,11 @@
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
+// @ts-ignore - Import worker as URL for Vite
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import type { OCRResult } from '../types';
 
 // Configure PDF.js worker - use bundled worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 async function convertPdfToImages(file: File): Promise<Blob[]> {
   const arrayBuffer = await file.arrayBuffer();
