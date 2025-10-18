@@ -173,20 +173,32 @@ const Upload = () => {
           .select()
           .single();
 
-        // Call AI mapping function to intelligently map OCR data
-        if (uploadedFile.ocrResult && uploadedFile.documentType) {
+        // Call AI mapping function with actual image file
+        if (uploadedFile.documentType) {
           try {
-            console.log('Calling map-pdf-fields with:', {
+            // Convert file to base64
+            const fileBase64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const base64 = (reader.result as string).split(',')[1];
+                resolve(base64);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(uploadedFile.file);
+            });
+
+            console.log('Calling map-pdf-fields with image file:', {
               documentType: uploadedFile.documentType,
               antragId: antrag.id,
-              fieldsCount: Object.keys(uploadedFile.ocrResult.extractedFields).length,
+              fileSize: uploadedFile.file.size,
             });
 
             const { data: mappingResult, error: mappingError } = await supabase.functions.invoke(
               'map-pdf-fields',
               {
                 body: {
-                  ocrData: uploadedFile.ocrResult.extractedFields,
+                  imageData: fileBase64,
+                  mimeType: uploadedFile.file.type,
                   documentType: uploadedFile.documentType,
                   antragId: antrag.id,
                 },
@@ -200,18 +212,6 @@ const Upload = () => {
                 title: "KI-Mapping Fehler",
                 description: `Fehler beim intelligenten Mapping: ${mappingError.message}`,
               });
-              // Fallback to basic extraction logs if AI fails
-              const extractionPromises = Object.entries(uploadedFile.ocrResult.extractedFields).map(
-                ([fieldName, fieldValue]) =>
-                  supabase.from('extraction_logs').insert({
-                    user_file_id: fileRecord?.id,
-                    antrag_id: antrag.id,
-                    field_name: fieldName,
-                    field_value: fieldValue as string,
-                    confidence_score: uploadedFile.ocrResult!.confidence,
-                  })
-              );
-              await Promise.all(extractionPromises);
             } else {
               console.log('AI Mapping successful:', mappingResult);
               
@@ -235,7 +235,7 @@ const Upload = () => {
                 }
               }
               
-              // Save the AI-mapped fields
+              // Save AI mapping metadata to extraction logs
               if (fileRecord && mappingResult.mapped_fields) {
                 const extractionPromises = Object.entries(mappingResult.mapped_fields).map(
                   ([fieldName, fieldValue]) =>
@@ -244,7 +244,7 @@ const Upload = () => {
                       antrag_id: antrag.id,
                       field_name: fieldName,
                       field_value: fieldValue as string,
-                      confidence_score: mappingResult.confidence || uploadedFile.ocrResult!.confidence,
+                      confidence_score: mappingResult.confidence || 0.95,
                     })
                 );
                 await Promise.all(extractionPromises);
@@ -252,18 +252,11 @@ const Upload = () => {
             }
           } catch (aiError) {
             console.error('AI mapping failed:', aiError);
-            // Fallback to basic extraction
-            const extractionPromises = Object.entries(uploadedFile.ocrResult.extractedFields).map(
-              ([fieldName, fieldValue]) =>
-                supabase.from('extraction_logs').insert({
-                  user_file_id: fileRecord?.id,
-                  antrag_id: antrag.id,
-                  field_name: fieldName,
-                  field_value: fieldValue as string,
-                  confidence_score: uploadedFile.ocrResult!.confidence,
-                })
-            );
-            await Promise.all(extractionPromises);
+            toast({
+              variant: "destructive",
+              title: "Fehler",
+              description: "Dokumentverarbeitung fehlgeschlagen",
+            });
           }
         }
 

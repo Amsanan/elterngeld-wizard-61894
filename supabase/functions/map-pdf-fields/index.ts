@@ -12,9 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    const { ocrData, documentType, antragId } = await req.json();
+    const { imageData, mimeType, documentType, antragId } = await req.json();
     
-    console.log("Mapping OCR data for document type:", documentType);
+    console.log("Processing image for document type:", documentType, "MIME:", mimeType);
 
     // Field mapping reference from Mapping032025_1.xlsx
     const mappingReference = `
@@ -98,13 +98,11 @@ Antworte NUR mit einem JSON-Objekt ohne zusätzlichen Text:
 }`;
 
     const userPrompt = `Dokumenttyp: ${documentType}
-    
-OCR-Daten:
-${JSON.stringify(ocrData, null, 2)}
 
-Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
+Bitte analysiere das hochgeladene Bild und extrahiere die relevanten Daten für den Elterngeldantrag.
+Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.`;
 
-    // Call OpenRouter API with Gemini Thinking model
+    // Call OpenRouter API with Mistral Small vision model
     const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
     if (!OPENROUTER_API_KEY) {
       throw new Error("OPENROUTER_API_KEY not configured");
@@ -120,7 +118,18 @@ Bitte mappe diese Daten intelligent zu den Elterngeldantrag-Feldern.`;
         model: "mistralai/mistral-small-24b-instruct-2501:free",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
+          { 
+            role: "user", 
+            content: [
+              { type: "text", text: userPrompt },
+              { 
+                type: "image_url", 
+                image_url: { 
+                  url: `data:${mimeType};base64,${imageData}` 
+                } 
+              }
+            ]
+          }
         ],
         temperature: 0.1,
       }),
