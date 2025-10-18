@@ -115,7 +115,7 @@ Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "mistralai/mistral-small-24b-instruct-2501:free",
+        model: "mistralai/mistral-small-3.2-24b-instruct:free",
         messages: [
           { role: "system", content: systemPrompt },
           { 
@@ -136,6 +136,9 @@ Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("OpenRouter API error:", response.status, errorText);
+      
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit erreicht. Bitte versuchen Sie es später erneut." }),
@@ -148,9 +151,17 @@ Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      throw new Error("AI Gateway error");
+      if (response.status === 400) {
+        return new Response(
+          JSON.stringify({ error: `Vision API Fehler: ${errorText}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ error: `OpenRouter Fehler (${response.status}): ${errorText}` }),
+        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const aiResponse = await response.json();

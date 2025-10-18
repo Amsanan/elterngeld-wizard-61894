@@ -54,23 +54,32 @@ const Upload = () => {
       // Detect document type
       const docType = detectDocumentType(ocrResult.text);
 
-      // Update file with OCR results
+      // For birth certificates, skip showing OCR results (we'll use vision API instead)
+      const skipOCR = docType === 'geburtsurkunde';
+
+      // Update file with results
       setFiles(prev => prev.map((f, i) => 
         i === index 
-          ? { ...f, ocrResult, documentType: docType }
+          ? { 
+              ...f, 
+              ocrResult: skipOCR ? undefined : ocrResult, 
+              documentType: docType 
+            }
           : f
       ));
 
       toast({
-        title: "OCR abgeschlossen",
-        description: `${uploadedFile.file.name} wurde erfolgreich analysiert.`,
+        title: skipOCR ? "Dokument erkannt" : "OCR abgeschlossen",
+        description: skipOCR 
+          ? `${uploadedFile.file.name} wird mit KI-Vision verarbeitet.`
+          : `${uploadedFile.file.name} wurde erfolgreich analysiert.`,
       });
 
     } catch (error) {
       console.error('OCR error:', error);
       toast({
         variant: "destructive",
-        title: "OCR fehlgeschlagen",
+        title: "Fehler",
         description: `Fehler bei der Analyse von ${uploadedFile.file.name}`,
       });
     } finally {
