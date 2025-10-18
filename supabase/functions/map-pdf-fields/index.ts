@@ -22,6 +22,10 @@ KRITISCHE MAPPING-REGELN basierend auf Mapping032025_1.xlsx:
 
 WICHTIG: Verwende immer die DATABASE COLUMN NAMES (links vom →), NICHT die Display-Namen!
 
+⚠️ CRITICAL: Geburtsurkunde (Birth Certificate) → NUR KIND-TABELLE!
+Geburtsurkunden enthalten KEINE Informationen über Eltern, Adressen oder andere Daten.
+Extrahiere NUR Daten für die KIND-Tabelle, NICHTS ANDERES!
+
 KIND-TABELLE (aus Geburtsurkunde) - DATABASE COLUMN NAMES:
 - vorname (extrahiere aus: Kind Vorname)
 - nachname (extrahiere aus: Kind Nachname)
@@ -189,6 +193,7 @@ Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.
       // Update appropriate tables based on document type
       const fields = mappedData.mapped_fields;
       
+      // CRITICAL: Geburtsurkunde only affects kind table
       if (documentType === "geburtsurkunde") {
         const kindData: any = { antrag_id: antragId };
         if (fields.vorname) kindData.vorname = fields.vorname;
@@ -202,7 +207,7 @@ Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.
         if (fields.keine_weitere_kinder !== undefined) kindData.keine_weitere_kinder = fields.keine_weitere_kinder;
         if (fields.insgesamt !== undefined) kindData.insgesamt = fields.insgesamt;
 
-        console.log("Saving kind data:", kindData);
+        console.log("Saving kind data from Geburtsurkunde:", kindData);
 
         // Check if kind entry already exists for this antrag
         const { data: existingKind } = await supabase
@@ -230,11 +235,15 @@ Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.
         if (kindError) {
           console.error("Error saving kind:", kindError);
         } else {
-          console.log("Kind data saved successfully");
+          console.log("Kind data saved successfully from Geburtsurkunde");
         }
       }
+      
+      // IMPORTANT: Geburtsurkunde only affects kind table - skip other table processing
+      if (documentType !== "geburtsurkunde") {
 
-      if (documentType === "personalausweis" || documentType === "adresse") {
+        // Process parent/address data for personalausweis or adresse documents
+        if (documentType === "personalausweis" || documentType === "adresse") {
         const elternteilData: any = { antrag_id: antragId };
         if (fields.vorname) elternteilData.vorname = fields.vorname;
         if (fields.nachname) elternteilData.nachname = fields.nachname;
@@ -346,10 +355,10 @@ Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.
           if (aufenthaltError) console.error("Error saving aufenthalt:", aufenthaltError);
           else console.log("Aufenthalt data saved successfully");
         }
-      }
+        }
 
-      // Handle single parent data if detected
-      if (fields.ist_alleinerziehend !== undefined) {
+        // Handle single parent data if detected
+        if (fields.ist_alleinerziehend !== undefined) {
         const alleinerziehendData: any = { antrag_id: antragId };
         alleinerziehendData.ist_alleinerziehend = fields.ist_alleinerziehend;
         if (fields.anderer_unmoeglich_betreuung !== undefined) alleinerziehendData.anderer_unmoeglich_betreuung = fields.anderer_unmoeglich_betreuung;
@@ -379,6 +388,7 @@ Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.
 
         if (alleinerziehendError) console.error("Error saving alleinerziehend:", alleinerziehendError);
         else console.log("Alleinerziehend data saved successfully");
+        }
       }
     }
 
