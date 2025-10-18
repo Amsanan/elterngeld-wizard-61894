@@ -46,25 +46,40 @@ export async function loadAntragData(antragId: string): Promise<AntragData | nul
       });
     }
 
-    // Add other table data
-    extracted_data = {
-      ...extracted_data,
-      ...elternteil.data,
-      ...wohnsitz.data,
-      ...wohnsitzAufenthalt.data,
-      ...alleinerziehende.data,
-    };
-
-    // Add extraction_logs data as fallback
-    if (extractionLogs.data) {
-      const logsData: Record<string, any> = {};
-      extractionLogs.data.forEach(log => {
-        if (log.field_name && log.field_value) {
-          logsData[log.field_name] = log.field_value;
+    // CRITICAL: Only add parent data from elternteil table
+    // Do NOT use extraction logs for parent fields to avoid mixing child/parent data
+    if (elternteil.data) {
+      // Only add elternteil fields (vorname, nachname, geburtsdatum, etc.)
+      Object.entries(elternteil.data).forEach(([key, value]) => {
+        if (key !== 'id' && key !== 'antrag_id' && key !== 'created_at') {
+          extracted_data[key] = value;
         }
       });
-      // Merge with priority to table data
-      extracted_data = { ...logsData, ...extracted_data };
+    }
+
+    // Add other table data
+    if (wohnsitz.data) {
+      Object.entries(wohnsitz.data).forEach(([key, value]) => {
+        if (key !== 'id' && key !== 'antrag_id' && key !== 'created_at') {
+          extracted_data[key] = value;
+        }
+      });
+    }
+    
+    if (wohnsitzAufenthalt.data) {
+      Object.entries(wohnsitzAufenthalt.data).forEach(([key, value]) => {
+        if (key !== 'id' && key !== 'antrag_id' && key !== 'created_at') {
+          extracted_data[key] = value;
+        }
+      });
+    }
+    
+    if (alleinerziehende.data) {
+      Object.entries(alleinerziehende.data).forEach(([key, value]) => {
+        if (key !== 'id' && key !== 'antrag_id' && key !== 'created_at') {
+          extracted_data[key] = value;
+        }
+      });
     }
 
     // Get uploaded document types
