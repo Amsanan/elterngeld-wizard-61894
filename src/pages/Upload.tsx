@@ -54,32 +54,23 @@ const Upload = () => {
       // Detect document type
       const docType = detectDocumentType(ocrResult.text);
 
-      // For birth certificates, skip showing OCR results (we'll use vision API instead)
-      const skipOCR = docType === 'geburtsurkunde';
-
-      // Update file with results
+      // Update file with OCR results
       setFiles(prev => prev.map((f, i) => 
         i === index 
-          ? { 
-              ...f, 
-              ocrResult: skipOCR ? undefined : ocrResult, 
-              documentType: docType 
-            }
+          ? { ...f, ocrResult, documentType: docType }
           : f
       ));
 
       toast({
-        title: skipOCR ? "Dokument erkannt" : "OCR abgeschlossen",
-        description: skipOCR 
-          ? `${uploadedFile.file.name} wird mit KI-Vision verarbeitet.`
-          : `${uploadedFile.file.name} wurde erfolgreich analysiert.`,
+        title: "OCR abgeschlossen",
+        description: `${uploadedFile.file.name} wurde erfolgreich analysiert.`,
       });
 
     } catch (error) {
       console.error('OCR error:', error);
       toast({
         variant: "destructive",
-        title: "Fehler",
+        title: "OCR fehlgeschlagen",
         description: `Fehler bei der Analyse von ${uploadedFile.file.name}`,
       });
     } finally {
@@ -223,6 +214,20 @@ const Upload = () => {
               });
             } else {
               console.log('AI Mapping successful:', mappingResult);
+              
+              // Show success feedback with extracted data
+              const extractedData = mappingResult.mapped_fields || {};
+              const dataPreview = Object.entries(extractedData)
+                .filter(([_, value]) => value !== null && value !== undefined)
+                .map(([key, value]) => `${key}: ${value}`)
+                .slice(0, 3)
+                .join(', ');
+              
+              toast({
+                title: "✓ Daten erfolgreich extrahiert",
+                description: `${dataPreview}${Object.keys(extractedData).length > 3 ? '...' : ''}`,
+                duration: 5000,
+              });
               
               // Check if data was actually saved to kind table
               if (uploadedFile.documentType === 'geburtsurkunde') {
