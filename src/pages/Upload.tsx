@@ -15,6 +15,7 @@ interface UploadedFile {
   documentType?: string;
   uploading?: boolean;
   uploaded?: boolean;
+  visionData?: any; // Store vision API results
 }
 
 const Upload = () => {
@@ -45,32 +46,103 @@ const Upload = () => {
     setOcrProgress(0);
 
     try {
-      // Perform OCR
-      const ocrResult = await performOCR(
+      // First do quick OCR to detect document type
+      const quickOcr = await performOCR(
         uploadedFile.file,
-        (progress) => setOcrProgress(progress)
+        (progress) => setOcrProgress(Math.min(progress, 30))
       );
+      const docType = detectDocumentType(quickOcr.text);
 
-      // Detect document type
-      const docType = detectDocumentType(ocrResult.text);
+      // For birth certificates, use vision API instead of OCR
+      if (docType === 'geburtsurkunde') {
+        setOcrProgress(40);
+        
+        // Convert file to base64
+        const fileBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(uploadedFile.file);
+        });
 
-      // Update file with OCR results
-      setFiles(prev => prev.map((f, i) => 
-        i === index 
-          ? { ...f, ocrResult, documentType: docType }
-          : f
-      ));
+        setOcrProgress(60);
 
-      toast({
-        title: "OCR abgeschlossen",
-        description: `${uploadedFile.file.name} wurde erfolgreich analysiert.`,
-      });
+        // Call vision API directly
+        const { data: visionResult, error: visionError } = await supabase.functions.invoke(
+          'map-pdf-fields',
+          {
+            body: {
+              imageData: fileBase64,
+              mimeType: uploadedFile.file.type,
+              documentType: docType,
+              antragId: null, // No antrag ID yet, just extract data
+            },
+          }
+        );
+
+        setOcrProgress(100);
+
+        if (visionError || !visionResult?.mapped_fields) {
+          throw new Error('Vision API Fehler');
+        }
+
+        // Convert vision results to OCR format for display
+        const extractedFields: Record<string, string> = {};
+        Object.entries(visionResult.mapped_fields).forEach(([key, value]) => {
+          if (value !== null && value !== undefined) {
+            extractedFields[key] = String(value);
+          }
+        });
+
+        setFiles(prev => prev.map((f, i) => 
+          i === index 
+            ? { 
+                ...f, 
+                ocrResult: {
+                  text: '',
+                  confidence: (visionResult.confidence || 0.95) * 100,
+                  extractedFields,
+                  documentType: docType,
+                },
+                documentType: docType,
+                visionData: visionResult // Store complete vision results
+              }
+            : f
+        ));
+
+        toast({
+          title: "✓ KI-Vision Extraktion abgeschlossen",
+          description: `${uploadedFile.file.name} - ${Object.keys(extractedFields).length} Felder extrahiert`,
+        });
+
+      } else {
+        // For other documents, use regular OCR
+        setOcrProgress(50);
+        const ocrResult = await performOCR(
+          uploadedFile.file,
+          (progress) => setOcrProgress(50 + progress / 2)
+        );
+
+        setFiles(prev => prev.map((f, i) => 
+          i === index 
+            ? { ...f, ocrResult, documentType: docType }
+            : f
+        ));
+
+        toast({
+          title: "OCR abgeschlossen",
+          description: `${uploadedFile.file.name} wurde erfolgreich analysiert.`,
+        });
+      }
 
     } catch (error) {
-      console.error('OCR error:', error);
+      console.error('Processing error:', error);
       toast({
         variant: "destructive",
-        title: "OCR fehlgeschlagen",
+        title: "Fehler",
         description: `Fehler bei der Analyse von ${uploadedFile.file.name}`,
       });
     } finally {
@@ -173,8 +245,64 @@ const Upload = () => {
           .select()
           .single();
 
-        // Call AI mapping function with actual image file
-        if (uploadedFile.documentType) {
+        // For birth certificates with pre-extracted vision data, save directly to database
+        if (uploadedFile.documentType === 'geburtsurkunde' && uploadedFile.visionData) {
+          try {
+            const fields = uploadedFile.visionData.mapped_fields;
+            
+            // Save to kind table
+            const kindData: any = { antrag_id: antrag.id };
+            if (fields.vorname) kindData.vorname = fields.vorname;
+            if (fields.nachname) kindData.nachname = fields.nachname;
+            if (fields.geburtsdatum) kindData.geburtsdatum = fields.geburtsdatum;
+            if (fields.anzahl_mehrlinge) kindData.anzahl_mehrlinge = fields.anzahl_mehrlinge;
+            if (fields.fruehgeboren !== undefined) kindData.fruehgeboren = fields.fruehgeboren;
+            if (fields.errechneter_geburtsdatum) kindData.errechneter_geburtsdatum = fields.errechneter_geburtsdatum;
+            if (fields.behinderung !== undefined) kindData.behinderung = fields.behinderung;
+            if (fields.anzahl_weitere_kinder) kindData.anzahl_weitere_kinder = fields.anzahl_weitere_kinder;
+            if (fields.keine_weitere_kinder !== undefined) kindData.keine_weitere_kinder = fields.keine_weitere_kinder;
+            if (fields.insgesamt !== undefined) kindData.insgesamt = fields.insgesamt;
+
+            const { error: kindError } = await supabase
+              .from('kind')
+              .insert(kindData);
+
+            if (kindError) {
+              console.error('Error saving kind:', kindError);
+              toast({
+                variant: "destructive",
+                title: "Fehler beim Speichern",
+                description: "Kinddaten konnten nicht gespeichert werden.",
+              });
+            } else {
+              toast({
+                title: "✓ Daten gespeichert",
+                description: `${fields.vorname} ${fields.nachname} wurde erfolgreich gespeichert.`,
+              });
+              
+              // Log to extraction_logs
+              if (fileRecord) {
+                const extractionPromises = Object.entries(fields).map(
+                  ([fieldName, fieldValue]) =>
+                    fieldValue !== null && fieldValue !== undefined &&
+                    supabase.from('extraction_logs').insert({
+                      user_file_id: fileRecord.id,
+                      antrag_id: antrag.id,
+                      field_name: fieldName,
+                      field_value: String(fieldValue),
+                      confidence_score: uploadedFile.visionData.confidence || 0.95,
+                    })
+                );
+                await Promise.all(extractionPromises.filter(Boolean));
+              }
+            }
+          } catch (error) {
+            console.error('Error processing birth certificate data:', error);
+          }
+        }
+
+        // Call AI mapping function for other document types
+        else if (uploadedFile.documentType && uploadedFile.documentType !== 'geburtsurkunde') {
           try {
             // Convert file to base64
             const fileBase64 = await new Promise<string>((resolve, reject) => {

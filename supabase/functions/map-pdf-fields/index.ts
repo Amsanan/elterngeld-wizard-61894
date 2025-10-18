@@ -180,8 +180,8 @@ Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.
       throw new Error("Invalid AI response format");
     }
 
-    // Save mapped data to database
-    if (antragId) {
+    // Save mapped data to database (only if antragId provided)
+    if (antragId && mappedData.mapped_fields) {
       const supabaseUrl = Deno.env.get("SUPABASE_URL");
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
       const supabase = createClient(supabaseUrl!, supabaseKey!);
