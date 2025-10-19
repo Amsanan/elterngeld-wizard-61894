@@ -198,6 +198,25 @@ serve(async (req) => {
 
       console.log(`Extracted JSON for page ${page.pageNumber}:`, jsonStr);
       const pageData = JSON.parse(jsonStr);
+      
+      // Log detailed extraction for each page
+      if (page.pageNumber === 2) {
+        console.log(`Page 2 Address Data:`, JSON.stringify({
+          plz: pageData.mapped_fields?.plz,
+          ort: pageData.mapped_fields?.ort,
+          strasse: pageData.mapped_fields?.strasse,
+          hausnr: pageData.mapped_fields?.hausnr,
+          wohnsitz_ausland: pageData.mapped_fields?.wohnsitz_ausland
+        }, null, 2));
+      } else {
+        console.log(`Page ${page.pageNumber} Personal Data:`, JSON.stringify({
+          vorname: pageData.mapped_fields?.vorname,
+          nachname: pageData.mapped_fields?.nachname,
+          geburtsdatum: pageData.mapped_fields?.geburtsdatum,
+          geschlecht: pageData.mapped_fields?.geschlecht
+        }, null, 2));
+      }
+      
       allResults.push(pageData);
     }
 
