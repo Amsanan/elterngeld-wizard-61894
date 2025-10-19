@@ -307,7 +307,7 @@ Beginne jetzt mit der Analyse:`;
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "mistralai/mistral-small-3.2-24b-instruct:free",
+              model: "qwen/qwen-2-vl-7b-instruct", // Cheap but effective paid vision model
               messages: [
                 { role: "system", content: systemPrompt },
                 {
