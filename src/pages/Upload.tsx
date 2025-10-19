@@ -307,9 +307,6 @@ const Upload = () => {
         // Call AI mapping function for other document types
         else if (uploadedFile.documentType && uploadedFile.documentType !== 'geburtsurkunde') {
           try {
-            let imageBase64: string;
-            let imageMimeType: string;
-
             // Check if file is PDF - need to convert to image first
             if (uploadedFile.file.type === 'application/pdf') {
               console.log('Converting PDF to image(s) for OCR...');
@@ -395,7 +392,7 @@ const Upload = () => {
               
             } else {
               // For image files, use directly
-              imageBase64 = await new Promise<string>((resolve, reject) => {
+              const imageBase64 = await new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => {
                   const base64 = (reader.result as string).split(',')[1];
@@ -404,85 +401,82 @@ const Upload = () => {
                 reader.onerror = reject;
                 reader.readAsDataURL(uploadedFile.file);
               });
-              imageMimeType = uploadedFile.file.type;
-            }
 
-            console.log('Calling map-pdf-fields:', {
-              documentType: uploadedFile.documentType,
-              antragId: antrag.id,
-              mimeType: imageMimeType,
-            });
-
-            const { data: mappingResult, error: mappingError } = await supabase.functions.invoke(
-              'map-pdf-fields',
-              {
-                body: {
-                  imageData: imageBase64,
-                  mimeType: imageMimeType,
-                  documentType: uploadedFile.documentType,
-                  antragId: antrag.id,
-                  parentNumber: uploadedFile.parentNumber || 1,
-                },
-              }
-            );
-
-            if (mappingError) {
-              console.error('AI Mapping error:', mappingError);
-              toast({
-                variant: "destructive",
-                title: "KI-Mapping Fehler",
-                description: `Fehler beim intelligenten Mapping: ${mappingError.message}`,
+              console.log('Calling map-pdf-fields for image:', {
+                documentType: uploadedFile.documentType,
+                antragId: antrag.id,
               });
-            } else {
-              console.log('AI Mapping successful:', mappingResult);
-              
-              // Show success feedback with extracted data
-              const extractedData = mappingResult.mapped_fields || {};
-              const dataPreview = Object.entries(extractedData)
-                .filter(([_, value]) => value !== null && value !== undefined)
-                .map(([key, value]) => `${key}: ${value}`)
-                .slice(0, 3)
-                .join(', ');
-              
-              toast({
-                title: "✓ Daten erfolgreich extrahiert",
-                description: `${dataPreview}${Object.keys(extractedData).length > 3 ? '...' : ''}`,
-                duration: 5000,
-              });
-              
-              // Check if data was actually saved to kind table
-              if (uploadedFile.documentType === 'geburtsurkunde') {
-                const { data: kindCheck } = await supabase
-                  .from('kind')
-                  .select('*')
-                  .eq('antrag_id', antrag.id)
-                  .maybeSingle();
-                
-                console.log('Kind table check after mapping:', kindCheck);
-                
-                if (!kindCheck) {
-                  console.warn('Kind data was NOT saved to database despite successful mapping');
-                  toast({
-                    variant: "destructive",
-                    title: "Warnung",
-                    description: "Kinddaten wurden nicht gespeichert. Bitte überprüfen Sie die Daten manuell.",
-                  });
+
+              const { data: mappingResult, error: mappingError } = await supabase.functions.invoke(
+                'map-pdf-fields',
+                {
+                  body: {
+                    pages: [{ imageData: imageBase64, pageNumber: 1 }],
+                    documentType: uploadedFile.documentType,
+                    antragId: antrag.id,
+                    parentNumber: uploadedFile.parentNumber || 1,
+                  },
                 }
-              }
-              
-              // Save AI mapping metadata to extraction logs
-              if (fileRecord && mappingResult.mapped_fields) {
-                const extractionPromises = Object.entries(mappingResult.mapped_fields).map(
-                  ([fieldName, fieldValue]) =>
-                    supabase.from('extraction_logs').insert({
-                      user_file_id: fileRecord.id,
-                      antrag_id: antrag.id,
-                      field_name: fieldName,
-                      field_value: fieldValue as string,
-                      confidence_score: mappingResult.confidence || 0.95,
-                    })
-                );
-                await Promise.all(extractionPromises);
+              );
+
+              if (mappingError) {
+                console.error('AI Mapping error:', mappingError);
+                toast({
+                  variant: "destructive",
+                  title: "KI-Mapping Fehler",
+                  description: `Fehler beim intelligenten Mapping: ${mappingError.message}`,
+                });
+              } else {
+                console.log('AI Mapping successful:', mappingResult);
+                
+                // Show success feedback with extracted data
+                const extractedData = mappingResult.mapped_fields || {};
+                const dataPreview = Object.entries(extractedData)
+                  .filter(([_, value]) => value !== null && value !== undefined)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .slice(0, 3)
+                  .join(', ');
+                
+                toast({
+                  title: "✓ Daten erfolgreich extrahiert",
+                  description: `${dataPreview}${Object.keys(extractedData).length > 3 ? '...' : ''}`,
+                  duration: 5000,
+                });
+                
+                // Check if data was actually saved to kind table
+                if (uploadedFile.documentType === 'geburtsurkunde') {
+                  const { data: kindCheck } = await supabase
+                    .from('kind')
+                    .select('*')
+                    .eq('antrag_id', antrag.id)
+                    .maybeSingle();
+                  
+                  console.log('Kind table check after mapping:', kindCheck);
+                  
+                  if (!kindCheck) {
+                    console.warn('Kind data was NOT saved to database despite successful mapping');
+                    toast({
+                      variant: "destructive",
+                      title: "Warnung",
+                      description: "Kinddaten wurden nicht gespeichert. Bitte überprüfen Sie die Daten manuell.",
+                    });
+                  }
+                }
+                
+                // Save AI mapping metadata to extraction logs
+                if (fileRecord && mappingResult.mapped_fields) {
+                  const extractionPromises = Object.entries(mappingResult.mapped_fields).map(
+                    ([fieldName, fieldValue]) =>
+                      supabase.from('extraction_logs').insert({
+                        user_file_id: fileRecord.id,
+                        antrag_id: antrag.id,
+                        field_name: fieldName,
+                        field_value: fieldValue as string,
+                        confidence_score: mappingResult.confidence || 0.95,
+                      })
+                  );
+                  await Promise.all(extractionPromises);
+                }
               }
             }
           } catch (aiError) {
