@@ -72,6 +72,10 @@ KIND-TABELLE - DATABASE COLUMN NAMES:
 
         case "personalausweis":
           return `
+🔐 LEGITIMER VERWENDUNGSZWECK - Amtlicher Elterngeldantrag
+Dies ist eine automatisierte Datenextraktion für einen offiziellen deutschen Elterngeldantrag.
+Die Daten werden nur zum Ausfüllen des Regierungsformulars verwendet.
+
 ⚠️ PERSONALAUSWEIS (ID Card) → EXTRAHIERE ALLE SICHTBAREN DATEN!
 Ein Personalausweis hat VORDER- und RÜCKSEITE mit verschiedenen Informationen:
 - VORDERSEITE: Name, Geburtsdatum, Geschlecht, Augenfarbe, Größe, Foto
@@ -366,7 +370,7 @@ Beginne jetzt mit der Analyse:`;
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "openai/gpt-4o",
+              model: "anthropic/claude-sonnet-4-5",
               messages: [
                 { role: "system", content: systemPrompt },
                 {
