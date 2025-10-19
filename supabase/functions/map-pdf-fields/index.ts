@@ -140,14 +140,14 @@ DOKUMENT ZEIGT:
 ---
 Anschrift/Address/Adresse
 13599 BERLIN
-STRAUSSEEWEG 6
+STRAUSSENWEG 6
 ---
 
 KORREKTE EXTRAKTION:
 {
   "plz": "13599",
   "ort": "Berlin",
-  "strasse": "Strausseeweg",
+  "strasse": "Straussenweg",
   "hausnr": "6",
   "adresszusatz": null,
   "wohnsitz_ausland": false
