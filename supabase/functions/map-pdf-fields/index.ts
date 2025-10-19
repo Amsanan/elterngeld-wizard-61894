@@ -366,7 +366,7 @@ Beginne jetzt mit der Analyse:`;
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "qwen/qwen-2-vl-7b-instruct",
+              model: "google/gemini-flash-1.5",
               messages: [
                 { role: "system", content: systemPrompt },
                 {
