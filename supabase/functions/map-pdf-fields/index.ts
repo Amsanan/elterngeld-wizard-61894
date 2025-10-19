@@ -76,22 +76,30 @@ KIND-TABELLE - DATABASE COLUMN NAMES:
 Dies ist eine automatisierte Datenextraktion für einen offiziellen deutschen Elterngeldantrag.
 Die Daten werden nur zum Ausfüllen des Regierungsformulars verwendet.
 
-⚠️ PERSONALAUSWEIS (ID Card) → EXTRAHIERE ALLE SICHTBAREN DATEN!
-Ein Personalausweis hat VORDER- und RÜCKSEITE mit verschiedenen Informationen:
-- VORDERSEITE: Name, Geburtsdatum, Geschlecht, Augenfarbe, Größe, Foto
-- RÜCKSEITE: ADRESSE (Anschrift/Address/Adresse), Ausstellungsdatum, Behörde
+⚠️ PERSONALAUSWEIS (ID Card) → EXTRAHIERE NUR SICHTBARE DATEN!
 
-⚠️ KRITISCH: Du MUSST ALLE im Bild sichtbaren Felder extrahieren!
-Wenn du eine ADRESSE siehst (Straße, PLZ, Ort) → EXTRAHIERE SIE VOLLSTÄNDIG!
-Wenn du persönliche Daten siehst (Name, Geburtsdatum) → EXTRAHIERE SIE VOLLSTÄNDIG!
+🔍 WICHTIG: Ein Personalausweis hat 2 Seiten mit unterschiedlichen Daten:
+- **VORDERSEITE (Seite 1)**: Foto, Name, Geburtsdatum, Geschlecht, Staatsangehörigkeit
+- **RÜCKSEITE (Seite 2)**: ADRESSE (unter "Anschrift/Address"), Augenfarbe, Größe
 
-ELTERNTEIL-TABELLE - DATABASE COLUMN NAMES (aus Vorderseite):
-- vorname (Vorname, z.B. "Anna", oft unter "Given names"/"Vornamen")
-- nachname (Nachname/Familienname, z.B. "Schmidt", oft unter "Surname"/"Name")
-- geburtsdatum (Geburtsdatum, Format: YYYY-MM-DD, z.B. "1990-05-20", aus "Date of birth"/"Datum")
-- geschlecht (Geschlecht, WERTE: "weiblich", "maennlich", "divers", "ohne_angabe")
+📋 DU MUSST ERKENNEN, welche Seite im Bild sichtbar ist:
+- Wenn du ein FOTO siehst → VORDERSEITE → extrahiere nur Personendaten
+- Wenn du "Anschrift/Address" siehst → RÜCKSEITE → extrahiere nur Adressdaten
+- Wenn BEIDE Seiten sichtbar → extrahiere ALLE Daten
 
-ANTRAG_2C_WOHNSITZ-TABELLE - DATABASE COLUMN NAMES (aus Rückseite):
+⚠️ EXTRAHIERE NUR, WAS DU SIEHST! Wenn Felder nicht sichtbar sind, lass sie weg!
+
+═══════════════════════════════════════════════════════════════
+📄 VORDERSEITE - ELTERNTEIL-TABELLE DATABASE COLUMNS:
+═══════════════════════════════════════════════════════════════
+- vorname: Vorname(n) unter "Vornamen" / "Given names" / "Prénoms"
+- nachname: Nachname unter "Name" / "Surname" / "Nom"
+- geburtsdatum: Format YYYY-MM-DD, aus "Geburtstag" / "Date of birth"
+- geschlecht: "weiblich", "maennlich", "divers", oder "ohne_angabe"
+
+═══════════════════════════════════════════════════════════════
+🏠 RÜCKSEITE - ANTRAG_2C_WOHNSITZ-TABELLE DATABASE COLUMNS:
+═══════════════════════════════════════════════════════════════
 
 🚨 ULTRA-KRITISCHE ANLEITUNG FÜR PERSONALAUSWEIS ADRESSE:
 
