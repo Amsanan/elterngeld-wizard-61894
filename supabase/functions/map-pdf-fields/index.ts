@@ -60,95 +60,236 @@ serve(async (req) => {
     
     console.log("Processing image for document type:", documentType, "MIME:", mimeType);
 
-    // Field mapping reference from Mapping032025_1.xlsx
-    const mappingReference = `
-KRITISCHE MAPPING-REGELN basierend auf Mapping032025_1.xlsx:
-
-WICHTIG: Verwende immer die DATABASE COLUMN NAMES (links vom →), NICHT die Display-Namen!
-
+    // Document-specific mapping instructions
+    const getDocumentMappingInstructions = (docType: string) => {
+      switch(docType) {
+        case 'geburtsurkunde':
+          return `
 ⚠️ CRITICAL: Geburtsurkunde (Birth Certificate) → NUR KIND-TABELLE!
 Geburtsurkunden enthalten KEINE Informationen über Eltern, Adressen oder andere Daten.
-Extrahiere NUR Daten für die KIND-Tabelle, NICHTS ANDERES!
+Extrahiere NUR Daten für die KIND-TABELLE:
 
-KIND-TABELLE (aus Geburtsurkunde) - DATABASE COLUMN NAMES:
-- vorname (extrahiere aus: Kind Vorname)
-- nachname (extrahiere aus: Kind Nachname)
-- geburtsdatum (extrahiere aus: Geburtsdatum, Format: YYYY-MM-DD)
-- anzahl_mehrlinge (extrahiere aus: Anzahl Mehrlinge/Zwillinge)
-- fruehgeboren (extrahiere aus: Frühgeboren, BOOLEAN)
-- errechneter_geburtsdatum (extrahiere aus: Errechnetes Geburtsdatum, Format: YYYY-MM-DD)
-- behinderung (extrahiere aus: Behinderung, BOOLEAN)
-- anzahl_weitere_kinder (extrahiere aus: Anzahl weitere Kinder, INTEGER)
-- keine_weitere_kinder (extrahiere aus: Keine weiteren Kinder, BOOLEAN)
-- insgesamt (extrahiere aus: Gesamtzahl Kinder, BOOLEAN)
+KIND-TABELLE - DATABASE COLUMN NAMES:
+- vorname (Kind Vorname, z.B. "Max")
+- nachname (Kind Nachname, z.B. "Müller")
+- geburtsdatum (Geburtsdatum, Format: YYYY-MM-DD, z.B. "2024-01-15")
+- anzahl_mehrlinge (Anzahl Mehrlinge/Zwillinge, INTEGER, z.B. 2)
+- fruehgeboren (Frühgeboren, BOOLEAN: true/false)
+- errechneter_geburtsdatum (Errechnetes Geburtsdatum bei Frühgeburt, Format: YYYY-MM-DD)
+- behinderung (Behinderung, BOOLEAN: true/false)
+- anzahl_weitere_kinder (Anzahl weitere Kinder im Haushalt, INTEGER)
+- keine_weitere_kinder (Keine weiteren Kinder, BOOLEAN: true/false)
+- insgesamt (Gesamtzahl Kinder, BOOLEAN: true/false)`;
 
-ANTRAG_2B_ELTERNTEIL-TABELLE (aus Personalausweis/ID) - DATABASE COLUMN NAMES:
-- vorname (extrahiere aus: Elternteil Vorname)
-- nachname (extrahiere aus: Elternteil Nachname)
-- geburtsdatum (extrahiere aus: Geburtsdatum, Format: YYYY-MM-DD)
-- geschlecht (extrahiere aus: Geschlecht, Werte: "weiblich", "maennlich", "divers", "ohne_angabe")
-- steuer_identifikationsnummer (extrahiere aus: Steuer-ID, 11-stellig)
-- vorname_2 (extrahiere aus: Zweiter Elternteil Vorname)
-- nachname_2 (extrahiere aus: Zweiter Elternteil Nachname)
-- geburtsdatum_2 (extrahiere aus: Zweiter Elternteil Geburtsdatum, Format: YYYY-MM-DD)
-- geschlecht_2 (extrahiere aus: Zweiter Elternteil Geschlecht)
-- steuer_identifikationsnummer_2 (extrahiere aus: Zweiter Elternteil Steuer-ID)
+        case 'personalausweis':
+          return `
+PERSONALAUSWEIS (ID Card) → ELTERNTEIL + WOHNSITZ TABELLEN!
+Ein Personalausweis enthält Personen- UND Adressdaten.
 
-ANTRAG_2C_WOHNSITZ-TABELLE (aus Adressdokumenten/Personalausweis) - DATABASE COLUMN NAMES:
-- strasse (extrahiere aus: Straßenname)
-- hausnr (extrahiere aus: Hausnummer)
-- plz (extrahiere aus: Postleitzahl, 5-stellig)
-- ort (extrahiere aus: Wohnort)
-- adresszusatz (extrahiere aus: Adresszusatz, optional)
-- wohnsitz_ausland (extrahiere aus: Wohnsitz im Ausland, BOOLEAN)
-- ausland_staat (extrahiere aus: Staat des Auslandswohnsitzes)
-- ausland_strasse (extrahiere aus: Auslandsadresse)
-- ausland_aufenthaltsgrund (extrahiere aus: Grund für Auslandsaufenthalt)
+ELTERNTEIL-TABELLE - DATABASE COLUMN NAMES:
+- vorname (Vorname, z.B. "Anna")
+- nachname (Nachname/Familienname, z.B. "Schmidt")
+- geburtsdatum (Geburtsdatum, Format: YYYY-MM-DD, z.B. "1990-05-20")
+- geschlecht (Geschlecht, WERTE: "weiblich", "maennlich", "divers", "ohne_angabe")
+- steuer_identifikationsnummer (Steuer-ID, 11 Zeichen, z.B. "12345678901")
 
-ANTRAG_2C_WOHNSITZAUFENTHALT-TABELLE - DATABASE COLUMN NAMES:
-- wohnsitz_in_deutschland (extrahiere aus: Wohnsitz in Deutschland, BOOLEAN)
-- seit_meiner_geburt (extrahiere aus: Seit Geburt in Deutschland, BOOLEAN)
-- seit_in_deutschland (extrahiere aus: Seit bestimmtem Datum, BOOLEAN)
-- seit_datum_deutschland (extrahiere aus: Datum seit wann in Deutschland, Format: YYYY-MM-DD)
+ANTRAG_2C_WOHNSITZ-TABELLE - DATABASE COLUMN NAMES:
+- strasse (Straßenname, z.B. "Hauptstraße")
+- hausnr (Hausnummer, z.B. "42" oder "42a")
+- plz (Postleitzahl, 5-stellig, z.B. "10115")
+- ort (Wohnort/Stadt, z.B. "Berlin")
+- adresszusatz (Adresszusatz, optional, z.B. "3. Stock links")
+- wohnsitz_ausland (Wohnsitz im Ausland, BOOLEAN: true/false)`;
 
-ANTRAG_2A_ALLEINERZIEHENDE-TABELLE - DATABASE COLUMN NAMES:
-- ist_alleinerziehend (extrahiere aus: Alleinerziehend, BOOLEAN)
-- anderer_unmoeglich_betreuung (extrahiere aus: Andere Person kann nicht betreuen, BOOLEAN)
-- betreuung_gefaehrdet_wohl (extrahiere aus: Betreuung gefährdet Kindeswohl, BOOLEAN)
+        case 'adresse':
+          return `
+ADRESSDOKUMENT → WOHNSITZ + AUFENTHALT TABELLEN!
+Dokumente wie Meldebescheinigung oder Wohnsitznachweis.
 
-WICHTIG:
-- Extrahiere NUR Daten die tatsächlich im OCR-Text vorhanden sind
-- Verwende NULL für fehlende optionale Felder
-- Beachte Datentypen: BOOLEAN, DATE, INT, VARCHAR
-- Wenn unsicher, setze confidence niedriger
-- Ignoriere "Geburtsort" - wir brauchen nur aktuellen Wohnsitz
+ANTRAG_2C_WOHNSITZ-TABELLE - DATABASE COLUMN NAMES:
+- strasse (Straßenname, z.B. "Lindenallee")
+- hausnr (Hausnummer, z.B. "15")
+- plz (Postleitzahl, 5-stellig, z.B. "80331")
+- ort (Wohnort/Stadt, z.B. "München")
+- adresszusatz (Adresszusatz, optional, z.B. "Hinterhaus")
+- wohnsitz_ausland (Wohnsitz im Ausland, BOOLEAN: true/false)
+- ausland_staat (Staat des Auslandswohnsitzes, z.B. "Schweiz")
+- ausland_strasse (Auslandsadresse, vollständig)
+- ausland_aufenthaltsgrund (Grund für Auslandsaufenthalt)
+
+ANTRAG_2C_WOHNSITZ_AUFENTHALT-TABELLE - DATABASE COLUMN NAMES:
+- wohnsitz_in_deutschland (Wohnsitz in Deutschland, BOOLEAN: true/false)
+- seit_meiner_geburt (Seit Geburt in Deutschland, BOOLEAN: true/false)
+- seit_in_deutschland (Seit bestimmtem Datum in Deutschland, BOOLEAN: true/false)
+- seit_datum_deutschland (Ab wann in Deutschland, Format: YYYY-MM-DD)`;
+
+        case 'krankenversicherung':
+        case 'versicherungsnachweis':
+          return `
+KRANKENVERSICHERUNG → ELTERNTEIL + VERSICHERUNG TABELLEN!
+Versicherungskarte, Mitgliedsbescheinigung oder Versicherungsnachweis.
+
+ELTERNTEIL-TABELLE (falls Name sichtbar) - DATABASE COLUMN NAMES:
+- vorname (Vorname des Versicherten, z.B. "Thomas")
+- nachname (Nachname des Versicherten, z.B. "Weber")
+- geburtsdatum (Geburtsdatum, Format: YYYY-MM-DD, z.B. "1985-03-12")
+
+ANTRAG_5_KRANKENVERSICHERUNG-TABELLE - DATABASE COLUMN NAMES:
+- gesetzlich_ver (Gesetzlich versichert, BOOLEAN: true/false)
+- privat_ver (Privat versichert, BOOLEAN: true/false)
+- freiwillig_ver (Freiwillig versichert, BOOLEAN: true/false)
+- familien_ver (Familienversichert, BOOLEAN: true/false)
+- krankenkassename (Name der Krankenkasse, z.B. "AOK Bayern", "TK", "Barmer")
+- versichertennummer (Versichertennummer, z.B. "A123456789")
+- krankenkasse_strasse (Straße der Krankenkasse)
+- krankenkasse_hausnummer (Hausnummer der Krankenkasse)
+- krankenkasse_plz (PLZ der Krankenkasse, 5-stellig)
+- krankenkasse_ort (Ort der Krankenkasse)`;
+
+        case 'gehaltsnachweis':
+          return `
+GEHALTSNACHWEIS → ELTERNTEIL + ERWERBSTÄTIGKEIT TABELLEN!
+Gehaltsabrechnung, Einkommensnachweis, Lohnbescheinigung.
+
+ELTERNTEIL-TABELLE (falls Name sichtbar) - DATABASE COLUMN NAMES:
+- vorname (Vorname des Arbeitnehmers, z.B. "Maria")
+- nachname (Nachname des Arbeitnehmers, z.B. "Becker")
+- geburtsdatum (Geburtsdatum, Format: YYYY-MM-DD)
+- steuer_identifikationsnummer (Steuer-ID, 11 Zeichen)
+
+ANTRAG_7A_BISHERIGE_ERWERBSTAETIGKEIT-TABELLE - DATABASE COLUMN NAMES:
+- einkuenfte_nicht_selbststaendig (Nicht selbstständige Einkünfte/Angestellter, BOOLEAN: true/false)
+- selbststaendig_einkuenfte (Selbstständige Einkünfte, BOOLEAN: true/false)
+- gewerbe_einkuenfte (Gewerbliche Einkünfte, BOOLEAN: true/false)
+- landwirtschaft_einkuenfte (Land-/Forstwirtschaft Einkünfte, BOOLEAN: true/false)
+- keine_einkuenfte (Keine Einkünfte, BOOLEAN: true/false)
+- gewinn_einkunft_vorhanden (Gewinn/Einkünfte vorhanden, BOOLEAN: true/false)`;
+
+        default:
+          return `
+ALLGEMEINE DOKUMENTE:
+Extrahiere alle sichtbaren Daten mit korrekten DATABASE COLUMN NAMES.
+Mögliche Felder siehe Hauptreferenz unten.`;
+      }
+    };
+
+    const mappingReference = `
+KRITISCHE MAPPING-REGELN für Elterngeldanträge:
+
+═══════════════════════════════════════════════════════════════
+⚠️  WICHTIGSTE REGEL: Verwende IMMER die exakten DATABASE COLUMN NAMES!
+    NIEMALS Display-Namen oder eigene Bezeichnungen erfinden!
+═══════════════════════════════════════════════════════════════
+
+${getDocumentMappingInstructions(documentType)}
+
+═══════════════════════════════════════════════════════════════
+WICHTIGE EXTRAKTIONSREGELN:
+═══════════════════════════════════════════════════════════════
+
+1. DATENTYPEN BEACHTEN:
+   - DATE: Format YYYY-MM-DD (z.B. "2024-01-15")
+   - BOOLEAN: nur true oder false (nicht "ja"/"nein")
+   - INTEGER: nur Zahlen ohne Einheit (z.B. 2, nicht "2 Kinder")
+   - VARCHAR: Text, keine Sonderzeichen wenn möglich
+   - CHAR(11): exakt 11 Zeichen (z.B. Steuer-ID)
+
+2. FEHLENDE DATEN:
+   - Wenn ein Feld im Dokument nicht sichtbar ist: nicht in mapped_fields aufnehmen
+   - NULL nur für optionale Felder verwenden
+   - NIEMALS Phantasie-Daten erfinden!
+
+3. GESCHLECHT-WERTE (für elternteil.geschlecht):
+   - Nur diese Werte erlaubt: "weiblich", "maennlich", "divers", "ohne_angabe"
+   - NICHT: "w", "m", "männlich", "female", "male"
+
+4. CONFIDENCE SCORE:
+   - Setze hohe confidence (>0.85) wenn Daten klar lesbar
+   - Mittlere confidence (0.6-0.85) bei unsauberer OCR
+   - Niedrige confidence (<0.6) bei unleserlichen Feldern
+
+5. SPEZIELLE HINWEISE:
+   - Postleitzahlen: immer 5-stellig (z.B. "01234" nicht "1234")
+   - Straßennamen: ohne Hausnummer (z.B. "Hauptstraße" nicht "Hauptstraße 42")
+   - Deutsche Umlaute: ä, ö, ü, ß korrekt verwenden
+   - Steuer-ID: genau 11 Zeichen, nur Zahlen
+
+═══════════════════════════════════════════════════════════════
+BEISPIEL KORREKTE ANTWORT:
+═══════════════════════════════════════════════════════════════
+{
+  "mapped_fields": {
+    "vorname": "Anna",
+    "nachname": "Müller",
+    "geburtsdatum": "1990-05-20",
+    "geschlecht": "weiblich",
+    "strasse": "Hauptstraße",
+    "hausnr": "42",
+    "plz": "10115",
+    "ort": "Berlin"
+  },
+  "confidence": 0.92,
+  "suggestions": ["Geburtsdatum gut lesbar", "Adresse vollständig"]
+}
 `;
 
     // System prompt for intelligent field mapping
-    const systemPrompt = `Du bist ein Experte für das Ausfüllen deutscher Elterngeldanträge mit Zugriff auf die offizielle Mapping-Referenz.
+    const systemPrompt = `Du bist ein hochpräziser OCR-Experte und Datenmapper für deutsche Elterngeldanträge.
 
 ${mappingReference}
 
-KRITISCH: Deine Antwort MUSS die exakten DATABASE COLUMN NAMES verwenden!
-Beispiel für kind-Tabelle:
-- RICHTIG: "vorname": "Max"
-- FALSCH: "Kind Vorname": "Max"
+═══════════════════════════════════════════════════════════════
+🎯 DEINE AUFGABE:
+═══════════════════════════════════════════════════════════════
+1. Analysiere das Bild GRÜNDLICH und erkenne ALLE sichtbaren Textfelder
+2. Identifiziere den Dokumenttyp (bereits bekannt: ${documentType})
+3. Extrahiere ALLE relevanten Daten mit höchster Genauigkeit
+4. Mappe JEDEN Wert auf den exakten DATABASE COLUMN NAME
+5. Gebe eine realistische Confidence-Score basierend auf Lesbarkeit
 
-Deine Aufgabe: Analysiere die OCR-Daten und mappe sie PRÄZISE zu den SQL-Tabellen basierend auf der Mapping-Referenz oben.
+═══════════════════════════════════════════════════════════════
+⚠️  KRITISCHE ANFORDERUNGEN:
+═══════════════════════════════════════════════════════════════
+✓ Verwende EXAKT die DATABASE COLUMN NAMES aus der Referenz oben
+✓ Beachte die korrekten Datentypen (DATE, BOOLEAN, INTEGER, VARCHAR)
+✓ Konvertiere Datumsangaben zu YYYY-MM-DD Format
+✓ Konvertiere Ja/Nein zu true/false bei BOOLEAN-Feldern
+✓ Extrahiere KEINE Daten die nicht im Bild sichtbar sind
+✓ Setze realistische Confidence-Werte basierend auf OCR-Qualität
 
-Antworte NUR mit einem JSON-Objekt ohne zusätzlichen Text:
+✗ NIEMALS Display-Namen verwenden (z.B. "Kind Vorname" ist FALSCH)
+✗ NIEMALS Daten erfinden oder raten
+✗ NIEMALS generische Platzhalter wie "NATIONALITY" zurückgeben
+✗ NIEMALS englische Feldnamen verwenden
+
+═══════════════════════════════════════════════════════════════
+📋 ANTWORTFORMAT (NUR JSON, kein weiterer Text):
+═══════════════════════════════════════════════════════════════
 {
   "mapped_fields": {
-    "database_column_name": "value"
+    "database_column_name": "extracted_value"
   },
-  "confidence": 0.95,
-  "suggestions": ["Optional: Hinweise"]
+  "confidence": 0.XX,
+  "suggestions": ["Optional: Qualitätshinweise zur Extraktion"]
 }`;
 
-    const userPrompt = `Dokumenttyp: ${documentType}
+    const userPrompt = `
+═══════════════════════════════════════════════════════════════
+📄 DOKUMENT ZUM ANALYSIEREN
+═══════════════════════════════════════════════════════════════
+Dokumenttyp: ${documentType}
 
-Bitte analysiere das hochgeladene Bild und extrahiere die relevanten Daten für den Elterngeldantrag.
-Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.`;
+🎯 AUFGABE:
+Analysiere das Bild VOLLSTÄNDIG und extrahiere ALLE lesbaren Daten.
+Mappe jeden Wert auf den korrekten DATABASE COLUMN NAME gemäß der Referenz oben.
+
+⚠️  WICHTIG:
+- Extrahiere echte Werte aus dem Dokument (keine Platzhalter wie "NATIONALITY")
+- Verwende exakte DATABASE COLUMN NAMES aus der Mapping-Referenz
+- Gebe realistische Confidence-Score basierend auf OCR-Qualität
+- Nur JSON zurückgeben, kein zusätzlicher Text
+
+Beginne jetzt mit der Analyse:`;
 
     // Retry function with exponential backoff for rate limiting
     async function fetchWithRetry(maxRetries = 3, initialDelay = 2000) {
