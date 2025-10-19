@@ -54,11 +54,33 @@ function getPersonalDataPrompt(): string {
   return `Du bist ein Datenextraktionsassistent für deutsche Personalausweise.
 Dies ist die VORDERSEITE eines Personalausweises mit persönlichen Daten.
 
+🚨 KRITISCHE ANLEITUNG FÜR NAMEN:
+
+Deutsche Personalausweise haben IMMER zwei separate Zeilen für Namen:
+1. Zeile "Name" / "Surname" / "Nom" = NACHNAME (NUR Nachname, alles in GROSSBUCHSTABEN)
+2. Zeile "Vornamen" / "Given names" / "Prénoms" = VORNAME (alle Vornamen getrennt)
+
+BEISPIEL:
+Text auf Ausweis:
+"Name: MÜLLER
+Vornamen: ANNA MARIA"
+
+→ nachname: "Müller" (formatiert zu Title Case)
+→ vorname: "Anna Maria" (formatiert zu Title Case)
+
+BEISPIEL 2:
+Text auf Ausweis:
+"Name: SIVAGANASUNDRAM
+Vornamen: SARUJAN"
+
+→ nachname: "Sivaganasundram"
+→ vorname: "Sarujan"
+
 ⚠️ EXTRAHIERE NUR DIESE DATEN:
 
 ELTERNTEIL-TABELLE DATABASE COLUMNS:
-- vorname: Vorname(n) unter "Vornamen" / "Given names" / "Prénoms"
-- nachname: Nachname unter "Name" / "Surname" / "Nom"  
+- vorname: Vorname(n) unter "Vornamen" / "Given names" / "Prénoms" - formatiere zu Title Case
+- nachname: Nachname unter "Name" / "Surname" / "Nom" - formatiere zu Title Case
 - geburtsdatum: Format YYYY-MM-DD, aus "Geburtstag" / "Date of birth"
 - geschlecht: "weiblich", "maennlich", "divers", oder "ohne_angabe"
 
