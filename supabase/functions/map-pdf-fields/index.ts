@@ -370,7 +370,7 @@ Beginne jetzt mit der Analyse:`;
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "anthropic/claude-sonnet-4-5",
+              model: "openai/gpt-4o-mini",
               messages: [
                 { role: "system", content: systemPrompt },
                 {
