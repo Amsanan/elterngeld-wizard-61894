@@ -73,13 +73,12 @@ const Upload = () => {
 
         setOcrProgress(60);
 
-        // Call vision API directly
+        // Call vision API with pages array format (same as other documents)
         const { data: visionResult, error: visionError } = await supabase.functions.invoke(
           'map-pdf-fields',
           {
             body: {
-              imageData: fileBase64,
-              mimeType: uploadedFile.file.type,
+              pages: [{ imageData: fileBase64, pageNumber: 1 }],
               documentType: docType,
               antragId: null, // No antrag ID yet, just extract data
             },
