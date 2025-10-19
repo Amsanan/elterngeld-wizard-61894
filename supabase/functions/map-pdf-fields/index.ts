@@ -89,55 +89,79 @@ ELTERNTEIL-TABELLE - DATABASE COLUMN NAMES (aus Vorderseite):
 
 ANTRAG_2C_WOHNSITZ-TABELLE - DATABASE COLUMN NAMES (aus Rückseite):
 
-🔍 KRITISCHE ANLEITUNG - ADRESSE AUF PERSONALAUSWEIS:
-Die Adresse steht auf der RÜCKSEITE in genau diesem Format:
+🚨 ULTRA-KRITISCHE ANLEITUNG FÜR PERSONALAUSWEIS ADRESSE:
 
+Das Dokument zeigt auf der Rückseite IMMER dieses exakte Format:
+
+Zeile 1: "Anschrift" / "Address" / "Adresse"
+Zeile 2: [5 ZIFFERN] [LEERZEICHEN] [STADTNAME IN GROSSBUCHSTABEN]
+Zeile 3: [STRASSENNAME IN GROSSBUCHSTABEN] [LEERZEICHEN] [NUMMER]
+
+🔢 SCHRITT 1 - FINDE PLZ (Postleitzahl):
+Suche in Zeile 2 nach "Anschrift":
+- Nimm die ERSTEN 5 ZIFFERN der nächsten Zeile
+- Beispiel: "13599 BERLIN" → plz = "13599"
+- ⚠️ NIEMALS andere Zahlen aus dem Dokument verwenden!
+
+🏙️ SCHRITT 2 - FINDE ORT (Stadt):
+In derselben Zeile wie die PLZ:
+- Nimm ALLES NACH den 5 Ziffern und dem Leerzeichen
+- Konvertiere zu normaler Schreibweise (erster Buchstabe groß)
+- Beispiel: "13599 BERLIN" → ort = "Berlin"
+
+🛣️ SCHRITT 3 - FINDE STRASSE (Straßenname):
+Zeile DIREKT NACH der PLZ+Ort Zeile:
+- Nimm ALLES VOR der letzten Zahl
+- Konvertiere zu normaler Schreibweise
+- Beispiel: "STRAUSSEEWEG 6" → strasse = "Strausseeweg"
+- ⚠️ NIEMALS die Stadt als Straße verwenden!
+
+🏠 SCHRITT 4 - FINDE HAUSNR (Hausnummer):
+Dieselbe Zeile wie die Straße:
+- Nimm die LETZTE Zahl/Ziffer (kann Buchstaben enthalten)
+- Beispiel: "STRAUSSEEWEG 6" → hausnr = "6"
+- Beispiel: "HAUPTSTR 42A" → hausnr = "42A"
+
+📊 DATABASE SPALTEN:
+- plz: string (genau 5 Ziffern, z.B. "13599")
+- ort: string (Stadt, normale Schreibweise, z.B. "Berlin")
+- strasse: string (Straßenname OHNE Nummer, z.B. "Strausseeweg")
+- hausnr: string (nur die Nummer, z.B. "6" oder "42A")
+- adresszusatz: string | null (meist leer)
+- wohnsitz_ausland: boolean (false für deutsche Adressen)
+
+✅ VOLLSTÄNDIGES BEISPIEL:
+
+DOKUMENT ZEIGT:
+---
 Anschrift/Address/Adresse
-[5-stellige PLZ] [STADT IN GROSSBUCHSTABEN]
-[STRASSENNAME IN GROSSBUCHSTABEN] [HAUSNUMMER]
-
-📋 SCHRITT-FÜR-SCHRITT EXTRAKTION:
-
-SCHRITT 1: Suche "Anschrift" oder "Address" oder "Adresse"
-SCHRITT 2: Die NÄCHSTE Zeile enthält: [PLZ] [ORT]
-  - Die ersten 5 ZIFFERN = plz
-  - Der REST der Zeile (nach dem Leerzeichen) = ort
-  
-SCHRITT 3: Die ÜBERNÄCHSTE Zeile enthält: [STRASSE] [HAUSNUMMER]
-  - Alles VOR der letzten Zahl/Ziffer = strasse
-  - Die letzte Zahl/Ziffer (mit Buchstaben wie "6" oder "42a") = hausnr
-
-SCHRITT 4: Normalisiere Großbuchstaben:
-  - "BERLIN" → "Berlin"
-  - "STRAUSSEEWEG" → "Strausseeweg"
-  - "MÜNCHEN" → "München"
-
-⚠️ DATABASE COLUMN NAMES:
-- plz: Postleitzahl (IMMER 5 Ziffern, z.B. "13599" NICHT "451398")
-- ort: Stadt/Wohnort (z.B. "Berlin", normale Schreibweise)
-- strasse: Straßenname OHNE Hausnummer (z.B. "Strausseeweg")
-- hausnr: Nur die Hausnummer (z.B. "6", "42a")
-- adresszusatz: Optional, meist leer (z.B. "Hinterhaus")
-- wohnsitz_ausland: BOOLEAN false (für deutsche Adressen)
-
-✅ KORREKTES BEISPIEL:
-Dokument zeigt:
-"Anschrift/Address/Adresse
 13599 BERLIN
-STRAUSSEEWEG 6"
+STRAUSSEEWEG 6
+---
 
-RICHTIG extrahiert:
-→ plz: "13599" (NUR die 5 Ziffern!)
-→ ort: "Berlin" (Stadt nach PLZ)
-→ strasse: "Strausseeweg" (Text VOR der Hausnummer)
-→ hausnr: "6" (die Zahl am Ende)
-→ adresszusatz: null
-→ wohnsitz_ausland: false
+KORREKTE EXTRAKTION:
+{
+  "plz": "13599",
+  "ort": "Berlin",
+  "strasse": "Strausseeweg",
+  "hausnr": "6",
+  "adresszusatz": null,
+  "wohnsitz_ausland": false
+}
 
-❌ HÄUFIGE FEHLER VERMEIDEN:
-- Nicht "BERLIN" als strasse verwenden!
-- Nicht PLZ mit anderen Zahlen vermischen!
-- Nicht ort als strasse verwenden!`;
+❌ FALSCHE EXTRAKTION (NICHT MACHEN!):
+{
+  "plz": "451398",  // ❌ FALSCH - Das ist keine PLZ!
+  "ort": "Berlin",
+  "strasse": "Berlin",  // ❌ FALSCH - Das ist die Stadt, nicht die Straße!
+  "hausnr": "",  // ❌ FALSCH - Hausnummer fehlt!
+}
+
+🎯 VALIDIERUNGSREGELN:
+1. PLZ ist IMMER genau 5 Ziffern
+2. Straße ist NIEMALS identisch mit Stadt
+3. Hausnummer ist NIEMALS leer wenn Straße vorhanden ist
+4. Stadt kommt VOR der Straße im Dokument`;
 
         case "adresse":
           return `
@@ -335,14 +359,14 @@ Beginne jetzt mit der Analyse:`;
         try {
           console.log(`API attempt ${attempt}/${maxRetries}`);
 
-          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "qwen/qwen-2-vl-7b-instruct", // Cheap but effective paid vision model
+              model: "google/gemini-2.5-flash", // Better vision model via Lovable AI
               messages: [
                 { role: "system", content: systemPrompt },
                 {
@@ -379,7 +403,7 @@ Beginne jetzt mit der Analyse:`;
           }
 
           // For other errors or last attempt, throw with details
-          console.error("OpenRouter API error:", response.status, errorText);
+          console.error("AI Gateway API error:", response.status, errorText);
           throw { status: response.status, errorText };
         } catch (error: any) {
           // If it's the last attempt or not a retriable error, throw
@@ -391,10 +415,10 @@ Beginne jetzt mit der Analyse:`;
       throw new Error("Max retries exceeded");
     }
 
-    // Call OpenRouter API with retry logic
-    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-    if (!OPENROUTER_API_KEY) {
-      throw new Error("OPENROUTER_API_KEY not configured");
+    // Call Lovable AI with retry logic
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY not configured");
     }
 
     let response;
@@ -422,7 +446,7 @@ Beginne jetzt mit der Analyse:`;
         });
       }
 
-      return new Response(JSON.stringify({ error: `OpenRouter Fehler: ${error?.message || "Unbekannter Fehler"}` }), {
+      return new Response(JSON.stringify({ error: `AI Gateway Fehler: ${error?.message || "Unbekannter Fehler"}` }), {
         status: error?.status || 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
