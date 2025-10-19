@@ -56,21 +56,36 @@ Dies ist die VORDERSEITE eines Personalausweises mit persönlichen Daten.
 
 🚨 KRITISCHE ANLEITUNG FÜR NAMEN:
 
-Deutsche Personalausweise haben IMMER zwei separate Zeilen für Namen:
-1. Zeile "Name" / "Surname" / "Nom" = NACHNAME (NUR Nachname, alles in GROSSBUCHSTABEN)
-2. Zeile "Vornamen" / "Given names" / "Prénoms" = VORNAME (alle Vornamen getrennt)
+Deutsche Personalausweise haben MEHRERE Namensfelder:
+1. Feld (a) "Name" / "Surname" / "Nom" = AKTUELLER NACHNAME (in GROSSBUCHSTABEN)
+2. Feld (b) "Geburtsname" / "Name at birth" / "Nom de naissance" = GEBURTSNAME (falls vorhanden, in GROSSBUCHSTABEN)
+3. Feld "Vornamen" / "Given names" / "Prénoms" = VORNAMEN (in GROSSBUCHSTABEN)
 
-BEISPIEL:
+WICHTIG: 
+- Feld (a) enthält den AKTUELLEN Nachnamen → verwende diesen für "nachname"
+- Feld (b) enthält den Geburtsnamen (falls abweichend) → IGNORIERE diesen
+- Vornamen-Feld enthält alle Vornamen → verwende diese für "vorname"
+
+BEISPIEL 1:
 Text auf Ausweis:
-"Name: MÜLLER
+"(a) Name: MÜLLER
 Vornamen: ANNA MARIA"
 
-→ nachname: "Müller" (formatiert zu Title Case)
-→ vorname: "Anna Maria" (formatiert zu Title Case)
+→ nachname: "Müller"
+→ vorname: "Anna Maria"
 
 BEISPIEL 2:
 Text auf Ausweis:
-"Name: SIVAGANASUNDRAM
+"(a) Name: SARUJAN
+(b) Geburtsname: BALACHANDRAN
+Vornamen: NILANDINI"
+
+→ nachname: "Sarujan" (verwende Feld a, NICHT Feld b!)
+→ vorname: "Nilandini"
+
+BEISPIEL 3:
+Text auf Ausweis:
+"(a) Name: SIVAGANASUNDRAM
 Vornamen: SARUJAN"
 
 → nachname: "Sivaganasundram"
@@ -79,8 +94,8 @@ Vornamen: SARUJAN"
 ⚠️ EXTRAHIERE NUR DIESE DATEN:
 
 ELTERNTEIL-TABELLE DATABASE COLUMNS:
-- vorname: Vorname(n) unter "Vornamen" / "Given names" / "Prénoms" - formatiere zu Title Case
-- nachname: Nachname unter "Name" / "Surname" / "Nom" - formatiere zu Title Case
+- vorname: Vorname(n) aus "Vornamen" / "Given names" / "Prénoms" - formatiere zu Title Case
+- nachname: Aktueller Name aus Feld (a) "Name" / "Surname" / "Nom" - formatiere zu Title Case
 - geburtsdatum: Format YYYY-MM-DD, aus "Geburtstag" / "Date of birth"
 - geschlecht: "weiblich", "maennlich", "divers", oder "ohne_angabe"
 
@@ -88,7 +103,7 @@ AUSGABEFORMAT (NUR JSON, kein weiterer Text):
 {
   "mapped_fields": {
     "vorname": "extrahierter Vorname",
-    "nachname": "extrahierter Nachname",
+    "nachname": "extrahierter Nachname (aus Feld a!)",
     "geburtsdatum": "YYYY-MM-DD",
     "geschlecht": "weiblich/maennlich/divers/ohne_angabe"
   },
@@ -333,7 +348,12 @@ serve(async (req) => {
       }
 
       if (hasData) {
-        await upsertRecord(supabase, tableName, tableData, { antrag_id: antragId });
+        // For antrag_2c_wohnsitz, use elternteil_id as match criteria if available
+        const matchCriteria = (tableName === "antrag_2c_wohnsitz" && elternteilId)
+          ? { antrag_id: antragId, elternteil_id: elternteilId }
+          : { antrag_id: antragId };
+        
+        await upsertRecord(supabase, tableName, tableData, matchCriteria);
       }
     }
 

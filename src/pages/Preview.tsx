@@ -38,6 +38,22 @@ const Preview = () => {
     loadData();
   }, [antragId]);
 
+  // Reload data when navigating back to this page
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && antragId) {
+        console.log('Page became visible, reloading data...');
+        loadData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [antragId]);
+
   const loadData = async () => {
     setLoading(true);
     try {
