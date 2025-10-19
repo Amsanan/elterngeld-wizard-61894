@@ -156,6 +156,54 @@ AUSGABEFORMAT (NUR JSON, kein weiterer Text):
 }`;
 }
 
+// Prompt for birth certificate (Geburtsurkunde)
+function getBirthCertificatePrompt(): string {
+  return `Du bist ein Datenextraktionsassistent für deutsche Geburtsurkunden.
+
+🚨 KRITISCHE ANLEITUNG FÜR GEBURTSURKUNDE:
+
+Deutsche Geburtsurkunden enthalten folgende Informationen über das Kind:
+- Vorname(n) des Kindes
+- Nachname / Familienname des Kindes
+- Geburtsdatum
+- Geburtsort
+- Optional: Angaben zu Mehrlingen oder Frühgeburt
+
+EXTRAKTIONSSCHRITTE:
+1. Suche nach "Vorname(n)" oder "Vornamen" für den/die Vornamen
+2. Suche nach "Nachname", "Familienname" oder "Name" für den Nachnamen
+3. Suche nach "geboren am" oder "Geburtsdatum" für das Datum (Format: DD.MM.YYYY)
+4. Suche nach "Geburtsort" oder "in" für den Ort
+5. Prüfe auf Hinweise zu Mehrlingen (Zwillinge, Drillinge)
+
+KIND-TABELLE DATABASE COLUMNS:
+- vorname: Vorname(n) des Kindes - formatiere zu Title Case
+- nachname: Nachname/Familienname des Kindes - formatiere zu Title Case
+- geburtsdatum: Format YYYY-MM-DD
+- anzahl_mehrlinge: Anzahl bei Mehrlingen (2 für Zwillinge, 3 für Drillinge, etc.)
+- fruehgeboren: true wenn Frühgeburt erwähnt wird
+
+BEISPIEL:
+Text: "Vorname: ANNA MARIA\nNachname: SCHMIDT\ngeboren am 15.03.2024\nin Berlin"
+
+→ vorname: "Anna Maria"
+→ nachname: "Schmidt"
+→ geburtsdatum: "2024-03-15"
+
+AUSGABEFORMAT (NUR JSON, kein weiterer Text):
+{
+  "mapped_fields": {
+    "vorname": "extrahierter Vorname",
+    "nachname": "extrahierter Nachname",
+    "geburtsdatum": "YYYY-MM-DD",
+    "anzahl_mehrlinge": null,
+    "fruehgeboren": false
+  },
+  "confidence": 0.XX,
+  "suggestions": []
+}`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -184,11 +232,30 @@ serve(async (req) => {
     
     for (const page of imagesToProcess) {
       const isFirstPage = page.pageNumber === 1;
-      const prompt = documentType === "personalausweis" && imagesToProcess.length > 1
-        ? (isFirstPage ? getPersonalDataPrompt() : getAddressDataPrompt())
-        : getPersonalDataPrompt(); // Default to personal data for single images
+      let prompt: string;
+      let promptType: string;
 
-      console.log(`Processing page ${page.pageNumber} with ${isFirstPage ? 'personal data' : 'address'} prompt`);
+      // Select prompt based on document type
+      if (documentType === "personalausweis") {
+        if (imagesToProcess.length > 1) {
+          // Multi-page ID card: page 1 = personal data, page 2 = address
+          prompt = isFirstPage ? getPersonalDataPrompt() : getAddressDataPrompt();
+          promptType = isFirstPage ? 'personal data' : 'address';
+        } else {
+          // Single page: assume front (personal data)
+          prompt = getPersonalDataPrompt();
+          promptType = 'personal data';
+        }
+      } else if (documentType === "geburtsurkunde") {
+        prompt = getBirthCertificatePrompt();
+        promptType = 'birth certificate';
+      } else {
+        // Default fallback
+        prompt = getPersonalDataPrompt();
+        promptType = 'default personal data';
+      }
+
+      console.log(`Processing ${documentType} page ${page.pageNumber} with ${promptType} prompt`);
 
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -236,22 +303,34 @@ serve(async (req) => {
       console.log(`Extracted JSON for page ${page.pageNumber}:`, jsonStr);
       const pageData = JSON.parse(jsonStr);
       
-      // Log detailed extraction for each page
-      if (page.pageNumber === 2) {
-        console.log(`Page 2 Address Data:`, JSON.stringify({
-          plz: pageData.mapped_fields?.plz,
-          ort: pageData.mapped_fields?.ort,
-          strasse: pageData.mapped_fields?.strasse,
-          hausnr: pageData.mapped_fields?.hausnr,
-          wohnsitz_ausland: pageData.mapped_fields?.wohnsitz_ausland
-        }, null, 2));
-      } else {
-        console.log(`Page ${page.pageNumber} Personal Data:`, JSON.stringify({
+      // Log detailed extraction based on document type
+      if (documentType === "personalausweis") {
+        if (page.pageNumber === 2) {
+          console.log(`Page 2 (Personalausweis) Address Data:`, JSON.stringify({
+            plz: pageData.mapped_fields?.plz,
+            ort: pageData.mapped_fields?.ort,
+            strasse: pageData.mapped_fields?.strasse,
+            hausnr: pageData.mapped_fields?.hausnr,
+            wohnsitz_ausland: pageData.mapped_fields?.wohnsitz_ausland
+          }, null, 2));
+        } else {
+          console.log(`Page ${page.pageNumber} (Personalausweis) Personal Data:`, JSON.stringify({
+            vorname: pageData.mapped_fields?.vorname,
+            nachname: pageData.mapped_fields?.nachname,
+            geburtsdatum: pageData.mapped_fields?.geburtsdatum,
+            geschlecht: pageData.mapped_fields?.geschlecht
+          }, null, 2));
+        }
+      } else if (documentType === "geburtsurkunde") {
+        console.log(`Page ${page.pageNumber} (Geburtsurkunde) Child Data:`, JSON.stringify({
           vorname: pageData.mapped_fields?.vorname,
           nachname: pageData.mapped_fields?.nachname,
           geburtsdatum: pageData.mapped_fields?.geburtsdatum,
-          geschlecht: pageData.mapped_fields?.geschlecht
+          anzahl_mehrlinge: pageData.mapped_fields?.anzahl_mehrlinge,
+          fruehgeboren: pageData.mapped_fields?.fruehgeboren
         }, null, 2));
+      } else {
+        console.log(`Page ${page.pageNumber} (${documentType}) Extracted Data:`, JSON.stringify(pageData.mapped_fields, null, 2));
       }
       
       allResults.push(pageData);
