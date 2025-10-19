@@ -8,7 +8,7 @@ export interface AntragData {
 }
 
 /**
- * Load antrag data from database
+ * Load antrag data from database using the new normalized elternteil structure
  */
 export async function loadAntragData(antragId: string): Promise<AntragData | null> {
   try {
@@ -21,16 +21,20 @@ export async function loadAntragData(antragId: string): Promise<AntragData | nul
 
     if (antragError) throw antragError;
 
-    // Get all related data
-    const [kind, elternteil, wohnsitz, wohnsitzAufenthalt, alleinerziehende, files, extractionLogs] = await Promise.all([
+    // Get all related data including both parents from normalized elternteil table
+    const [kind, elternteilData, wohnsitz, wohnsitzAufenthalt, alleinerziehende, files] = await Promise.all([
       supabase.from('kind').select('*').eq('antrag_id', antragId).maybeSingle(),
-      supabase.from('antrag_2b_elternteil').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('elternteil').select('*').eq('antrag_id', antragId), // Get both parents
       supabase.from('antrag_2c_wohnsitz').select('*').eq('antrag_id', antragId).maybeSingle(),
       supabase.from('antrag_2c_wohnsitz_aufenthalt').select('*').eq('antrag_id', antragId).maybeSingle(),
       supabase.from('antrag_2a_alleinerziehende').select('*').eq('antrag_id', antragId).maybeSingle(),
       supabase.from('user_files').select('*').eq('antrag_id', antragId),
-      supabase.from('extraction_logs').select('*').eq('antrag_id', antragId),
     ]);
+
+    // Separate parent 1 and parent 2 from elternteil data
+    const elternteil = elternteilData.data || [];
+    const elternteil_1 = elternteil.find((e: any) => e.parent_number === 1);
+    const elternteil_2 = elternteil.find((e: any) => e.parent_number === 2);
 
     // Combine data from tables with prefixes to avoid field name conflicts
     let extracted_data: Record<string, any> = {
@@ -46,13 +50,20 @@ export async function loadAntragData(antragId: string): Promise<AntragData | nul
       });
     }
 
-    // CRITICAL: Only add parent data from elternteil table
-    // Do NOT use extraction logs for parent fields to avoid mixing child/parent data
-    if (elternteil.data) {
-      // Only add elternteil fields (vorname, nachname, geburtsdatum, etc.)
-      Object.entries(elternteil.data).forEach(([key, value]) => {
-        if (key !== 'id' && key !== 'antrag_id' && key !== 'created_at') {
+    // Add parent 1 data (no suffix for backward compatibility with PDF fields)
+    if (elternteil_1) {
+      Object.entries(elternteil_1).forEach(([key, value]) => {
+        if (key !== 'id' && key !== 'antrag_id' && key !== 'created_at' && key !== 'parent_number' && key !== 'updated_at') {
           extracted_data[key] = value;
+        }
+      });
+    }
+
+    // Add parent 2 data with '_2' suffix
+    if (elternteil_2) {
+      Object.entries(elternteil_2).forEach(([key, value]) => {
+        if (key !== 'id' && key !== 'antrag_id' && key !== 'created_at' && key !== 'parent_number' && key !== 'updated_at') {
+          extracted_data[`${key}_2`] = value;
         }
       });
     }
@@ -90,7 +101,13 @@ export async function loadAntragData(antragId: string): Promise<AntragData | nul
       key => extracted_data[key] !== null && extracted_data[key] !== undefined && extracted_data[key] !== ''
     );
 
-    console.log('Loaded antrag data:', { extracted_data, uploaded_documents, filled_fields });
+    console.log('Loaded antrag data with normalized elternteil:', { 
+      extracted_data, 
+      uploaded_documents, 
+      filled_fields,
+      hasParent1: !!elternteil_1,
+      hasParent2: !!elternteil_2,
+    });
 
     return {
       antrag_id: antragId,

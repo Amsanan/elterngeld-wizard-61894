@@ -6,6 +6,50 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Generic upsert helper function
+async function upsertRecord(supabase: any, tableName: string, data: any, matchCriteria: any) {
+  const { data: existing } = await supabase
+    .from(tableName)
+    .select("id")
+    .match(matchCriteria)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from(tableName)
+      .update(data)
+      .eq("id", existing.id);
+    if (error) {
+      console.error(`Error updating ${tableName}:`, error);
+    } else {
+      console.log(`${tableName} updated successfully`);
+    }
+    return existing;
+  } else {
+    const { data: inserted, error } = await supabase
+      .from(tableName)
+      .insert(data)
+      .select()
+      .single();
+    if (error) {
+      console.error(`Error inserting ${tableName}:`, error);
+    } else {
+      console.log(`${tableName} inserted successfully`);
+    }
+    return inserted;
+  }
+}
+
+// Document-to-table mapping configuration
+const DOCUMENT_TABLE_MAPPING: Record<string, { tables: string[], requiresParent: boolean }> = {
+  'geburtsurkunde': { tables: ['kind'], requiresParent: false },
+  'personalausweis': { tables: ['elternteil', 'antrag_2c_wohnsitz'], requiresParent: true },
+  'gehaltsnachweis': { tables: ['elternteil', 'antrag_7a_bisherige_erwerbstaetigkeit'], requiresParent: true },
+  'krankenversicherung': { tables: ['elternteil', 'antrag_5_krankenversicherung'], requiresParent: true },
+  'adresse': { tables: ['antrag_2c_wohnsitz', 'antrag_2c_wohnsitz_aufenthalt'], requiresParent: true },
+  'versicherungsnachweis': { tables: ['elternteil', 'antrag_5_krankenversicherung'], requiresParent: true },
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -226,211 +270,112 @@ Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
       const supabase = createClient(supabaseUrl!, supabaseKey!);
 
-      // Update appropriate tables based on document type
       const fields = mappedData.mapped_fields;
+      const mapping = DOCUMENT_TABLE_MAPPING[documentType];
       
-      // CRITICAL: Geburtsurkunde only affects kind table
-      if (documentType === "geburtsurkunde") {
-        const kindData: any = { antrag_id: antragId };
-        if (fields.vorname) kindData.vorname = fields.vorname;
-        if (fields.nachname) kindData.nachname = fields.nachname;
-        if (fields.geburtsdatum) kindData.geburtsdatum = fields.geburtsdatum;
-        if (fields.anzahl_mehrlinge) kindData.anzahl_mehrlinge = fields.anzahl_mehrlinge;
-        if (fields.fruehgeboren !== undefined) kindData.fruehgeboren = fields.fruehgeboren;
-        if (fields.errechneter_geburtsdatum) kindData.errechneter_geburtsdatum = fields.errechneter_geburtsdatum;
-        if (fields.behinderung !== undefined) kindData.behinderung = fields.behinderung;
-        if (fields.anzahl_weitere_kinder) kindData.anzahl_weitere_kinder = fields.anzahl_weitere_kinder;
-        if (fields.keine_weitere_kinder !== undefined) kindData.keine_weitere_kinder = fields.keine_weitere_kinder;
-        if (fields.insgesamt !== undefined) kindData.insgesamt = fields.insgesamt;
-
-        console.log("Saving kind data from Geburtsurkunde:", kindData);
-
-        // Check if kind entry already exists for this antrag
-        const { data: existingKind } = await supabase
-          .from("kind")
-          .select("id")
-          .eq("antrag_id", antragId)
-          .maybeSingle();
-
-        let kindError;
-        if (existingKind) {
-          // Update existing
-          const { error } = await supabase
-            .from("kind")
-            .update(kindData)
-            .eq("id", existingKind.id);
-          kindError = error;
-        } else {
-          // Insert new
-          const { error } = await supabase
-            .from("kind")
-            .insert(kindData);
-          kindError = error;
-        }
-
-        if (kindError) {
-          console.error("Error saving kind:", kindError);
-        } else {
-          console.log("Kind data saved successfully from Geburtsurkunde");
-        }
+      if (!mapping) {
+        console.warn(`No mapping found for document type: ${documentType}`);
+        return new Response(
+          JSON.stringify(mappedData),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
-      
-      // IMPORTANT: Geburtsurkunde only affects kind table - skip other table processing
-      if (documentType !== "geburtsurkunde") {
 
-        // Process parent/address data for personalausweis or adresse documents
-        if (documentType === "personalausweis" || documentType === "adresse") {
-        const elternteilData: any = { antrag_id: antragId };
+      // Dynamic table population based on mapping
+      for (const tableName of mapping.tables) {
+        if (tableName === 'kind') {
+          const kindData: any = { antrag_id: antragId };
+          if (fields.vorname) kindData.vorname = fields.vorname;
+          if (fields.nachname) kindData.nachname = fields.nachname;
+          if (fields.geburtsdatum) kindData.geburtsdatum = fields.geburtsdatum;
+          if (fields.anzahl_mehrlinge) kindData.anzahl_mehrlinge = fields.anzahl_mehrlinge;
+          if (fields.fruehgeboren !== undefined) kindData.fruehgeboren = fields.fruehgeboren;
+          if (fields.errechneter_geburtsdatum) kindData.errechneter_geburtsdatum = fields.errechneter_geburtsdatum;
+          if (fields.behinderung !== undefined) kindData.behinderung = fields.behinderung;
+          if (fields.anzahl_weitere_kinder) kindData.anzahl_weitere_kinder = fields.anzahl_weitere_kinder;
+          if (fields.keine_weitere_kinder !== undefined) kindData.keine_weitere_kinder = fields.keine_weitere_kinder;
+          if (fields.insgesamt !== undefined) kindData.insgesamt = fields.insgesamt;
+
+          console.log("Saving kind data:", kindData);
+          await upsertRecord(supabase, "kind", kindData, { antrag_id: antragId });
         
-        // Map to correct parent fields based on parentNumber (1 or 2)
-        if (parentNumber === 2) {
-          // Save to Parent 2 fields (with _2 suffix)
-          if (fields.vorname) elternteilData.vorname_2 = fields.vorname;
-          if (fields.nachname) elternteilData.nachname_2 = fields.nachname;
-          if (fields.geburtsdatum) elternteilData.geburtsdatum_2 = fields.geburtsdatum;
-          if (fields.geschlecht) elternteilData.geschlecht_2 = fields.geschlecht;
-          if (fields.steuer_identifikationsnummer) elternteilData.steuer_identifikationsnummer_2 = fields.steuer_identifikationsnummer;
-        } else {
-          // Save to Parent 1 fields (default, no suffix)
+        } else if (tableName === 'elternteil') {
+          // Create or update elternteil record
+          const elternteilData: any = { 
+            antrag_id: antragId,
+            parent_number: parentNumber
+          };
           if (fields.vorname) elternteilData.vorname = fields.vorname;
           if (fields.nachname) elternteilData.nachname = fields.nachname;
           if (fields.geburtsdatum) elternteilData.geburtsdatum = fields.geburtsdatum;
           if (fields.geschlecht) elternteilData.geschlecht = fields.geschlecht;
           if (fields.steuer_identifikationsnummer) elternteilData.steuer_identifikationsnummer = fields.steuer_identifikationsnummer;
-        }
 
-        if (Object.keys(elternteilData).length > 1) {
-          console.log("Saving elternteil data:", elternteilData);
-
-          const { data: existingElternteil } = await supabase
-            .from("antrag_2b_elternteil")
-            .select("id")
-            .eq("antrag_id", antragId)
-            .maybeSingle();
-
-          let elternteilError;
-          if (existingElternteil) {
-            const { error } = await supabase
-              .from("antrag_2b_elternteil")
-              .update(elternteilData)
-              .eq("id", existingElternteil.id);
-            elternteilError = error;
-          } else {
-            const { error } = await supabase
-              .from("antrag_2b_elternteil")
-              .insert(elternteilData);
-            elternteilError = error;
+          if (Object.keys(elternteilData).length > 2) { // More than just antrag_id and parent_number
+            console.log("Saving elternteil data:", elternteilData);
+            const elternteil = await upsertRecord(supabase, "elternteil", elternteilData, { 
+              antrag_id: antragId, 
+              parent_number: parentNumber 
+            });
+            
+            // Store elternteil_id for related tables
+            if (elternteil) {
+              (fields as any)._elternteil_id = elternteil.id;
+            }
           }
+        
+        } else if (tableName === 'antrag_2c_wohnsitz') {
+          const wohnsitzData: any = { antrag_id: antragId };
+          if ((fields as any)._elternteil_id) wohnsitzData.elternteil_id = (fields as any)._elternteil_id;
+          if (fields.strasse) wohnsitzData.strasse = fields.strasse;
+          if (fields.hausnr) wohnsitzData.hausnr = fields.hausnr;
+          if (fields.plz) wohnsitzData.plz = fields.plz;
+          if (fields.ort) wohnsitzData.ort = fields.ort;
+          if (fields.adresszusatz) wohnsitzData.adresszusatz = fields.adresszusatz;
+          if (fields.wohnsitz_ausland !== undefined) wohnsitzData.wohnsitz_ausland = fields.wohnsitz_ausland;
 
-          if (elternteilError) console.error("Error saving elternteil:", elternteilError);
-          else console.log("Elternteil data saved successfully");
-        }
-
-        // Insert address data if present
-        const wohnsitzData: any = { antrag_id: antragId };
-        if (fields.strasse) wohnsitzData.strasse = fields.strasse;
-        if (fields.hausnr) wohnsitzData.hausnr = fields.hausnr;
-        if (fields.plz) wohnsitzData.plz = fields.plz;
-        if (fields.ort) wohnsitzData.ort = fields.ort;
-        if (fields.adresszusatz) wohnsitzData.adresszusatz = fields.adresszusatz;
-        if (fields.wohnsitz_ausland !== undefined) wohnsitzData.wohnsitz_ausland = fields.wohnsitz_ausland;
-        if (fields.ausland_staat) wohnsitzData.ausland_staat = fields.ausland_staat;
-        if (fields.ausland_strasse) wohnsitzData.ausland_strasse = fields.ausland_strasse;
-        if (fields.ausland_aufenthaltsgrund) wohnsitzData.ausland_aufenthaltsgrund = fields.ausland_aufenthaltsgrund;
-
-        if (Object.keys(wohnsitzData).length > 1) {
-          console.log("Saving wohnsitz data:", wohnsitzData);
-
-          const { data: existingWohnsitz } = await supabase
-            .from("antrag_2c_wohnsitz")
-            .select("id")
-            .eq("antrag_id", antragId)
-            .maybeSingle();
-
-          let wohnsitzError;
-          if (existingWohnsitz) {
-            const { error } = await supabase
-              .from("antrag_2c_wohnsitz")
-              .update(wohnsitzData)
-              .eq("id", existingWohnsitz.id);
-            wohnsitzError = error;
-          } else {
-            const { error } = await supabase
-              .from("antrag_2c_wohnsitz")
-              .insert(wohnsitzData);
-            wohnsitzError = error;
+          if (Object.keys(wohnsitzData).length > 1) {
+            console.log("Saving wohnsitz data:", wohnsitzData);
+            await upsertRecord(supabase, "antrag_2c_wohnsitz", wohnsitzData, { antrag_id: antragId });
           }
+        
+        } else if (tableName === 'antrag_2c_wohnsitz_aufenthalt') {
+          const aufenthaltData: any = { antrag_id: antragId };
+          if ((fields as any)._elternteil_id) aufenthaltData.elternteil_id = (fields as any)._elternteil_id;
+          if (fields.wohnsitz_in_deutschland !== undefined) aufenthaltData.wohnsitz_in_deutschland = fields.wohnsitz_in_deutschland;
+          if (fields.seit_meiner_geburt !== undefined) aufenthaltData.seit_meiner_geburt = fields.seit_meiner_geburt;
+          if (fields.seit_in_deutschland !== undefined) aufenthaltData.seit_in_deutschland = fields.seit_in_deutschland;
+          if (fields.seit_datum_deutschland) aufenthaltData.seit_datum_deutschland = fields.seit_datum_deutschland;
 
-          if (wohnsitzError) console.error("Error saving wohnsitz:", wohnsitzError);
-          else console.log("Wohnsitz data saved successfully");
-        }
-
-        // Insert residence status data if present
-        const aufenthaltData: any = { antrag_id: antragId };
-        if (fields.wohnsitz_in_deutschland !== undefined) aufenthaltData.wohnsitz_in_deutschland = fields.wohnsitz_in_deutschland;
-        if (fields.seit_meiner_geburt !== undefined) aufenthaltData.seit_meiner_geburt = fields.seit_meiner_geburt;
-        if (fields.seit_in_deutschland !== undefined) aufenthaltData.seit_in_deutschland = fields.seit_in_deutschland;
-        if (fields.seit_datum_deutschland) aufenthaltData.seit_datum_deutschland = fields.seit_datum_deutschland;
-
-        if (Object.keys(aufenthaltData).length > 1) {
-          console.log("Saving aufenthalt data:", aufenthaltData);
-
-          const { data: existingAufenthalt } = await supabase
-            .from("antrag_2c_wohnsitz_aufenthalt")
-            .select("id")
-            .eq("antrag_id", antragId)
-            .maybeSingle();
-
-          let aufenthaltError;
-          if (existingAufenthalt) {
-            const { error } = await supabase
-              .from("antrag_2c_wohnsitz_aufenthalt")
-              .update(aufenthaltData)
-              .eq("id", existingAufenthalt.id);
-            aufenthaltError = error;
-          } else {
-            const { error } = await supabase
-              .from("antrag_2c_wohnsitz_aufenthalt")
-              .insert(aufenthaltData);
-            aufenthaltError = error;
+          if (Object.keys(aufenthaltData).length > 1) {
+            console.log("Saving aufenthalt data:", aufenthaltData);
+            await upsertRecord(supabase, "antrag_2c_wohnsitz_aufenthalt", aufenthaltData, { antrag_id: antragId });
           }
+        
+        } else if (tableName === 'antrag_5_krankenversicherung') {
+          const versicherungData: any = { antrag_id: antragId };
+          if ((fields as any)._elternteil_id) versicherungData.elternteil_id = (fields as any)._elternteil_id;
+          if (fields.gesetzlich_ver !== undefined) versicherungData.gesetzlich_ver = fields.gesetzlich_ver;
+          if (fields.privat_ver !== undefined) versicherungData.privat_ver = fields.privat_ver;
+          if (fields.krankenkassename) versicherungData.krankenkassename = fields.krankenkassename;
+          if (fields.versichertennummer) versicherungData.versichertennummer = fields.versichertennummer;
 
-          if (aufenthaltError) console.error("Error saving aufenthalt:", aufenthaltError);
-          else console.log("Aufenthalt data saved successfully");
-        }
-        }
+          if (Object.keys(versicherungData).length > 1) {
+            console.log("Saving versicherung data:", versicherungData);
+            await upsertRecord(supabase, "antrag_5_krankenversicherung", versicherungData, { antrag_id: antragId });
+          }
+        
+        } else if (tableName === 'antrag_7a_bisherige_erwerbstaetigkeit') {
+          const erwerbData: any = { antrag_id: antragId };
+          if ((fields as any)._elternteil_id) erwerbData.elternteil_id = (fields as any)._elternteil_id;
+          if (fields.einkuenfte_nicht_selbststaendig !== undefined) erwerbData.einkuenfte_nicht_selbststaendig = fields.einkuenfte_nicht_selbststaendig;
+          if (fields.selbststaendig_einkuenfte !== undefined) erwerbData.selbststaendig_einkuenfte = fields.selbststaendig_einkuenfte;
+          if (fields.keine_einkuenfte !== undefined) erwerbData.keine_einkuenfte = fields.keine_einkuenfte;
 
-        // Handle single parent data if detected
-        if (fields.ist_alleinerziehend !== undefined) {
-        const alleinerziehendData: any = { antrag_id: antragId };
-        alleinerziehendData.ist_alleinerziehend = fields.ist_alleinerziehend;
-        if (fields.anderer_unmoeglich_betreuung !== undefined) alleinerziehendData.anderer_unmoeglich_betreuung = fields.anderer_unmoeglich_betreuung;
-        if (fields.betreuung_gefaehrdet_wohl !== undefined) alleinerziehendData.betreuung_gefaehrdet_wohl = fields.betreuung_gefaehrdet_wohl;
-
-        console.log("Saving alleinerziehend data:", alleinerziehendData);
-
-        const { data: existingAlleinerziehend } = await supabase
-          .from("antrag_2a_alleinerziehende")
-          .select("id")
-          .eq("antrag_id", antragId)
-          .maybeSingle();
-
-        let alleinerziehendError;
-        if (existingAlleinerziehend) {
-          const { error } = await supabase
-            .from("antrag_2a_alleinerziehende")
-            .update(alleinerziehendData)
-            .eq("id", existingAlleinerziehend.id);
-          alleinerziehendError = error;
-        } else {
-          const { error } = await supabase
-            .from("antrag_2a_alleinerziehende")
-            .insert(alleinerziehendData);
-          alleinerziehendError = error;
-        }
-
-        if (alleinerziehendError) console.error("Error saving alleinerziehend:", alleinerziehendError);
-        else console.log("Alleinerziehend data saved successfully");
+          if (Object.keys(erwerbData).length > 1) {
+            console.log("Saving erwerb data:", erwerbData);
+            await upsertRecord(supabase, "antrag_7a_bisherige_erwerbstaetigkeit", erwerbData, { antrag_id: antragId });
+          }
         }
       }
     }

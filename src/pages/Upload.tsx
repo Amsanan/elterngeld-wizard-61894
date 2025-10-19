@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { performOCR, detectDocumentType, type OCRResult } from "@/lib/documents";
+import { requiresParentSelection } from "@/lib/documentMapping";
 
 interface UploadedFile {
   file: File;
@@ -522,9 +523,7 @@ const Upload = () => {
                         )}
 
                         {/* Parent selection for documents that need it */}
-                        {(uploadedFile.documentType === 'personalausweis' || 
-                          uploadedFile.documentType === 'gehaltsnachweis' ||
-                          uploadedFile.documentType === 'versicherungsnachweis') && (
+                        {uploadedFile.documentType && requiresParentSelection(uploadedFile.documentType) && (
                           <div className="mt-3 mb-3 p-3 bg-secondary/20 rounded-lg">
                             <label className="text-xs font-semibold text-foreground mb-2 block">
                               Dieses Dokument gehört zu:

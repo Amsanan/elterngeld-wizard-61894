@@ -431,6 +431,7 @@ export type Database = {
           ausland_staat: string | null
           ausland_strasse: string | null
           created_at: string | null
+          elternteil_id: string | null
           hausnr: string | null
           id: string
           ort: string | null
@@ -454,6 +455,7 @@ export type Database = {
           ausland_staat?: string | null
           ausland_strasse?: string | null
           created_at?: string | null
+          elternteil_id?: string | null
           hausnr?: string | null
           id?: string
           ort?: string | null
@@ -477,6 +479,7 @@ export type Database = {
           ausland_staat?: string | null
           ausland_strasse?: string | null
           created_at?: string | null
+          elternteil_id?: string | null
           hausnr?: string | null
           id?: string
           ort?: string | null
@@ -492,12 +495,20 @@ export type Database = {
             referencedRelation: "antrag"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "antrag_2c_wohnsitz_elternteil_id_fkey"
+            columns: ["elternteil_id"]
+            isOneToOne: false
+            referencedRelation: "elternteil"
+            referencedColumns: ["id"]
+          },
         ]
       }
       antrag_2c_wohnsitz_aufenthalt: {
         Row: {
           antrag_id: string
           created_at: string | null
+          elternteil_id: string | null
           id: string
           seit_datum_deutschland: string | null
           seit_in_deutschland: boolean | null
@@ -507,6 +518,7 @@ export type Database = {
         Insert: {
           antrag_id: string
           created_at?: string | null
+          elternteil_id?: string | null
           id?: string
           seit_datum_deutschland?: string | null
           seit_in_deutschland?: boolean | null
@@ -516,6 +528,7 @@ export type Database = {
         Update: {
           antrag_id?: string
           created_at?: string | null
+          elternteil_id?: string | null
           id?: string
           seit_datum_deutschland?: string | null
           seit_in_deutschland?: boolean | null
@@ -528,6 +541,13 @@ export type Database = {
             columns: ["antrag_id"]
             isOneToOne: false
             referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "antrag_2c_wohnsitz_aufenthalt_elternteil_id_fkey"
+            columns: ["elternteil_id"]
+            isOneToOne: false
+            referencedRelation: "elternteil"
             referencedColumns: ["id"]
           },
         ]
@@ -636,6 +656,7 @@ export type Database = {
         Row: {
           antrag_id: string
           created_at: string | null
+          elternteil_id: string | null
           freizuegigkeit_ja: boolean | null
           freizuegigkeit_ja_2: boolean | null
           freizuegigkeit_nein: boolean | null
@@ -657,6 +678,7 @@ export type Database = {
         Insert: {
           antrag_id: string
           created_at?: string | null
+          elternteil_id?: string | null
           freizuegigkeit_ja?: boolean | null
           freizuegigkeit_ja_2?: boolean | null
           freizuegigkeit_nein?: boolean | null
@@ -678,6 +700,7 @@ export type Database = {
         Update: {
           antrag_id?: string
           created_at?: string | null
+          elternteil_id?: string | null
           freizuegigkeit_ja?: boolean | null
           freizuegigkeit_ja_2?: boolean | null
           freizuegigkeit_nein?: boolean | null
@@ -704,12 +727,20 @@ export type Database = {
             referencedRelation: "antrag"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "antrag_2f_staatsangehoerigkeit_elternteil_id_fkey"
+            columns: ["elternteil_id"]
+            isOneToOne: false
+            referencedRelation: "elternteil"
+            referencedColumns: ["id"]
+          },
         ]
       }
       antrag_2g_familienstand: {
         Row: {
           antrag_id: string
           created_at: string | null
+          elternteil_id: string | null
           geschieden: boolean | null
           geschieden_2: boolean | null
           id: string
@@ -733,6 +764,7 @@ export type Database = {
         Insert: {
           antrag_id: string
           created_at?: string | null
+          elternteil_id?: string | null
           geschieden?: boolean | null
           geschieden_2?: boolean | null
           id?: string
@@ -756,6 +788,7 @@ export type Database = {
         Update: {
           antrag_id?: string
           created_at?: string | null
+          elternteil_id?: string | null
           geschieden?: boolean | null
           geschieden_2?: boolean | null
           id?: string
@@ -782,6 +815,13 @@ export type Database = {
             columns: ["antrag_id"]
             isOneToOne: true
             referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "antrag_2g_familienstand_elternteil_id_fkey"
+            columns: ["elternteil_id"]
+            isOneToOne: false
+            referencedRelation: "elternteil"
             referencedColumns: ["id"]
           },
         ]
@@ -1050,6 +1090,7 @@ export type Database = {
         Row: {
           antrag_id: string
           created_at: string | null
+          elternteil_id: string | null
           familien_ver: boolean | null
           familien_ver_2: boolean | null
           frei_heifuer: boolean | null
@@ -1084,6 +1125,7 @@ export type Database = {
         Insert: {
           antrag_id: string
           created_at?: string | null
+          elternteil_id?: string | null
           familien_ver?: boolean | null
           familien_ver_2?: boolean | null
           frei_heifuer?: boolean | null
@@ -1118,6 +1160,7 @@ export type Database = {
         Update: {
           antrag_id?: string
           created_at?: string | null
+          elternteil_id?: string | null
           familien_ver?: boolean | null
           familien_ver_2?: boolean | null
           frei_heifuer?: boolean | null
@@ -1155,6 +1198,13 @@ export type Database = {
             columns: ["antrag_id"]
             isOneToOne: true
             referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "antrag_5_krankenversicherung_elternteil_id_fkey"
+            columns: ["elternteil_id"]
+            isOneToOne: false
+            referencedRelation: "elternteil"
             referencedColumns: ["id"]
           },
         ]
@@ -1232,6 +1282,7 @@ export type Database = {
           created_at: string | null
           einkuenfte_nicht_selbststaendig: boolean | null
           einkuenfte_nicht_selbststaendig_2: boolean | null
+          elternteil_id: string | null
           gewerbe_einkuenfte: boolean | null
           gewerbe_einkuenfte_2: boolean | null
           gewinn_einkunft_vorhanden: boolean | null
@@ -1249,6 +1300,7 @@ export type Database = {
           created_at?: string | null
           einkuenfte_nicht_selbststaendig?: boolean | null
           einkuenfte_nicht_selbststaendig_2?: boolean | null
+          elternteil_id?: string | null
           gewerbe_einkuenfte?: boolean | null
           gewerbe_einkuenfte_2?: boolean | null
           gewinn_einkunft_vorhanden?: boolean | null
@@ -1266,6 +1318,7 @@ export type Database = {
           created_at?: string | null
           einkuenfte_nicht_selbststaendig?: boolean | null
           einkuenfte_nicht_selbststaendig_2?: boolean | null
+          elternteil_id?: string | null
           gewerbe_einkuenfte?: boolean | null
           gewerbe_einkuenfte_2?: boolean | null
           gewinn_einkunft_vorhanden?: boolean | null
@@ -1286,6 +1339,13 @@ export type Database = {
             referencedRelation: "antrag"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "antrag_7a_bisherige_erwerbstaetigkeit_elternteil_id_fkey"
+            columns: ["elternteil_id"]
+            isOneToOne: false
+            referencedRelation: "elternteil"
+            referencedColumns: ["id"]
+          },
         ]
       }
       antrag_8a_einkomen_vor_geburt_bestimmt: {
@@ -1294,6 +1354,7 @@ export type Database = {
           berufsausbildung: boolean | null
           berufsausbildung_2: boolean | null
           created_at: string | null
+          elternteil_id: string | null
           id: string
           keine_der_bestimmten: boolean | null
           keine_der_bestimmten_2: boolean | null
@@ -1307,6 +1368,7 @@ export type Database = {
           berufsausbildung?: boolean | null
           berufsausbildung_2?: boolean | null
           created_at?: string | null
+          elternteil_id?: string | null
           id?: string
           keine_der_bestimmten?: boolean | null
           keine_der_bestimmten_2?: boolean | null
@@ -1320,6 +1382,7 @@ export type Database = {
           berufsausbildung?: boolean | null
           berufsausbildung_2?: boolean | null
           created_at?: string | null
+          elternteil_id?: string | null
           id?: string
           keine_der_bestimmten?: boolean | null
           keine_der_bestimmten_2?: boolean | null
@@ -1336,6 +1399,13 @@ export type Database = {
             referencedRelation: "antrag"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "antrag_8a_einkomen_vor_geburt_bestimmt_elternteil_id_fkey"
+            columns: ["elternteil_id"]
+            isOneToOne: false
+            referencedRelation: "elternteil"
+            referencedColumns: ["id"]
+          },
         ]
       }
       antrag_8b_steuern_und_abgaben: {
@@ -1344,6 +1414,7 @@ export type Database = {
           arbeitslosenversicherung: boolean | null
           arbeitslosenversicherung_2: boolean | null
           created_at: string | null
+          elternteil_id: string | null
           id: string
           keine_abgaben: boolean | null
           keine_abgaben_2: boolean | null
@@ -1359,6 +1430,7 @@ export type Database = {
           arbeitslosenversicherung?: boolean | null
           arbeitslosenversicherung_2?: boolean | null
           created_at?: string | null
+          elternteil_id?: string | null
           id?: string
           keine_abgaben?: boolean | null
           keine_abgaben_2?: boolean | null
@@ -1374,6 +1446,7 @@ export type Database = {
           arbeitslosenversicherung?: boolean | null
           arbeitslosenversicherung_2?: boolean | null
           created_at?: string | null
+          elternteil_id?: string | null
           id?: string
           keine_abgaben?: boolean | null
           keine_abgaben_2?: boolean | null
@@ -1390,6 +1463,13 @@ export type Database = {
             columns: ["antrag_id"]
             isOneToOne: true
             referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "antrag_8b_steuern_und_abgaben_elternteil_id_fkey"
+            columns: ["elternteil_id"]
+            isOneToOne: false
+            referencedRelation: "elternteil"
             referencedColumns: ["id"]
           },
         ]
@@ -1412,6 +1492,7 @@ export type Database = {
           created_at: string | null
           elterngeld_fuer_aelteres: boolean | null
           elterngeld_fuer_aelteres_2: boolean | null
+          elternteil_id: string | null
           id: string
           krankengeld: boolean | null
           krankengeld_2: boolean | null
@@ -1437,6 +1518,7 @@ export type Database = {
           created_at?: string | null
           elterngeld_fuer_aelteres?: boolean | null
           elterngeld_fuer_aelteres_2?: boolean | null
+          elternteil_id?: string | null
           id?: string
           krankengeld?: boolean | null
           krankengeld_2?: boolean | null
@@ -1462,6 +1544,7 @@ export type Database = {
           created_at?: string | null
           elterngeld_fuer_aelteres?: boolean | null
           elterngeld_fuer_aelteres_2?: boolean | null
+          elternteil_id?: string | null
           id?: string
           krankengeld?: boolean | null
           krankengeld_2?: boolean | null
@@ -1475,6 +1558,60 @@ export type Database = {
             foreignKeyName: "antrag_9_einkommen_ersatz_leistungen_antrag_id_fkey"
             columns: ["antrag_id"]
             isOneToOne: true
+            referencedRelation: "antrag"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "antrag_9_einkommen_ersatz_leistungen_elternteil_id_fkey"
+            columns: ["elternteil_id"]
+            isOneToOne: false
+            referencedRelation: "elternteil"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      elternteil: {
+        Row: {
+          antrag_id: string
+          created_at: string | null
+          geburtsdatum: string | null
+          geschlecht: Database["public"]["Enums"]["geschlecht_type"] | null
+          id: string
+          nachname: string | null
+          parent_number: number
+          steuer_identifikationsnummer: string | null
+          updated_at: string | null
+          vorname: string | null
+        }
+        Insert: {
+          antrag_id: string
+          created_at?: string | null
+          geburtsdatum?: string | null
+          geschlecht?: Database["public"]["Enums"]["geschlecht_type"] | null
+          id?: string
+          nachname?: string | null
+          parent_number: number
+          steuer_identifikationsnummer?: string | null
+          updated_at?: string | null
+          vorname?: string | null
+        }
+        Update: {
+          antrag_id?: string
+          created_at?: string | null
+          geburtsdatum?: string | null
+          geschlecht?: Database["public"]["Enums"]["geschlecht_type"] | null
+          id?: string
+          nachname?: string | null
+          parent_number?: number
+          steuer_identifikationsnummer?: string | null
+          updated_at?: string | null
+          vorname?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elternteil_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: false
             referencedRelation: "antrag"
             referencedColumns: ["id"]
           },
