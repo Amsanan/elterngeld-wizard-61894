@@ -366,7 +366,7 @@ Beginne jetzt mit der Analyse:`;
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "google/gemini-flash-1.5",
+              model: "google/gemini-pro-vision",
               messages: [
                 { role: "system", content: systemPrompt },
                 {
