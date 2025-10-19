@@ -86,23 +86,33 @@ ELTERNTEIL-TABELLE - DATABASE COLUMN NAMES (aus Vorderseite):
 - nachname (Nachname/Familienname, z.B. "Schmidt", oft unter "Surname"/"Name")
 - geburtsdatum (Geburtsdatum, Format: YYYY-MM-DD, z.B. "1990-05-20", aus "Date of birth"/"Datum")
 - geschlecht (Geschlecht, WERTE: "weiblich", "maennlich", "divers", "ohne_angabe")
-- steuer_identifikationsnummer (Steuer-ID, 11 Zeichen, z.B. "12345678901")
 
 ANTRAG_2C_WOHNSITZ-TABELLE - DATABASE COLUMN NAMES (aus Rückseite):
-⚠️ SUCHE NACH: "Anschrift"/"Address"/"Adresse" auf der Rückseite!
-- strasse (Straßenname, z.B. "STRAUSSEEWEG", "Hauptstraße" - OHNE Hausnummer!)
-- hausnr (Hausnummer separat, z.B. "6", "42", "42a")
-- plz (Postleitzahl, 5-stellig, z.B. "13599", "10115")
-- ort (Wohnort/Stadt, z.B. "BERLIN", "München")
+⚠️ ADRESSFORMAT auf Personalausweis Rückseite:
+Zeile 1: "Anschrift/Address/Adresse"
+Zeile 2: "13599 BERLIN" (PLZ + Ort, oft GROSSBUCHSTABEN)
+Zeile 3: "STRAUSSEEWEG 6" (Straße + Hausnummer, oft GROSSBUCHSTABEN)
+
+⚠️ EXTRAKTIONSREGELN für Adresse:
+1. ERSTE ZEILE nach "Anschrift": PLZ (5 Ziffern) + Ort (Rest der Zeile)
+2. ZWEITE ZEILE: Straßenname + Hausnummer (trenne am letzten Leerzeichen oder letzter Ziffer)
+3. Konvertiere GROSSBUCHSTABEN zu normalem Text (z.B. "BERLIN" → "Berlin", "STRAUSSEEWEG" → "Strausseeweg")
+
+DATABASE COLUMN NAMES:
+- plz (Postleitzahl, 5-stellig, z.B. "13599")
+- ort (Wohnort/Stadt, z.B. "Berlin" - normale Schreibweise, NICHT GROSSBUCHSTABEN!)
+- strasse (Straßenname OHNE Hausnummer, z.B. "Strausseeweg" - normale Schreibweise!)
+- hausnr (Hausnummer separat, z.B. "6", "42a")
 - adresszusatz (Adresszusatz, optional, z.B. "3. Stock links")
 - wohnsitz_ausland (Wohnsitz im Ausland, BOOLEAN: false für deutsche Adressen)
 
-⚠️ BEISPIEL RÜCKSEITE:
-Wenn du siehst: "13599 BERLIN" und "STRAUSSEEWEG 6"
+⚠️ BEISPIEL:
+Dokument zeigt: "13599 BERLIN\nSTRAUSSEEWEG 6"
 → plz: "13599"
-→ ort: "Berlin" (nicht "BERLIN")
-→ strasse: "Strausseeweg" (nicht "STRAUSSEEWEG")
-→ hausnr: "6"`;
+→ ort: "Berlin"
+→ strasse: "Strausseeweg"
+→ hausnr: "6"
+→ wohnsitz_ausland: false`;
 
         case "adresse":
           return `
