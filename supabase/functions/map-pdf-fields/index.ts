@@ -366,7 +366,7 @@ Beginne jetzt mit der Analyse:`;
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "google/gemini-pro-vision",
+              model: "openai/gpt-4o",
               messages: [
                 { role: "system", content: systemPrompt },
                 {
