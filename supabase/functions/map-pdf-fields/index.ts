@@ -106,65 +106,101 @@ Antworte NUR mit einem JSON-Objekt ohne zusätzlichen Text:
 Bitte analysiere das hochgeladene Bild und extrahiere die relevanten Daten für den Elterngeldantrag.
 Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.`;
 
-    // Call OpenRouter API with Mistral Small vision model
+    // Retry function with exponential backoff for rate limiting
+    async function fetchWithRetry(maxRetries = 3, initialDelay = 2000) {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`API attempt ${attempt}/${maxRetries}`);
+          
+          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "mistralai/mistral-small-3.2-24b-instruct:free",
+              messages: [
+                { role: "system", content: systemPrompt },
+                { 
+                  role: "user", 
+                  content: [
+                    { type: "text", text: userPrompt },
+                    { 
+                      type: "image_url", 
+                      image_url: { 
+                        url: `data:${mimeType};base64,${imageData}` 
+                      } 
+                    }
+                  ]
+                }
+              ],
+              temperature: 0.1,
+            }),
+          });
+
+          // If success, return response
+          if (response.ok) {
+            console.log(`API call succeeded on attempt ${attempt}`);
+            return response;
+          }
+
+          const errorText = await response.text();
+          
+          // If rate limited (429), retry with exponential backoff
+          if (response.status === 429 && attempt < maxRetries) {
+            const delay = initialDelay * Math.pow(2, attempt - 1);
+            console.log(`Rate limited. Retrying in ${delay}ms... (attempt ${attempt}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+
+          // For other errors or last attempt, throw with details
+          console.error("OpenRouter API error:", response.status, errorText);
+          throw { status: response.status, errorText };
+
+        } catch (error: any) {
+          // If it's the last attempt or not a retriable error, throw
+          if (attempt === maxRetries || !error?.status) {
+            throw error;
+          }
+        }
+      }
+      throw new Error("Max retries exceeded");
+    }
+
+    // Call OpenRouter API with retry logic
     const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
     if (!OPENROUTER_API_KEY) {
       throw new Error("OPENROUTER_API_KEY not configured");
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "mistralai/mistral-small-3.2-24b-instruct:free",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { 
-            role: "user", 
-            content: [
-              { type: "text", text: userPrompt },
-              { 
-                type: "image_url", 
-                image_url: { 
-                  url: `data:${mimeType};base64,${imageData}` 
-                } 
-              }
-            ]
-          }
-        ],
-        temperature: 0.1,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OpenRouter API error:", response.status, errorText);
-      
-      if (response.status === 429) {
+    let response;
+    try {
+      response = await fetchWithRetry();
+    } catch (error: any) {
+      if (error?.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit erreicht. Bitte versuchen Sie es später erneut." }),
+          JSON.stringify({ error: "Rate limit erreicht nach mehreren Versuchen. Bitte versuchen Sie es in einigen Minuten erneut." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
+      if (error?.status === 402) {
         return new Response(
           JSON.stringify({ error: "API Fehler. Bitte versuchen Sie es später erneut." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 400) {
+      if (error?.status === 400) {
         return new Response(
-          JSON.stringify({ error: `Vision API Fehler: ${errorText}` }),
+          JSON.stringify({ error: `Vision API Fehler: ${error?.errorText}` }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
       return new Response(
-        JSON.stringify({ error: `OpenRouter Fehler (${response.status}): ${errorText}` }),
-        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: `OpenRouter Fehler: ${error?.message || 'Unbekannter Fehler'}` }),
+        { status: error?.status || 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
