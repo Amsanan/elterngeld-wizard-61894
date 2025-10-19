@@ -88,31 +88,56 @@ ELTERNTEIL-TABELLE - DATABASE COLUMN NAMES (aus Vorderseite):
 - geschlecht (Geschlecht, WERTE: "weiblich", "maennlich", "divers", "ohne_angabe")
 
 ANTRAG_2C_WOHNSITZ-TABELLE - DATABASE COLUMN NAMES (aus Rückseite):
-⚠️ ADRESSFORMAT auf Personalausweis Rückseite:
-Zeile 1: "Anschrift/Address/Adresse"
-Zeile 2: "13599 BERLIN" (PLZ + Ort, oft GROSSBUCHSTABEN)
-Zeile 3: "STRAUSSEEWEG 6" (Straße + Hausnummer, oft GROSSBUCHSTABEN)
 
-⚠️ EXTRAKTIONSREGELN für Adresse:
-1. ERSTE ZEILE nach "Anschrift": PLZ (5 Ziffern) + Ort (Rest der Zeile)
-2. ZWEITE ZEILE: Straßenname + Hausnummer (trenne am letzten Leerzeichen oder letzter Ziffer)
-3. Konvertiere GROSSBUCHSTABEN zu normalem Text (z.B. "BERLIN" → "Berlin", "STRAUSSEEWEG" → "Strausseeweg")
+🔍 KRITISCHE ANLEITUNG - ADRESSE AUF PERSONALAUSWEIS:
+Die Adresse steht auf der RÜCKSEITE in genau diesem Format:
 
-DATABASE COLUMN NAMES:
-- plz (Postleitzahl, 5-stellig, z.B. "13599")
-- ort (Wohnort/Stadt, z.B. "Berlin" - normale Schreibweise, NICHT GROSSBUCHSTABEN!)
-- strasse (Straßenname OHNE Hausnummer, z.B. "Strausseeweg" - normale Schreibweise!)
-- hausnr (Hausnummer separat, z.B. "6", "42a")
-- adresszusatz (Adresszusatz, optional, z.B. "3. Stock links")
-- wohnsitz_ausland (Wohnsitz im Ausland, BOOLEAN: false für deutsche Adressen)
+Anschrift/Address/Adresse
+[5-stellige PLZ] [STADT IN GROSSBUCHSTABEN]
+[STRASSENNAME IN GROSSBUCHSTABEN] [HAUSNUMMER]
 
-⚠️ BEISPIEL:
-Dokument zeigt: "13599 BERLIN\nSTRAUSSEEWEG 6"
-→ plz: "13599"
-→ ort: "Berlin"
-→ strasse: "Strausseeweg"
-→ hausnr: "6"
-→ wohnsitz_ausland: false`;
+📋 SCHRITT-FÜR-SCHRITT EXTRAKTION:
+
+SCHRITT 1: Suche "Anschrift" oder "Address" oder "Adresse"
+SCHRITT 2: Die NÄCHSTE Zeile enthält: [PLZ] [ORT]
+  - Die ersten 5 ZIFFERN = plz
+  - Der REST der Zeile (nach dem Leerzeichen) = ort
+  
+SCHRITT 3: Die ÜBERNÄCHSTE Zeile enthält: [STRASSE] [HAUSNUMMER]
+  - Alles VOR der letzten Zahl/Ziffer = strasse
+  - Die letzte Zahl/Ziffer (mit Buchstaben wie "6" oder "42a") = hausnr
+
+SCHRITT 4: Normalisiere Großbuchstaben:
+  - "BERLIN" → "Berlin"
+  - "STRAUSSEEWEG" → "Strausseeweg"
+  - "MÜNCHEN" → "München"
+
+⚠️ DATABASE COLUMN NAMES:
+- plz: Postleitzahl (IMMER 5 Ziffern, z.B. "13599" NICHT "451398")
+- ort: Stadt/Wohnort (z.B. "Berlin", normale Schreibweise)
+- strasse: Straßenname OHNE Hausnummer (z.B. "Strausseeweg")
+- hausnr: Nur die Hausnummer (z.B. "6", "42a")
+- adresszusatz: Optional, meist leer (z.B. "Hinterhaus")
+- wohnsitz_ausland: BOOLEAN false (für deutsche Adressen)
+
+✅ KORREKTES BEISPIEL:
+Dokument zeigt:
+"Anschrift/Address/Adresse
+13599 BERLIN
+STRAUSSEEWEG 6"
+
+RICHTIG extrahiert:
+→ plz: "13599" (NUR die 5 Ziffern!)
+→ ort: "Berlin" (Stadt nach PLZ)
+→ strasse: "Strausseeweg" (Text VOR der Hausnummer)
+→ hausnr: "6" (die Zahl am Ende)
+→ adresszusatz: null
+→ wohnsitz_ausland: false
+
+❌ HÄUFIGE FEHLER VERMEIDEN:
+- Nicht "BERLIN" als strasse verwenden!
+- Nicht PLZ mit anderen Zahlen vermischen!
+- Nicht ort als strasse verwenden!`;
 
         case "adresse":
           return `
