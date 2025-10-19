@@ -318,7 +318,7 @@ Beginne jetzt mit der Analyse:`;
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "mistralai/mistral-small-3.2-24b-instruct:free",
+              model: "google/gemini-2.0-flash-exp:free",
               messages: [
                 { role: "system", content: systemPrompt },
                 { 
