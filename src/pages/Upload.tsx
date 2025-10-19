@@ -312,35 +312,87 @@ const Upload = () => {
 
             // Check if file is PDF - need to convert to image first
             if (uploadedFile.file.type === 'application/pdf') {
-              console.log('Converting PDF to image for OCR...');
+              console.log('Converting PDF to image(s) for OCR...');
               
               // Load PDF using pdf.js
               const arrayBuffer = await uploadedFile.file.arrayBuffer();
               const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+              const numPages = pdf.numPages;
               
-              // Get first page (most IDs have info on first page)
-              const page = await pdf.getPage(1);
+              console.log(`PDF has ${numPages} page(s)`);
               
-              // Create canvas to render PDF page
-              const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better quality
-              const canvas = document.createElement('canvas');
-              const context = canvas.getContext('2d')!;
-              canvas.width = viewport.width;
-              canvas.height = viewport.height;
+              // For Personalausweis, process front and back (2 pages)
+              const pagesToProcess = (uploadedFile.documentType === 'personalausweis' && numPages >= 2) 
+                ? Math.min(numPages, 2) 
+                : 1;
               
-              // Render PDF page to canvas
-              await page.render({
-                canvasContext: context,
-                viewport: viewport,
-                canvas: canvas,
-              }).promise;
+              const pages: Array<{imageData: string, pageNumber: number}> = [];
               
-              // Convert canvas to base64 JPEG
-              const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-              imageBase64 = dataUrl.split(',')[1];
-              imageMimeType = 'image/jpeg';
+              for (let pageNum = 1; pageNum <= pagesToProcess; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                
+                // Create canvas to render PDF page
+                const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better quality
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d')!;
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                
+                // Render PDF page to canvas
+                await page.render({
+                  canvasContext: context,
+                  viewport: viewport,
+                  canvas: canvas,
+                }).promise;
+                
+                // Convert canvas to base64 JPEG
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                const imageBase64 = dataUrl.split(',')[1];
+                
+                pages.push({ imageData: imageBase64, pageNumber: pageNum });
+                console.log(`Processed page ${pageNum}/${pagesToProcess}`);
+              }
               
-              console.log('PDF converted to image successfully');
+              console.log(`PDF converted to ${pages.length} image(s) successfully`);
+              
+              // Call edge function with pages array
+              const { data: mappingResult, error: mappingError } = await supabase.functions.invoke(
+                'map-pdf-fields',
+                {
+                  body: {
+                    pages: pages,
+                    documentType: uploadedFile.documentType,
+                    antragId: antrag.id,
+                    parentNumber: uploadedFile.parentNumber || 1,
+                  },
+                }
+              );
+
+              if (mappingError) {
+                console.error('AI Mapping error:', mappingError);
+                toast({
+                  variant: "destructive",
+                  title: "KI-Mapping Fehler",
+                  description: `Fehler beim intelligenten Mapping: ${mappingError.message}`,
+                });
+              } else {
+                console.log('AI Mapping successful:', mappingResult);
+                
+                // Show success feedback with extracted data
+                const extractedData = mappingResult.mapped_fields || {};
+                const dataPreview = Object.entries(extractedData)
+                  .filter(([_, value]) => value !== null && value !== undefined)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .slice(0, 3)
+                  .join(', ');
+                
+                toast({
+                  title: "✓ Daten erfolgreich extrahiert",
+                  description: `${dataPreview}${Object.keys(extractedData).length > 3 ? '...' : ''}`,
+                  duration: 5000,
+                });
+              }
+              
             } else {
               // For image files, use directly
               imageBase64 = await new Promise<string>((resolve, reject) => {
