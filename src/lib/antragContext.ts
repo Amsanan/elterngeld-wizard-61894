@@ -21,13 +21,64 @@ export async function loadAntragData(antragId: string): Promise<AntragData | nul
 
     if (antragError) throw antragError;
 
-    // Get all related data including both parents from normalized elternteil table
-    const [kind, elternteilData, wohnsitz, wohnsitzAufenthalt, alleinerziehende, files] = await Promise.all([
+    // Get all related data including both parents and all form sections
+    const [
+      kind, 
+      elternteilData, 
+      wohnsitz, 
+      wohnsitzAufenthalt, 
+      alleinerziehende,
+      elternteilInfo,
+      kindAdresse,
+      arbeitImAusland,
+      antragstellende,
+      staatsangehoerigkeit,
+      familienstand,
+      betreuungKind,
+      elternkindBeziehung,
+      adoption,
+      weitereKinder,
+      krankenversicherung,
+      gesamteinkommen,
+      mindestbetrag,
+      bisherigeErwerbstaetigkeit,
+      einkommenVorGeburt,
+      steuernUndAbgaben,
+      einkommenErsatzLeistungen,
+      mutterschaftsLeistungen,
+      bankverbindung,
+      kontakt,
+      mitteilung,
+      unterschrift,
+      files
+    ] = await Promise.all([
       supabase.from('kind').select('*').eq('antrag_id', antragId).maybeSingle(),
-      supabase.from('elternteil').select('*').eq('antrag_id', antragId), // Get both parents
-      supabase.from('antrag_2c_wohnsitz').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('elternteil').select('*').eq('antrag_id', antragId),
+      supabase.from('antrag_2c_wohnsitz').select('*').eq('antrag_id', antragId),
       supabase.from('antrag_2c_wohnsitz_aufenthalt').select('*').eq('antrag_id', antragId).maybeSingle(),
       supabase.from('antrag_2a_alleinerziehende').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_2b_elternteil').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_2c_kind_adresse').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_2d_arbeit_im_ausland').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_2e_antragstellende').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_2f_staatsangehoerigkeit').select('*').eq('antrag_id', antragId),
+      supabase.from('antrag_2g_familienstand').select('*').eq('antrag_id', antragId),
+      supabase.from('antrag_3a_betreuung_kind').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_3b_elternkind_beziehung').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_3c_adoption').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_4_weitere_kinder_info').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_5_krankenversicherung').select('*').eq('antrag_id', antragId),
+      supabase.from('antrag_6a_gesamteinkommen').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_6b_mindestbetrag').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_7a_bisherige_erwerbstaetigkeit').select('*').eq('antrag_id', antragId),
+      supabase.from('antrag_8a_einkomen_vor_geburt_bestimmt').select('*').eq('antrag_id', antragId),
+      supabase.from('antrag_8b_steuern_und_abgaben').select('*').eq('antrag_id', antragId),
+      supabase.from('antrag_9_einkommen_ersatz_leistungen').select('*').eq('antrag_id', antragId),
+      supabase.from('antrag_10_mutterschafts_leistungen').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_16a_bankverbindung').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_16b_kontakt').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_16c_mitteilung').select('*').eq('antrag_id', antragId).maybeSingle(),
+      supabase.from('antrag_16d_unterschrift').select('*').eq('antrag_id', antragId).maybeSingle(),
       supabase.from('user_files').select('*').eq('antrag_id', antragId),
     ]);
 
@@ -68,29 +119,69 @@ export async function loadAntragData(antragId: string): Promise<AntragData | nul
       });
     }
 
-    // Add other table data
-    if (wohnsitz.data) {
-      Object.entries(wohnsitz.data).forEach(([key, value]) => {
-        if (key !== 'id' && key !== 'antrag_id' && key !== 'created_at') {
-          extracted_data[key] = value;
+    // Helper to merge table data, handling arrays and filtering parent-specific data
+    const mergeTableData = (data: any, suffix: string = '', elternteilId?: string) => {
+      if (!data) return;
+      
+      // Handle array results (e.g., wohnsitz, staatsangehoerigkeit with elternteil_id)
+      const records = Array.isArray(data) ? data : [data];
+      
+      records.forEach((record: any) => {
+        if (!record) return;
+        
+        // Filter by elternteil_id if specified
+        if (elternteilId && record.elternteil_id && record.elternteil_id !== elternteilId) {
+          return;
         }
+        
+        Object.entries(record).forEach(([key, value]) => {
+          if (key !== 'id' && key !== 'antrag_id' && key !== 'created_at' && key !== 'updated_at' && key !== 'elternteil_id') {
+            extracted_data[`${key}${suffix}`] = value;
+          }
+        });
       });
+    };
+
+    // Merge all table data
+    mergeTableData(alleinerziehende.data);
+    mergeTableData(elternteilInfo.data);
+    mergeTableData(kindAdresse.data);
+    mergeTableData(arbeitImAusland.data);
+    mergeTableData(antragstellende.data);
+    mergeTableData(betreuungKind.data);
+    mergeTableData(elternkindBeziehung.data);
+    mergeTableData(adoption.data);
+    mergeTableData(weitereKinder.data);
+    mergeTableData(gesamteinkommen.data);
+    mergeTableData(mindestbetrag.data);
+    mergeTableData(mutterschaftsLeistungen.data);
+    mergeTableData(bankverbindung.data);
+    mergeTableData(kontakt.data);
+    mergeTableData(mitteilung.data);
+    mergeTableData(unterschrift.data);
+    mergeTableData(wohnsitzAufenthalt.data);
+    
+    // Handle parent-specific data (wohnsitz, staatsangehoerigkeit, etc.)
+    if (elternteil_1) {
+      mergeTableData(wohnsitz.data, '', elternteil_1.id);
+      mergeTableData(staatsangehoerigkeit.data, '', elternteil_1.id);
+      mergeTableData(familienstand.data, '', elternteil_1.id);
+      mergeTableData(krankenversicherung.data, '', elternteil_1.id);
+      mergeTableData(bisherigeErwerbstaetigkeit.data, '', elternteil_1.id);
+      mergeTableData(einkommenVorGeburt.data, '', elternteil_1.id);
+      mergeTableData(steuernUndAbgaben.data, '', elternteil_1.id);
+      mergeTableData(einkommenErsatzLeistungen.data, '', elternteil_1.id);
     }
     
-    if (wohnsitzAufenthalt.data) {
-      Object.entries(wohnsitzAufenthalt.data).forEach(([key, value]) => {
-        if (key !== 'id' && key !== 'antrag_id' && key !== 'created_at') {
-          extracted_data[key] = value;
-        }
-      });
-    }
-    
-    if (alleinerziehende.data) {
-      Object.entries(alleinerziehende.data).forEach(([key, value]) => {
-        if (key !== 'id' && key !== 'antrag_id' && key !== 'created_at') {
-          extracted_data[key] = value;
-        }
-      });
+    if (elternteil_2) {
+      mergeTableData(wohnsitz.data, '_2', elternteil_2.id);
+      mergeTableData(staatsangehoerigkeit.data, '_2', elternteil_2.id);
+      mergeTableData(familienstand.data, '_2', elternteil_2.id);
+      mergeTableData(krankenversicherung.data, '_2', elternteil_2.id);
+      mergeTableData(bisherigeErwerbstaetigkeit.data, '_2', elternteil_2.id);
+      mergeTableData(einkommenVorGeburt.data, '_2', elternteil_2.id);
+      mergeTableData(steuernUndAbgaben.data, '_2', elternteil_2.id);
+      mergeTableData(einkommenErsatzLeistungen.data, '_2', elternteil_2.id);
     }
 
     // Get uploaded document types

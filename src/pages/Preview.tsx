@@ -84,37 +84,28 @@ const Preview = () => {
   const generatePreview = async (data: any) => {
     setGenerating(true);
     try {
-      // Helper function to extract string value from data
-      const getValue = (field: any): string | undefined => {
-        if (typeof field === 'string') return field;
-        if (field && typeof field === 'object' && field.value !== 'undefined') {
-          return field.value;
+      // Helper function to convert values to appropriate types
+      const formatValue = (value: any): string | boolean | undefined => {
+        if (value === null || value === undefined) return undefined;
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'string') return value;
+        if (typeof value === 'number') return String(value);
+        if (value instanceof Date) return value.toISOString().split('T')[0];
+        return String(value);
+      };
+
+      // Convert ALL database data to FormData format
+      const formData: FormData = {};
+      
+      // Map all extracted data from database
+      Object.entries(data).forEach(([key, value]) => {
+        const formattedValue = formatValue(value);
+        if (formattedValue !== undefined) {
+          formData[key] = formattedValue;
         }
-        return undefined;
-      };
+      });
 
-      // Convert database data to FormData format
-      const formData: FormData = {
-        // Kind
-        kind_vorname: getValue(data.kind_vorname),
-        kind_nachname: getValue(data.kind_nachname),
-        kind_geburtsdatum: getValue(data.kind_geburtsdatum),
-        kind_geschlecht: getValue(data.kind_geschlecht),
-        
-        // Parent
-        vorname: getValue(data.vorname),
-        nachname: getValue(data.nachname),
-        geburtsdatum: getValue(data.geburtsdatum),
-        steuer_identifikationsnummer: getValue(data.steuer_identifikationsnummer),
-        
-        // Address
-        strasse: getValue(data.strasse),
-        hausnr: getValue(data.hausnr),
-        plz: getValue(data.plz),
-        ort: getValue(data.ort),
-      };
-
-      console.log('Generating PDF with data:', formData);
+      console.log('Generating PDF with complete database data:', formData);
 
       const bytes = await generateFilledPDF(formData);
       setPdfBytes(bytes);
