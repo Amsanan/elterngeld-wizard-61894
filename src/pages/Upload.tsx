@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { performOCR, detectDocumentType, type OCRResult } from "@/lib/documents";
 import { requiresParentSelection } from "@/lib/documentMapping";
+import * as pdfjsLib from 'pdfjs-dist';
 
 interface UploadedFile {
   file: File;
@@ -306,32 +307,69 @@ const Upload = () => {
         // Call AI mapping function for other document types
         else if (uploadedFile.documentType && uploadedFile.documentType !== 'geburtsurkunde') {
           try {
-            // Convert file to base64
-            const fileBase64 = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => {
-                const base64 = (reader.result as string).split(',')[1];
-                resolve(base64);
-              };
-              reader.onerror = reject;
-              reader.readAsDataURL(uploadedFile.file);
-            });
+            let imageBase64: string;
+            let imageMimeType: string;
 
-            console.log('Calling map-pdf-fields with image file:', {
+            // Check if file is PDF - need to convert to image first
+            if (uploadedFile.file.type === 'application/pdf') {
+              console.log('Converting PDF to image for OCR...');
+              
+              // Load PDF using pdf.js
+              const arrayBuffer = await uploadedFile.file.arrayBuffer();
+              const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+              
+              // Get first page (most IDs have info on first page)
+              const page = await pdf.getPage(1);
+              
+              // Create canvas to render PDF page
+              const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better quality
+              const canvas = document.createElement('canvas');
+              const context = canvas.getContext('2d')!;
+              canvas.width = viewport.width;
+              canvas.height = viewport.height;
+              
+              // Render PDF page to canvas
+              await page.render({
+                canvasContext: context,
+                viewport: viewport,
+                canvas: canvas,
+              }).promise;
+              
+              // Convert canvas to base64 JPEG
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+              imageBase64 = dataUrl.split(',')[1];
+              imageMimeType = 'image/jpeg';
+              
+              console.log('PDF converted to image successfully');
+            } else {
+              // For image files, use directly
+              imageBase64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const base64 = (reader.result as string).split(',')[1];
+                  resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(uploadedFile.file);
+              });
+              imageMimeType = uploadedFile.file.type;
+            }
+
+            console.log('Calling map-pdf-fields:', {
               documentType: uploadedFile.documentType,
               antragId: antrag.id,
-              fileSize: uploadedFile.file.size,
+              mimeType: imageMimeType,
             });
 
             const { data: mappingResult, error: mappingError } = await supabase.functions.invoke(
               'map-pdf-fields',
               {
                 body: {
-                  imageData: fileBase64,
-                  mimeType: uploadedFile.file.type,
+                  imageData: imageBase64,
+                  mimeType: imageMimeType,
                   documentType: uploadedFile.documentType,
                   antragId: antrag.id,
-                  parentNumber: uploadedFile.parentNumber || 1, // Default to Parent 1
+                  parentNumber: uploadedFile.parentNumber || 1,
                 },
               }
             );
