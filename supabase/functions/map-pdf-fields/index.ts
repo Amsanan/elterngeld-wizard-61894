@@ -359,14 +359,14 @@ Beginne jetzt mit der Analyse:`;
         try {
           console.log(`API attempt ${attempt}/${maxRetries}`);
 
-          const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              Authorization: `Bearer ${OPENROUTER_API_KEY}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "google/gemini-2.5-flash", // Better vision model via Lovable AI
+              model: "qwen/qwen-2-vl-7b-instruct",
               messages: [
                 { role: "system", content: systemPrompt },
                 {
@@ -403,7 +403,7 @@ Beginne jetzt mit der Analyse:`;
           }
 
           // For other errors or last attempt, throw with details
-          console.error("AI Gateway API error:", response.status, errorText);
+          console.error("OpenRouter API error:", response.status, errorText);
           throw { status: response.status, errorText };
         } catch (error: any) {
           // If it's the last attempt or not a retriable error, throw
@@ -415,10 +415,10 @@ Beginne jetzt mit der Analyse:`;
       throw new Error("Max retries exceeded");
     }
 
-    // Call Lovable AI with retry logic
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+    // Call OpenRouter API with retry logic
+    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+    if (!OPENROUTER_API_KEY) {
+      throw new Error("OPENROUTER_API_KEY not configured");
     }
 
     let response;
@@ -446,7 +446,7 @@ Beginne jetzt mit der Analyse:`;
         });
       }
 
-      return new Response(JSON.stringify({ error: `AI Gateway Fehler: ${error?.message || "Unbekannter Fehler"}` }), {
+      return new Response(JSON.stringify({ error: `OpenRouter Fehler: ${error?.message || "Unbekannter Fehler"}` }), {
         status: error?.status || 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
