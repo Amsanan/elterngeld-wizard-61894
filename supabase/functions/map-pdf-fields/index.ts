@@ -318,7 +318,7 @@ Beginne jetzt mit der Analyse:`;
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "meta-llama/llama-3.2-90b-vision-instruct:free",
+              model: "qwen/qwen-2-vl-7b-instruct:free",
               messages: [
                 { role: "system", content: systemPrompt },
                 { 
