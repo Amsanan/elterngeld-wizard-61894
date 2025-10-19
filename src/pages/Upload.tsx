@@ -16,6 +16,7 @@ interface UploadedFile {
   uploading?: boolean;
   uploaded?: boolean;
   visionData?: any; // Store vision API results
+  parentNumber?: 1 | 2; // Which parent this document belongs to (for Personalausweis, etc.)
 }
 
 const Upload = () => {
@@ -329,6 +330,7 @@ const Upload = () => {
                   mimeType: uploadedFile.file.type,
                   documentType: uploadedFile.documentType,
                   antragId: antrag.id,
+                  parentNumber: uploadedFile.parentNumber || 1, // Default to Parent 1
                 },
               }
             );
@@ -418,6 +420,12 @@ const Upload = () => {
 
   const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const setParentNumber = (index: number, parentNum: 1 | 2) => {
+    setFiles((prev) => prev.map((f, i) => 
+      i === index ? { ...f, parentNumber: parentNum } : f
+    ));
   };
 
   return (
@@ -511,6 +519,35 @@ const Upload = () => {
                           <Badge variant="outline" className="mb-2">
                             {uploadedFile.documentType}
                           </Badge>
+                        )}
+
+                        {/* Parent selection for documents that need it */}
+                        {(uploadedFile.documentType === 'personalausweis' || 
+                          uploadedFile.documentType === 'gehaltsnachweis' ||
+                          uploadedFile.documentType === 'versicherungsnachweis') && (
+                          <div className="mt-3 mb-3 p-3 bg-secondary/20 rounded-lg">
+                            <label className="text-xs font-semibold text-foreground mb-2 block">
+                              Dieses Dokument gehört zu:
+                            </label>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant={uploadedFile.parentNumber === 1 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setParentNumber(index, 1)}
+                              >
+                                Elternteil 1
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={uploadedFile.parentNumber === 2 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setParentNumber(index, 2)}
+                              >
+                                Elternteil 2
+                              </Button>
+                            </div>
+                          </div>
                         )}
 
                         {uploadedFile.ocrResult && (

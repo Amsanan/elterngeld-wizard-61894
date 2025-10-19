@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { imageData, mimeType, documentType, antragId } = await req.json();
+    const { imageData, mimeType, documentType, antragId, parentNumber = 1 } = await req.json();
     
     console.log("Processing image for document type:", documentType, "MIME:", mimeType);
 
@@ -245,16 +245,23 @@ Nutze die Mapping-Referenz, um die korrekten DATABASE COLUMN NAMES zu verwenden.
         // Process parent/address data for personalausweis or adresse documents
         if (documentType === "personalausweis" || documentType === "adresse") {
         const elternteilData: any = { antrag_id: antragId };
-        if (fields.vorname) elternteilData.vorname = fields.vorname;
-        if (fields.nachname) elternteilData.nachname = fields.nachname;
-        if (fields.geburtsdatum) elternteilData.geburtsdatum = fields.geburtsdatum;
-        if (fields.geschlecht) elternteilData.geschlecht = fields.geschlecht;
-        if (fields.steuer_identifikationsnummer) elternteilData.steuer_identifikationsnummer = fields.steuer_identifikationsnummer;
-        if (fields.vorname_2) elternteilData.vorname_2 = fields.vorname_2;
-        if (fields.nachname_2) elternteilData.nachname_2 = fields.nachname_2;
-        if (fields.geburtsdatum_2) elternteilData.geburtsdatum_2 = fields.geburtsdatum_2;
-        if (fields.geschlecht_2) elternteilData.geschlecht_2 = fields.geschlecht_2;
-        if (fields.steuer_identifikationsnummer_2) elternteilData.steuer_identifikationsnummer_2 = fields.steuer_identifikationsnummer_2;
+        
+        // Map to correct parent fields based on parentNumber (1 or 2)
+        if (parentNumber === 2) {
+          // Save to Parent 2 fields (with _2 suffix)
+          if (fields.vorname) elternteilData.vorname_2 = fields.vorname;
+          if (fields.nachname) elternteilData.nachname_2 = fields.nachname;
+          if (fields.geburtsdatum) elternteilData.geburtsdatum_2 = fields.geburtsdatum;
+          if (fields.geschlecht) elternteilData.geschlecht_2 = fields.geschlecht;
+          if (fields.steuer_identifikationsnummer) elternteilData.steuer_identifikationsnummer_2 = fields.steuer_identifikationsnummer;
+        } else {
+          // Save to Parent 1 fields (default, no suffix)
+          if (fields.vorname) elternteilData.vorname = fields.vorname;
+          if (fields.nachname) elternteilData.nachname = fields.nachname;
+          if (fields.geburtsdatum) elternteilData.geburtsdatum = fields.geburtsdatum;
+          if (fields.geschlecht) elternteilData.geschlecht = fields.geschlecht;
+          if (fields.steuer_identifikationsnummer) elternteilData.steuer_identifikationsnummer = fields.steuer_identifikationsnummer;
+        }
 
         if (Object.keys(elternteilData).length > 1) {
           console.log("Saving elternteil data:", elternteilData);
