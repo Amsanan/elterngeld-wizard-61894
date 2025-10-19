@@ -8,17 +8,10 @@ const corsHeaders = {
 
 // Generic upsert helper function
 async function upsertRecord(supabase: any, tableName: string, data: any, matchCriteria: any) {
-  const { data: existing } = await supabase
-    .from(tableName)
-    .select("id")
-    .match(matchCriteria)
-    .maybeSingle();
+  const { data: existing } = await supabase.from(tableName).select("id").match(matchCriteria).maybeSingle();
 
   if (existing) {
-    const { error } = await supabase
-      .from(tableName)
-      .update(data)
-      .eq("id", existing.id);
+    const { error } = await supabase.from(tableName).update(data).eq("id", existing.id);
     if (error) {
       console.error(`Error updating ${tableName}:`, error);
     } else {
@@ -26,11 +19,7 @@ async function upsertRecord(supabase: any, tableName: string, data: any, matchCr
     }
     return existing;
   } else {
-    const { data: inserted, error } = await supabase
-      .from(tableName)
-      .insert(data)
-      .select()
-      .single();
+    const { data: inserted, error } = await supabase.from(tableName).insert(data).select().single();
     if (error) {
       console.error(`Error inserting ${tableName}:`, error);
     } else {
@@ -41,13 +30,13 @@ async function upsertRecord(supabase: any, tableName: string, data: any, matchCr
 }
 
 // Document-to-table mapping configuration
-const DOCUMENT_TABLE_MAPPING: Record<string, { tables: string[], requiresParent: boolean }> = {
-  'geburtsurkunde': { tables: ['kind'], requiresParent: false },
-  'personalausweis': { tables: ['elternteil', 'antrag_2c_wohnsitz'], requiresParent: true },
-  'gehaltsnachweis': { tables: ['elternteil', 'antrag_7a_bisherige_erwerbstaetigkeit'], requiresParent: true },
-  'krankenversicherung': { tables: ['elternteil', 'antrag_5_krankenversicherung'], requiresParent: true },
-  'adresse': { tables: ['antrag_2c_wohnsitz', 'antrag_2c_wohnsitz_aufenthalt'], requiresParent: true },
-  'versicherungsnachweis': { tables: ['elternteil', 'antrag_5_krankenversicherung'], requiresParent: true },
+const DOCUMENT_TABLE_MAPPING: Record<string, { tables: string[]; requiresParent: boolean }> = {
+  geburtsurkunde: { tables: ["kind"], requiresParent: false },
+  personalausweis: { tables: ["elternteil", "antrag_2c_wohnsitz"], requiresParent: true },
+  gehaltsnachweis: { tables: ["elternteil", "antrag_7a_bisherige_erwerbstaetigkeit"], requiresParent: true },
+  krankenversicherung: { tables: ["elternteil", "antrag_5_krankenversicherung"], requiresParent: true },
+  adresse: { tables: ["antrag_2c_wohnsitz", "antrag_2c_wohnsitz_aufenthalt"], requiresParent: true },
+  versicherungsnachweis: { tables: ["elternteil", "antrag_5_krankenversicherung"], requiresParent: true },
 };
 
 serve(async (req) => {
@@ -57,13 +46,13 @@ serve(async (req) => {
 
   try {
     const { imageData, mimeType, documentType, antragId, parentNumber = 1 } = await req.json();
-    
+
     console.log("Processing image for document type:", documentType, "MIME:", mimeType);
 
     // Document-specific mapping instructions
     const getDocumentMappingInstructions = (docType: string) => {
-      switch(docType) {
-        case 'geburtsurkunde':
+      switch (docType) {
+        case "geburtsurkunde":
           return `
 ⚠️ CRITICAL: Geburtsurkunde (Birth Certificate) → NUR KIND-TABELLE!
 Geburtsurkunden enthalten KEINE Informationen über Eltern, Adressen oder andere Daten.
@@ -81,7 +70,7 @@ KIND-TABELLE - DATABASE COLUMN NAMES:
 - keine_weitere_kinder (Keine weiteren Kinder, BOOLEAN: true/false)
 - insgesamt (Gesamtzahl Kinder, BOOLEAN: true/false)`;
 
-        case 'personalausweis':
+        case "personalausweis":
           return `
 ⚠️ PERSONALAUSWEIS (ID Card) → EXTRAHIERE ALLE SICHTBAREN DATEN!
 Ein Personalausweis hat VORDER- und RÜCKSEITE mit verschiedenen Informationen:
@@ -115,7 +104,7 @@ Wenn du siehst: "13599 BERLIN" und "STRAUSSEEWEG 6"
 → strasse: "Strausseeweg" (nicht "STRAUSSEEWEG")
 → hausnr: "6"`;
 
-        case 'adresse':
+        case "adresse":
           return `
 ADRESSDOKUMENT → WOHNSITZ + AUFENTHALT TABELLEN!
 Dokumente wie Meldebescheinigung oder Wohnsitznachweis.
@@ -137,8 +126,8 @@ ANTRAG_2C_WOHNSITZ_AUFENTHALT-TABELLE - DATABASE COLUMN NAMES:
 - seit_in_deutschland (Seit bestimmtem Datum in Deutschland, BOOLEAN: true/false)
 - seit_datum_deutschland (Ab wann in Deutschland, Format: YYYY-MM-DD)`;
 
-        case 'krankenversicherung':
-        case 'versicherungsnachweis':
+        case "krankenversicherung":
+        case "versicherungsnachweis":
           return `
 KRANKENVERSICHERUNG → ELTERNTEIL + VERSICHERUNG TABELLEN!
 Versicherungskarte, Mitgliedsbescheinigung oder Versicherungsnachweis.
@@ -160,7 +149,7 @@ ANTRAG_5_KRANKENVERSICHERUNG-TABELLE - DATABASE COLUMN NAMES:
 - krankenkasse_plz (PLZ der Krankenkasse, 5-stellig)
 - krankenkasse_ort (Ort der Krankenkasse)`;
 
-        case 'gehaltsnachweis':
+        case "gehaltsnachweis":
           return `
 GEHALTSNACHWEIS → ELTERNTEIL + ERWERBSTÄTIGKEIT TABELLEN!
 Gehaltsabrechnung, Einkommensnachweis, Lohnbescheinigung.
@@ -310,29 +299,29 @@ Beginne jetzt mit der Analyse:`;
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           console.log(`API attempt ${attempt}/${maxRetries}`);
-          
+
           const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
-              "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+              Authorization: `Bearer ${OPENROUTER_API_KEY}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "qwen/qwen-2-vl-7b-instruct:free",
+              model: "mistralai/mistral-small-3.2-24b-instruct:free",
               messages: [
                 { role: "system", content: systemPrompt },
-                { 
-                  role: "user", 
+                {
+                  role: "user",
                   content: [
                     { type: "text", text: userPrompt },
-                    { 
-                      type: "image_url", 
-                      image_url: { 
-                        url: `data:${mimeType};base64,${imageData}` 
-                      } 
-                    }
-                  ]
-                }
+                    {
+                      type: "image_url",
+                      image_url: {
+                        url: `data:${mimeType};base64,${imageData}`,
+                      },
+                    },
+                  ],
+                },
               ],
               temperature: 0.1,
             }),
@@ -345,19 +334,18 @@ Beginne jetzt mit der Analyse:`;
           }
 
           const errorText = await response.text();
-          
+
           // If rate limited (429), retry with exponential backoff
           if (response.status === 429 && attempt < maxRetries) {
             const delay = initialDelay * Math.pow(2, attempt - 1);
             console.log(`Rate limited. Retrying in ${delay}ms... (attempt ${attempt}/${maxRetries})`);
-            await new Promise(resolve => setTimeout(resolve, delay));
+            await new Promise((resolve) => setTimeout(resolve, delay));
             continue;
           }
 
           // For other errors or last attempt, throw with details
           console.error("OpenRouter API error:", response.status, errorText);
           throw { status: response.status, errorText };
-
         } catch (error: any) {
           // If it's the last attempt or not a retriable error, throw
           if (attempt === maxRetries || !error?.status) {
@@ -380,32 +368,34 @@ Beginne jetzt mit der Analyse:`;
     } catch (error: any) {
       if (error?.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit erreicht nach mehreren Versuchen. Bitte versuchen Sie es in einigen Minuten erneut." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({
+            error: "Rate limit erreicht nach mehreren Versuchen. Bitte versuchen Sie es in einigen Minuten erneut.",
+          }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       if (error?.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "API Fehler. Bitte versuchen Sie es später erneut." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "API Fehler. Bitte versuchen Sie es später erneut." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       if (error?.status === 400) {
-        return new Response(
-          JSON.stringify({ error: `Vision API Fehler: ${error?.errorText}` }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: `Vision API Fehler: ${error?.errorText}` }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-      
-      return new Response(
-        JSON.stringify({ error: `OpenRouter Fehler: ${error?.message || 'Unbekannter Fehler'}` }),
-        { status: error?.status || 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+
+      return new Response(JSON.stringify({ error: `OpenRouter Fehler: ${error?.message || "Unbekannter Fehler"}` }), {
+        status: error?.status || 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const aiResponse = await response.json();
     const content = aiResponse.choices[0].message.content;
-    
+
     // Parse AI response
     let mappedData;
     try {
@@ -427,18 +417,17 @@ Beginne jetzt mit der Analyse:`;
 
       const fields = mappedData.mapped_fields;
       const mapping = DOCUMENT_TABLE_MAPPING[documentType];
-      
+
       if (!mapping) {
         console.warn(`No mapping found for document type: ${documentType}`);
-        return new Response(
-          JSON.stringify(mappedData),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify(mappedData), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       // Dynamic table population based on mapping
       for (const tableName of mapping.tables) {
-        if (tableName === 'kind') {
+        if (tableName === "kind") {
           const kindData: any = { antrag_id: antragId };
           if (fields.vorname) kindData.vorname = fields.vorname;
           if (fields.nachname) kindData.nachname = fields.nachname;
@@ -453,33 +442,33 @@ Beginne jetzt mit der Analyse:`;
 
           console.log("Saving kind data:", kindData);
           await upsertRecord(supabase, "kind", kindData, { antrag_id: antragId });
-        
-        } else if (tableName === 'elternteil') {
+        } else if (tableName === "elternteil") {
           // Create or update elternteil record
-          const elternteilData: any = { 
+          const elternteilData: any = {
             antrag_id: antragId,
-            parent_number: parentNumber
+            parent_number: parentNumber,
           };
           if (fields.vorname) elternteilData.vorname = fields.vorname;
           if (fields.nachname) elternteilData.nachname = fields.nachname;
           if (fields.geburtsdatum) elternteilData.geburtsdatum = fields.geburtsdatum;
           if (fields.geschlecht) elternteilData.geschlecht = fields.geschlecht;
-          if (fields.steuer_identifikationsnummer) elternteilData.steuer_identifikationsnummer = fields.steuer_identifikationsnummer;
+          if (fields.steuer_identifikationsnummer)
+            elternteilData.steuer_identifikationsnummer = fields.steuer_identifikationsnummer;
 
-          if (Object.keys(elternteilData).length > 2) { // More than just antrag_id and parent_number
+          if (Object.keys(elternteilData).length > 2) {
+            // More than just antrag_id and parent_number
             console.log("Saving elternteil data:", elternteilData);
-            const elternteil = await upsertRecord(supabase, "elternteil", elternteilData, { 
-              antrag_id: antragId, 
-              parent_number: parentNumber 
+            const elternteil = await upsertRecord(supabase, "elternteil", elternteilData, {
+              antrag_id: antragId,
+              parent_number: parentNumber,
             });
-            
+
             // Store elternteil_id for related tables
             if (elternteil) {
               (fields as any)._elternteil_id = elternteil.id;
             }
           }
-        
-        } else if (tableName === 'antrag_2c_wohnsitz') {
+        } else if (tableName === "antrag_2c_wohnsitz") {
           const wohnsitzData: any = { antrag_id: antragId };
           if ((fields as any)._elternteil_id) wohnsitzData.elternteil_id = (fields as any)._elternteil_id;
           if (fields.strasse) wohnsitzData.strasse = fields.strasse;
@@ -493,11 +482,11 @@ Beginne jetzt mit der Analyse:`;
             console.log("Saving wohnsitz data:", wohnsitzData);
             await upsertRecord(supabase, "antrag_2c_wohnsitz", wohnsitzData, { antrag_id: antragId });
           }
-        
-        } else if (tableName === 'antrag_2c_wohnsitz_aufenthalt') {
+        } else if (tableName === "antrag_2c_wohnsitz_aufenthalt") {
           const aufenthaltData: any = { antrag_id: antragId };
           if ((fields as any)._elternteil_id) aufenthaltData.elternteil_id = (fields as any)._elternteil_id;
-          if (fields.wohnsitz_in_deutschland !== undefined) aufenthaltData.wohnsitz_in_deutschland = fields.wohnsitz_in_deutschland;
+          if (fields.wohnsitz_in_deutschland !== undefined)
+            aufenthaltData.wohnsitz_in_deutschland = fields.wohnsitz_in_deutschland;
           if (fields.seit_meiner_geburt !== undefined) aufenthaltData.seit_meiner_geburt = fields.seit_meiner_geburt;
           if (fields.seit_in_deutschland !== undefined) aufenthaltData.seit_in_deutschland = fields.seit_in_deutschland;
           if (fields.seit_datum_deutschland) aufenthaltData.seit_datum_deutschland = fields.seit_datum_deutschland;
@@ -506,8 +495,7 @@ Beginne jetzt mit der Analyse:`;
             console.log("Saving aufenthalt data:", aufenthaltData);
             await upsertRecord(supabase, "antrag_2c_wohnsitz_aufenthalt", aufenthaltData, { antrag_id: antragId });
           }
-        
-        } else if (tableName === 'antrag_5_krankenversicherung') {
+        } else if (tableName === "antrag_5_krankenversicherung") {
           const versicherungData: any = { antrag_id: antragId };
           if ((fields as any)._elternteil_id) versicherungData.elternteil_id = (fields as any)._elternteil_id;
           if (fields.gesetzlich_ver !== undefined) versicherungData.gesetzlich_ver = fields.gesetzlich_ver;
@@ -519,12 +507,13 @@ Beginne jetzt mit der Analyse:`;
             console.log("Saving versicherung data:", versicherungData);
             await upsertRecord(supabase, "antrag_5_krankenversicherung", versicherungData, { antrag_id: antragId });
           }
-        
-        } else if (tableName === 'antrag_7a_bisherige_erwerbstaetigkeit') {
+        } else if (tableName === "antrag_7a_bisherige_erwerbstaetigkeit") {
           const erwerbData: any = { antrag_id: antragId };
           if ((fields as any)._elternteil_id) erwerbData.elternteil_id = (fields as any)._elternteil_id;
-          if (fields.einkuenfte_nicht_selbststaendig !== undefined) erwerbData.einkuenfte_nicht_selbststaendig = fields.einkuenfte_nicht_selbststaendig;
-          if (fields.selbststaendig_einkuenfte !== undefined) erwerbData.selbststaendig_einkuenfte = fields.selbststaendig_einkuenfte;
+          if (fields.einkuenfte_nicht_selbststaendig !== undefined)
+            erwerbData.einkuenfte_nicht_selbststaendig = fields.einkuenfte_nicht_selbststaendig;
+          if (fields.selbststaendig_einkuenfte !== undefined)
+            erwerbData.selbststaendig_einkuenfte = fields.selbststaendig_einkuenfte;
           if (fields.keine_einkuenfte !== undefined) erwerbData.keine_einkuenfte = fields.keine_einkuenfte;
 
           if (Object.keys(erwerbData).length > 1) {
@@ -537,16 +526,14 @@ Beginne jetzt mit der Analyse:`;
 
     console.log("Successfully mapped fields:", mappedData);
 
-    return new Response(
-      JSON.stringify(mappedData),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
+    return new Response(JSON.stringify(mappedData), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Error in map-pdf-fields:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
