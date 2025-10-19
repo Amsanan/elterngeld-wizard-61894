@@ -83,23 +83,37 @@ KIND-TABELLE - DATABASE COLUMN NAMES:
 
         case 'personalausweis':
           return `
-PERSONALAUSWEIS (ID Card) → ELTERNTEIL + WOHNSITZ TABELLEN!
-Ein Personalausweis enthält Personen- UND Adressdaten.
+⚠️ PERSONALAUSWEIS (ID Card) → EXTRAHIERE ALLE SICHTBAREN DATEN!
+Ein Personalausweis hat VORDER- und RÜCKSEITE mit verschiedenen Informationen:
+- VORDERSEITE: Name, Geburtsdatum, Geschlecht, Augenfarbe, Größe, Foto
+- RÜCKSEITE: ADRESSE (Anschrift/Address/Adresse), Ausstellungsdatum, Behörde
 
-ELTERNTEIL-TABELLE - DATABASE COLUMN NAMES:
-- vorname (Vorname, z.B. "Anna")
-- nachname (Nachname/Familienname, z.B. "Schmidt")
-- geburtsdatum (Geburtsdatum, Format: YYYY-MM-DD, z.B. "1990-05-20")
+⚠️ KRITISCH: Du MUSST ALLE im Bild sichtbaren Felder extrahieren!
+Wenn du eine ADRESSE siehst (Straße, PLZ, Ort) → EXTRAHIERE SIE VOLLSTÄNDIG!
+Wenn du persönliche Daten siehst (Name, Geburtsdatum) → EXTRAHIERE SIE VOLLSTÄNDIG!
+
+ELTERNTEIL-TABELLE - DATABASE COLUMN NAMES (aus Vorderseite):
+- vorname (Vorname, z.B. "Anna", oft unter "Given names"/"Vornamen")
+- nachname (Nachname/Familienname, z.B. "Schmidt", oft unter "Surname"/"Name")
+- geburtsdatum (Geburtsdatum, Format: YYYY-MM-DD, z.B. "1990-05-20", aus "Date of birth"/"Datum")
 - geschlecht (Geschlecht, WERTE: "weiblich", "maennlich", "divers", "ohne_angabe")
 - steuer_identifikationsnummer (Steuer-ID, 11 Zeichen, z.B. "12345678901")
 
-ANTRAG_2C_WOHNSITZ-TABELLE - DATABASE COLUMN NAMES:
-- strasse (Straßenname, z.B. "Hauptstraße")
-- hausnr (Hausnummer, z.B. "42" oder "42a")
-- plz (Postleitzahl, 5-stellig, z.B. "10115")
-- ort (Wohnort/Stadt, z.B. "Berlin")
+ANTRAG_2C_WOHNSITZ-TABELLE - DATABASE COLUMN NAMES (aus Rückseite):
+⚠️ SUCHE NACH: "Anschrift"/"Address"/"Adresse" auf der Rückseite!
+- strasse (Straßenname, z.B. "STRAUSSEEWEG", "Hauptstraße" - OHNE Hausnummer!)
+- hausnr (Hausnummer separat, z.B. "6", "42", "42a")
+- plz (Postleitzahl, 5-stellig, z.B. "13599", "10115")
+- ort (Wohnort/Stadt, z.B. "BERLIN", "München")
 - adresszusatz (Adresszusatz, optional, z.B. "3. Stock links")
-- wohnsitz_ausland (Wohnsitz im Ausland, BOOLEAN: true/false)`;
+- wohnsitz_ausland (Wohnsitz im Ausland, BOOLEAN: false für deutsche Adressen)
+
+⚠️ BEISPIEL RÜCKSEITE:
+Wenn du siehst: "13599 BERLIN" und "STRAUSSEEWEG 6"
+→ plz: "13599"
+→ ort: "Berlin" (nicht "BERLIN")
+→ strasse: "Strausseeweg" (nicht "STRAUSSEEWEG")
+→ hausnr: "6"`;
 
         case 'adresse':
           return `
