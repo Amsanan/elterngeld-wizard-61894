@@ -99,16 +99,16 @@ const Applications = () => {
     if (!selectedAntragId) return;
 
     try {
-      const { error } = await supabase
-        .from('antrag')
-        .delete()
-        .eq('id', selectedAntragId);
+      // Call database function to delete antrag and all related data including storage files
+      const { error } = await supabase.rpc('delete_antrag_cascade', {
+        p_antrag_id: selectedAntragId
+      });
 
       if (error) throw error;
 
       toast({
         title: "Antrag gelöscht",
-        description: "Der Antrag wurde erfolgreich gelöscht.",
+        description: "Der Antrag und alle zugehörigen Daten wurden erfolgreich gelöscht.",
       });
 
       queryClient.invalidateQueries({ queryKey: ['applications'] });
@@ -235,6 +235,14 @@ const Applications = () => {
             <AlertDialogTitle>Antrag löschen?</AlertDialogTitle>
             <AlertDialogDescription>
               Möchten Sie diesen Antrag wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+              <br /><br />
+              <strong>Folgende Daten werden gelöscht:</strong>
+              <ul className="list-disc list-inside mt-2 text-sm">
+                <li>Der Antrag selbst</li>
+                <li>Alle hochgeladenen Dokumente (PDFs/Bilder)</li>
+                <li>Alle Extraktionslogs</li>
+                <li>Alle zugehörigen Formulardaten</li>
+              </ul>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

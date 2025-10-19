@@ -1842,6 +1842,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_antrag_cascade: {
+        Args: { p_antrag_id: string }
+        Returns: undefined
+      }
       delete_expired_data: {
         Args: Record<PropertyKey, never>
         Returns: undefined
