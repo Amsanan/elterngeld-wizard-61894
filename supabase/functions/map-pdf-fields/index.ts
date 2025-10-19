@@ -39,6 +39,16 @@ const DOCUMENT_TABLE_MAPPING: Record<string, { tables: string[]; requiresParent:
   versicherungsnachweis: { tables: ["elternteil", "antrag_5_krankenversicherung"], requiresParent: true },
 };
 
+// Table field mappings - define which fields belong to each table
+const TABLE_FIELDS: Record<string, string[]> = {
+  elternteil: ["vorname", "nachname", "geburtsdatum", "geschlecht", "steuer_identifikationsnummer"],
+  antrag_2c_wohnsitz: ["strasse", "hausnr", "plz", "ort", "adresszusatz", "wohnsitz_ausland"],
+  antrag_2c_wohnsitz_aufenthalt: ["wohnsitz_in_deutschland", "seit_meiner_geburt", "seit_in_deutschland", "seit_datum_deutschland"],
+  antrag_5_krankenversicherung: ["gesetzlich_ver", "privat_ver", "krankenkassename", "versichertennummer"],
+  antrag_7a_bisherige_erwerbstaetigkeit: ["einkuenfte_nicht_selbststaendig", "selbststaendig_einkuenfte", "keine_einkuenfte"],
+  kind: ["vorname", "nachname", "geburtsdatum", "anzahl_mehrlinge", "fruehgeboren", "errechneter_geburtsdatum", "behinderung", "anzahl_weitere_kinder", "keine_weitere_kinder", "insgesamt"]
+};
+
 // Prompt for ID card front page (personal data)
 function getPersonalDataPrompt(): string {
   return `Du bist ein Datenextraktionsassistent für deutsche Personalausweise.
@@ -270,10 +280,12 @@ serve(async (req) => {
         tableData.elternteil_id = elternteilId;
       }
 
-      // Map fields based on table
+      // Only map fields that belong to this specific table
+      const allowedFields = TABLE_FIELDS[tableName] || [];
       let hasData = false;
+      
       for (const [key, value] of Object.entries(mapped_fields)) {
-        if (value !== null && value !== undefined) {
+        if (allowedFields.includes(key) && value !== null && value !== undefined) {
           tableData[key] = value;
           hasData = true;
         }
