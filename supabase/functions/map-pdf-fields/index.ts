@@ -454,6 +454,8 @@ Beginne jetzt mit der Analyse:`;
 
     const aiResponse = await response.json();
     const content = aiResponse.choices[0].message.content;
+    
+    console.log("Raw AI response content:", content);
 
     // Parse AI response
     let mappedData;
@@ -464,8 +466,10 @@ Beginne jetzt mit der Analyse:`;
       console.log("AI returned field names:", Object.keys(mappedData.mapped_fields || {}));
       console.log("AI mapped data:", JSON.stringify(mappedData, null, 2));
     } catch (parseError) {
-      console.error("Failed to parse AI response:", content);
-      throw new Error("Invalid AI response format");
+      console.error("Failed to parse AI response. Raw content:", content);
+      console.error("Parse error:", parseError);
+      const errorMsg = parseError instanceof Error ? parseError.message : String(parseError);
+      throw new Error(`Invalid AI response format: ${errorMsg}`);
     }
 
     // Save mapped data to database (only if antragId provided)
