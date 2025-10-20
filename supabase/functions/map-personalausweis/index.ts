@@ -31,7 +31,7 @@ async function upsertRecord(supabase: any, tableName: string, data: any, matchCr
 
 // Table field mappings
 const TABLE_FIELDS: Record<string, string[]> = {
-  elternteil: ["vorname", "nachname", "geburtsname", "geburtsdatum", "geschlecht", "steuer_identifikationsnummer"],
+  elternteil: ["vorname", "nachname", "geburtsdatum", "geschlecht", "steuer_identifikationsnummer"],
   antrag_2c_wohnsitz: ["strasse", "hausnr", "plz", "ort", "adresszusatz", "wohnsitz_ausland"],
 };
 
@@ -83,7 +83,7 @@ Wenn unklar → \`"page_side": "unknown"\` und alle Felder auf \`null\`.
 Extrahiere folgende Felder:
 
 - **nachname** → Feld (a) „Name" / „Surname" / „Nom" (aktueller Familienname)
-- **geburtsname** → **WICHTIG:** Feld (b) „Geburtsname" / „Name at birth" / „Nom de naissance". Auf deutschen Personalausweisen ist dies immer mit [b] markiert und steht unter dem Nachname [a]. **MUSS IMMER EXTRAHIERT WERDEN, auch wenn es dem Nachnamen ähnelt.**
+- **geburtsname** → Feld (b) „Geburtsname" / „Name at birth" / „Nom de naissance"
 - **vorname** → Feld „Vornamen" / „Given names" / „Prénoms"
 - **geburtsdatum** → Feld „Geburtsdatum" / „Date of birth" (Format \`YYYY-MM-DD\`)
 - **geburtsort** → Feld „Geburtsort" / „Place of birth"
@@ -98,7 +98,7 @@ Extrahiere folgende Felder:
 3. Mehrere **Nachnamen**:
    - Mit Bindestrich: unverändert → \`"Meier-Schmidt"\`.
    - Mit Leerzeichen: trenne mit \`, \` → \`"Meier, Schmidt"\`.
-4. **KRITISCH:** Suche explizit nach dem Feld mit [b] Marker für den Geburtsnamen. Falls **Geburtsname = Nachname**, setze \`geburtsname\` trotzdem auf den gefundenen Wert (nicht null).
+4. Falls **Geburtsname = Nachname**, setze \`geburtsname = null\`.
 
 ---
 
@@ -290,7 +290,6 @@ serve(async (req) => {
     const elternteilFields: any = {};
     if (mapped_fields.vorname) elternteilFields.vorname = mapped_fields.vorname;
     if (mapped_fields.nachname) elternteilFields.nachname = mapped_fields.nachname;
-    if (mapped_fields.geburtsname) elternteilFields.geburtsname = mapped_fields.geburtsname;
     if (mapped_fields.geburtsdatum) elternteilFields.geburtsdatum = mapped_fields.geburtsdatum;
     if (mapped_fields.geschlecht) elternteilFields.geschlecht = mapped_fields.geschlecht;
     if (mapped_fields.steuer_identifikationsnummer) {
