@@ -1575,6 +1575,7 @@ export type Database = {
           antrag_id: string
           created_at: string | null
           geburtsdatum: string | null
+          geburtsname: string | null
           geschlecht: Database["public"]["Enums"]["geschlecht_type"] | null
           id: string
           nachname: string | null
@@ -1587,6 +1588,7 @@ export type Database = {
           antrag_id: string
           created_at?: string | null
           geburtsdatum?: string | null
+          geburtsname?: string | null
           geschlecht?: Database["public"]["Enums"]["geschlecht_type"] | null
           id?: string
           nachname?: string | null
@@ -1599,6 +1601,7 @@ export type Database = {
           antrag_id?: string
           created_at?: string | null
           geburtsdatum?: string | null
+          geburtsname?: string | null
           geschlecht?: Database["public"]["Enums"]["geschlecht_type"] | null
           id?: string
           nachname?: string | null
