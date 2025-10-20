@@ -62,3 +62,9 @@ port = 54327
 
 [functions.map-pdf-fields]
 verify_jwt = true
+
+[functions.map-personalausweis]
+verify_jwt = true
+
+[functions.map-geburtsurkunde]
+verify_jwt = true

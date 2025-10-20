@@ -73,13 +73,13 @@ const Upload = () => {
 
         setOcrProgress(60);
 
-        // Call vision API with pages array format (same as other documents)
+        // Call appropriate edge function based on document type
+        const functionName = docType === 'geburtsurkunde' ? 'map-geburtsurkunde' : 'map-pdf-fields';
         const { data: visionResult, error: visionError } = await supabase.functions.invoke(
-          'map-pdf-fields',
+          functionName,
           {
             body: {
               pages: [{ imageData: fileBase64, pageNumber: 1 }],
-              documentType: docType,
               antragId: null, // No antrag ID yet, just extract data
             },
           }
@@ -351,13 +351,16 @@ const Upload = () => {
               
               console.log(`PDF converted to ${pages.length} image(s) successfully`);
               
-              // Call edge function with pages array
+              // Call appropriate edge function based on document type
+              const functionName = uploadedFile.documentType === 'personalausweis' 
+                ? 'map-personalausweis' 
+                : 'map-pdf-fields';
+              
               const { data: mappingResult, error: mappingError } = await supabase.functions.invoke(
-                'map-pdf-fields',
+                functionName,
                 {
                   body: {
                     pages: pages,
-                    documentType: uploadedFile.documentType,
                     antragId: antrag.id,
                     parentNumber: uploadedFile.parentNumber || 1,
                   },
@@ -401,17 +404,21 @@ const Upload = () => {
                 reader.readAsDataURL(uploadedFile.file);
               });
 
-              console.log('Calling map-pdf-fields for image:', {
+              console.log('Calling document-specific edge function for image:', {
                 documentType: uploadedFile.documentType,
                 antragId: antrag.id,
               });
 
+              // Call appropriate edge function based on document type
+              const functionName = uploadedFile.documentType === 'personalausweis' 
+                ? 'map-personalausweis' 
+                : 'map-pdf-fields';
+
               const { data: mappingResult, error: mappingError } = await supabase.functions.invoke(
-                'map-pdf-fields',
+                functionName,
                 {
                   body: {
                     pages: [{ imageData: imageBase64, pageNumber: 1 }],
-                    documentType: uploadedFile.documentType,
                     antragId: antrag.id,
                     parentNumber: uploadedFile.parentNumber || 1,
                   },
