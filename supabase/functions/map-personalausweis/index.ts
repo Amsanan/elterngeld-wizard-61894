@@ -100,6 +100,36 @@ Wenn keine MRZ gefunden wird, antworte mit:
 }`;
 }
 
+// Prompt to extract address from the back of ID card (separate from MRZ)
+function getAddressExtractionPrompt(): string {
+  return `Du extrahierst die ADRESSE von der Rückseite eines deutschen Personalausweises.
+
+Suche nach der Adresse, die OBERHALB der MRZ (Machine Readable Zone) steht.
+
+Die Adresse hat typischerweise diese Struktur:
+- Straße und Hausnummer (z.B. "STRAUSSENWEG 6")
+- PLZ und Ort (z.B. "13599 BERLIN")
+- Optional: Adresszusatz
+
+Extrahiere folgende Felder:
+- plz: 5-stellige Postleitzahl
+- ort: Stadtname in Title Case
+- strasse: Straßenname in Title Case
+- hausnr: Hausnummer (inkl. Zusätze wie "12a", "12-14")
+- adresszusatz: Optional (z.B. "c/o Meyer")
+
+Antworte NUR mit JSON:
+{
+  "plz": "13599",
+  "ort": "Berlin",
+  "strasse": "Straussenweg",
+  "hausnr": "6",
+  "adresszusatz": null
+}
+
+Wenn keine Adresse gefunden wird, gib leere Werte zurück.`;
+}
+
 // Helper function to format MRZ date (YYMMDD) to YYYY-MM-DD
 function formatMRZDate(mrzDate: string): string {
   if (!mrzDate || mrzDate.length !== 6) return "";
@@ -217,7 +247,7 @@ serve(async (req) => {
           if (parsedMRZ.valid && parsedMRZ.fields) {
             const fields = parsedMRZ.fields;
             
-            // Extract data from MRZ
+            // Extract personal data from MRZ
             const extractedData: any = {
               page_side: 'back',
               mapped_fields: {
@@ -234,6 +264,65 @@ serve(async (req) => {
             };
             
             console.log('Extracted from MRZ:', JSON.stringify(extractedData, null, 2));
+            
+            // Now extract address from the same image (separate AI call)
+            console.log(`Extracting address from page ${page.pageNumber}`);
+            const addressPrompt = getAddressExtractionPrompt();
+            
+            const addressResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "openai/gpt-4o-mini",
+                messages: [
+                  {
+                    role: "user",
+                    content: [
+                      { type: "text", text: addressPrompt },
+                      {
+                        type: "image_url",
+                        image_url: {
+                          url: `data:image/png;base64,${page.imageData}`,
+                        },
+                      },
+                    ],
+                  },
+                ],
+              }),
+            });
+
+            if (addressResponse.ok) {
+              const addressAI = await addressResponse.json();
+              const addressContent = addressAI.choices?.[0]?.message?.content;
+              console.log('Address AI response:', addressContent);
+              
+              if (addressContent) {
+                const addressJsonMatch = addressContent.match(/```json\n([\s\S]*?)\n```/) || addressContent.match(/```\n([\s\S]*?)\n```/);
+                const addressJsonStr = addressJsonMatch ? addressJsonMatch[1] : addressContent;
+                
+                try {
+                  const addressData = JSON.parse(addressJsonStr);
+                  console.log('Extracted address:', JSON.stringify(addressData, null, 2));
+                  
+                  // Merge address data into extracted data
+                  if (addressData.plz) extractedData.mapped_fields.plz = addressData.plz;
+                  if (addressData.ort) extractedData.mapped_fields.ort = addressData.ort;
+                  if (addressData.strasse) extractedData.mapped_fields.strasse = addressData.strasse;
+                  if (addressData.hausnr) extractedData.mapped_fields.hausnr = addressData.hausnr;
+                  if (addressData.adresszusatz) extractedData.mapped_fields.adresszusatz = addressData.adresszusatz;
+                  
+                  extractedData.mapped_fields.wohnsitz_ausland = false; // Has German address
+                } catch (addrError) {
+                  console.error('Error parsing address JSON:', addrError);
+                }
+              }
+            } else {
+              console.error('Address extraction API error:', await addressResponse.text());
+            }
+            
             allResults.push(extractedData);
           } else {
             console.log('MRZ parsing failed - invalid format:', parsedMRZ.error);
