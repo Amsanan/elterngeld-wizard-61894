@@ -172,30 +172,35 @@ serve(async (req) => {
 
     console.log('Final result:', JSON.stringify(finalResult, null, 2));
 
-    // Database operations
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Only save to database if antragId is provided
+    // During initial extraction (preview), antragId is null and we just return the data
+    if (antragId) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { mapped_fields } = finalResult;
+      const { mapped_fields } = finalResult;
 
-    // Handle kind (child) data
-    const kindFields: any = {
-      antrag_id: antragId,
-    };
+      // Handle kind (child) data
+      const kindFields: any = {
+        antrag_id: antragId,
+      };
 
-    const allowedFields = TABLE_FIELDS["kind"] || [];
-    let hasData = false;
-    
-    for (const [key, value] of Object.entries(mapped_fields)) {
-      if (allowedFields.includes(key) && value !== null && value !== undefined) {
-        kindFields[key] = value;
-        hasData = true;
+      const allowedFields = TABLE_FIELDS["kind"] || [];
+      let hasData = false;
+      
+      for (const [key, value] of Object.entries(mapped_fields)) {
+        if (allowedFields.includes(key) && value !== null && value !== undefined) {
+          kindFields[key] = value;
+          hasData = true;
+        }
       }
-    }
 
-    if (hasData) {
-      await upsertRecord(supabase, "kind", kindFields, { antrag_id: antragId });
+      if (hasData) {
+        await upsertRecord(supabase, "kind", kindFields, { antrag_id: antragId });
+      }
+    } else {
+      console.log('Skipping database save - no antragId provided (extraction only)');
     }
 
     return new Response(JSON.stringify(finalResult), {
