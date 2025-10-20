@@ -31,7 +31,7 @@ async function upsertRecord(supabase: any, tableName: string, data: any, matchCr
 
 // Table field mappings
 const TABLE_FIELDS: Record<string, string[]> = {
-  elternteil: ["vorname", "nachname", "geburtsdatum", "geschlecht", "steuer_identifikationsnummer"],
+  elternteil: ["vorname", "nachname", "geburtsname", "geburtsdatum", "geschlecht", "steuer_identifikationsnummer"],
   antrag_2c_wohnsitz: ["strasse", "hausnr", "plz", "ort", "adresszusatz", "wohnsitz_ausland"],
 };
 
@@ -290,6 +290,7 @@ serve(async (req) => {
     const elternteilFields: any = {};
     if (mapped_fields.vorname) elternteilFields.vorname = mapped_fields.vorname;
     if (mapped_fields.nachname) elternteilFields.nachname = mapped_fields.nachname;
+    if (mapped_fields.geburtsname) elternteilFields.geburtsname = mapped_fields.geburtsname;
     if (mapped_fields.geburtsdatum) elternteilFields.geburtsdatum = mapped_fields.geburtsdatum;
     if (mapped_fields.geschlecht) elternteilFields.geschlecht = mapped_fields.geschlecht;
     if (mapped_fields.steuer_identifikationsnummer) {
