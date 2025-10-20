@@ -83,7 +83,7 @@ Wenn unklar → \`"page_side": "unknown"\` und alle Felder auf \`null\`.
 Extrahiere folgende Felder:
 
 - **nachname** → Feld (a) „Name" / „Surname" / „Nom" (aktueller Familienname)
-- **geburtsname** → Feld (b) „Geburtsname" / „Name at birth" / „Nom de naissance"
+- **geburtsname** → **WICHTIG:** Feld (b) „Geburtsname" / „Name at birth" / „Nom de naissance". Auf deutschen Personalausweisen ist dies immer mit [b] markiert und steht unter dem Nachname [a]. **MUSS IMMER EXTRAHIERT WERDEN, auch wenn es dem Nachnamen ähnelt.**
 - **vorname** → Feld „Vornamen" / „Given names" / „Prénoms"
 - **geburtsdatum** → Feld „Geburtsdatum" / „Date of birth" (Format \`YYYY-MM-DD\`)
 - **geburtsort** → Feld „Geburtsort" / „Place of birth"
@@ -98,7 +98,7 @@ Extrahiere folgende Felder:
 3. Mehrere **Nachnamen**:
    - Mit Bindestrich: unverändert → \`"Meier-Schmidt"\`.
    - Mit Leerzeichen: trenne mit \`, \` → \`"Meier, Schmidt"\`.
-4. Falls **Geburtsname = Nachname**, setze \`geburtsname = null\`.
+4. **KRITISCH:** Suche explizit nach dem Feld mit [b] Marker für den Geburtsnamen. Falls **Geburtsname = Nachname**, setze \`geburtsname\` trotzdem auf den gefundenen Wert (nicht null).
 
 ---
 
