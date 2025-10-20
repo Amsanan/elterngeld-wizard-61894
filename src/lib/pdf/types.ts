@@ -22,6 +22,7 @@ export interface FormData {
   
   // Parent data (Elternteil 1)
   vorname?: string;
+  geburtsname?: string;
   nachname?: string;
   geburtsdatum?: string;
   geschlecht?: string;
@@ -29,6 +30,7 @@ export interface FormData {
   
   // Parent data (Elternteil 2)
   vorname_2?: string;
+  geburtsname_2?: string;
   nachname_2?: string;
   geburtsdatum_2?: string;
   geschlecht_2?: string;

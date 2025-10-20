@@ -31,13 +31,17 @@ export function getFieldMappings(formData: FormData): Record<string, string | bo
     'cb.kindeswohl2a': formData.betreuung_gefaehrdet_wohl || false,
     
     // Parent data (Elternteil 1)
-    'txt.vorname2b': formData.vorname || '',
+    'txt.vorname2b': formData.geburtsname 
+      ? `${formData.vorname}, ${formData.geburtsname}`
+      : formData.vorname || '',
     'txt.name2b': formData.nachname || '',
     'txt.geburt2b': formData.geburtsdatum || '',
     'txt.steuer2b_1': formData.steuer_identifikationsnummer || '',
     
     // Parent data (Elternteil 2)
-    'txt.vorname2b 1': formData.vorname_2 || '',
+    'txt.vorname2b 1': formData.geburtsname_2
+      ? `${formData.vorname_2}, ${formData.geburtsname_2}`
+      : formData.vorname_2 || '',
     'txt.name2b 1': formData.nachname_2 || '',
     'txt.geburt2b 1': formData.geburtsdatum_2 || '',
     'txt.steuer2b_2': formData.steuer_identifikationsnummer_2 || '',
