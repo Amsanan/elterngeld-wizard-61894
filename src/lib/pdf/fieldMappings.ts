@@ -83,19 +83,20 @@ export function getFieldMappings(formData: FormData): Record<string, string | bo
     'txt.plzarbeitgeber2c': formData.ausland_arbeitgeber_sitz_plz || '',
     'txt.ortarbeitgeber2c': formData.ausland_arbeitgeber_sitz_ort || '',
     
-    // Ausland (Parent 2)
+    // Ausland (Parent 2) - Note: PDF template may not have these fields
     'cb.nein2c 1': formData.wohnsitz_ausland_2 || false,
     'txt.staat2c 1': formData.ausland_staat_2 || '',
     'txt.adresse2c 1': formData.ausland_strasse_2 || '',
     'txt.warum2c 1': formData.ausland_aufenthaltsgrund_2 || '',
     'cb.befristet2c 1': formData.aufenthalt_befristet_2 || false,
     'txt.von2c 1': formData.aufenthalt_befristet_von_2 || '',
-    'txt.bis2c 1': formData.aufenthalt_befristet_bis_2 || '',
-    'cb.unbefristet2c 1': formData.aufenthalt_unbefristet_2 || false,
-    'txt.unbefristetdatum2c 1': formData.aufenthalt_unbefristet_seit_2 || '',
-    'cb.jaRecht2c 1': formData.arbeitsvertrag_deutsches_recht_2_ja || false,
-    'cb.neinRecht2c 1': formData.arbeitsvertrag_deutsches_recht_2_nein || false,
-    'txt.plzarbeitgeber2c 1': formData.ausland_arbeitgeber_sitz_plz_2 || '',
-    'txt.ortarbeitgeber2c 1': formData.ausland_arbeitgeber_sitz_ort_2 || '',
+    // Note: The following fields don't exist in the current PDF template
+    // 'txt.bis2c 1': formData.aufenthalt_befristet_bis_2 || '',
+    // 'cb.unbefristet2c 1': formData.aufenthalt_unbefristet_2 || false,
+    // 'txt.unbefristetdatum2c 1': formData.aufenthalt_unbefristet_seit_2 || '',
+    // 'cb.jaRecht2c 1': formData.arbeitsvertrag_deutsches_recht_2_ja || false,
+    // 'cb.neinRecht2c 1': formData.arbeitsvertrag_deutsches_recht_2_nein || false,
+    // 'txt.plzarbeitgeber2c 1': formData.ausland_arbeitgeber_sitz_plz_2 || '',
+    // 'txt.ortarbeitgeber2c 1': formData.ausland_arbeitgeber_sitz_ort_2 || '',
   };
 }
