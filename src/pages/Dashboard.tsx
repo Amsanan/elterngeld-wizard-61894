@@ -35,11 +35,8 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleCreateAntrag = async () => {
-    toast({
-      title: "Funktion nicht verfügbar",
-      description: "Die Upload-Funktion wird gerade neu aufgebaut.",
-    });
+  const handleCreateAntrag = () => {
+    navigate("/upload-geburtsurkunde");
   };
 
   const handleSignOut = async () => {
@@ -91,13 +88,13 @@ const Dashboard = () => {
                   <Upload className="h-8 w-8 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-2 text-foreground">Neuer Antrag</h3>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Geburtsurkunde hochladen</h3>
                   <p className="text-muted-foreground">
-                    Dokumente hochladen und neuen Elterngeldantrag erstellen
+                    Geburtsurkunde hochladen für Elterngeldantrag
                   </p>
                 </div>
-                <Button className="mt-4" disabled={isCreatingAntrag}>
-                  {isCreatingAntrag ? "Wird erstellt..." : "Jetzt starten"}
+                <Button className="mt-4">
+                  Jetzt starten
                 </Button>
               </div>
             </Card>

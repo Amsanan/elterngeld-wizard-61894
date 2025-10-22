@@ -1,0 +1,28 @@
+<Geburtsurkunden>
+    <Geburtsurkunde>
+        <Kind>
+            <Vorname>Max</Vorname>
+            <Nachname>Muster</Nachname>
+            <Geburtsdatum>2025-08-12</Geburtsdatum>
+            <Geburtsort>Berlin</Geburtsort>
+            <Geburtsnummer>123456</Geburtsnummer>
+        </Kind>
+        <Eltern>
+            <Mutter>
+                <Vorname>Maria</Vorname>
+                <Nachname>Muster</Nachname>
+                <Geburtsname>Schmidt</Geburtsname>
+            </Mutter>
+            <Vater>
+                <Vorname>Peter</Vorname>
+                <Nachname>Muster</Nachname>
+            </Vater>
+        </Eltern>
+        <AusstellendeBehoerde>
+            <Name>Standesamt Berlin</Name>
+            <Urkundennummer>BE-2025-00345</Urkundennummer>
+            <Ausstelldatum>2025-08-13</Ausstelldatum>
+        </AusstellendeBehoerde>
+        <Verwendungszweck>Elterngeld</Verwendungszweck>
+    </Geburtsurkunde>
+</Geburtsurkunden>

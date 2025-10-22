@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      geburtsurkunden: {
+        Row: {
+          ausstelldatum: string | null
+          behoerde_name: string | null
+          created_at: string
+          file_path: string | null
+          id: string
+          kind_geburtsdatum: string | null
+          kind_geburtsnummer: string | null
+          kind_geburtsort: string | null
+          kind_nachname: string | null
+          kind_vorname: string | null
+          mutter_geburtsname: string | null
+          mutter_nachname: string | null
+          mutter_vorname: string | null
+          updated_at: string
+          urkundennummer: string | null
+          user_id: string
+          vater_nachname: string | null
+          vater_vorname: string | null
+          verwendungszweck: string | null
+        }
+        Insert: {
+          ausstelldatum?: string | null
+          behoerde_name?: string | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          kind_geburtsdatum?: string | null
+          kind_geburtsnummer?: string | null
+          kind_geburtsort?: string | null
+          kind_nachname?: string | null
+          kind_vorname?: string | null
+          mutter_geburtsname?: string | null
+          mutter_nachname?: string | null
+          mutter_vorname?: string | null
+          updated_at?: string
+          urkundennummer?: string | null
+          user_id: string
+          vater_nachname?: string | null
+          vater_vorname?: string | null
+          verwendungszweck?: string | null
+        }
+        Update: {
+          ausstelldatum?: string | null
+          behoerde_name?: string | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          kind_geburtsdatum?: string | null
+          kind_geburtsnummer?: string | null
+          kind_geburtsort?: string | null
+          kind_nachname?: string | null
+          kind_vorname?: string | null
+          mutter_geburtsname?: string | null
+          mutter_nachname?: string | null
+          mutter_vorname?: string | null
+          updated_at?: string
+          urkundennummer?: string | null
+          user_id?: string
+          vater_nachname?: string | null
+          vater_vorname?: string | null
+          verwendungszweck?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
