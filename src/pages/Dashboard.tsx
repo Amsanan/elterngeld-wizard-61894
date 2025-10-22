@@ -36,59 +36,10 @@ const Dashboard = () => {
   }, [navigate]);
 
   const handleCreateAntrag = async () => {
-    setIsCreatingAntrag(true);
-    try {
-      // Check if user exists in profiles
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (profileError || !profile) {
-        toast({
-          title: "Fehler",
-          description: "Benutzerprofil nicht gefunden.",
-          variant: "destructive",
-        });
-        setIsCreatingAntrag(false);
-        return;
-      }
-
-      // Create new antrag entry
-      const { data: antrag, error: antragError } = await supabase
-        .from('antrag')
-        .insert({
-          user_id: profile.user_id,
-          antrag_timestamp: new Date().toISOString(),
-          status: 'draft'
-        })
-        .select()
-        .single();
-
-      if (antragError) {
-        toast({
-          title: "Fehler",
-          description: "Antrag konnte nicht erstellt werden.",
-          variant: "destructive",
-        });
-        setIsCreatingAntrag(false);
-        return;
-      }
-
-      // Navigate to upload page with antrag ID
-      sessionStorage.setItem('current_antrag_id', antrag.id);
-      navigate("/upload");
-    } catch (error) {
-      console.error("Error creating antrag:", error);
-      toast({
-        title: "Fehler",
-        description: "Ein unerwarteter Fehler ist aufgetreten.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCreatingAntrag(false);
-    }
+    toast({
+      title: "Funktion nicht verfügbar",
+      description: "Die Upload-Funktion wird gerade neu aufgebaut.",
+    });
   };
 
   const handleSignOut = async () => {
@@ -151,10 +102,7 @@ const Dashboard = () => {
               </div>
             </Card>
 
-            <Card 
-              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => navigate("/applications")}
-            >
+            <Card className="p-8 opacity-50">
               <div className="flex flex-col items-center text-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
                   <List className="h-8 w-8 text-accent" />
@@ -162,10 +110,9 @@ const Dashboard = () => {
                 <div>
                   <h3 className="text-xl font-semibold mb-2 text-foreground">Meine Anträge</h3>
                   <p className="text-muted-foreground">
-                    Gespeicherte und abgeschlossene Anträge einsehen
+                    Funktion in Entwicklung
                   </p>
                 </div>
-                <Button variant="outline" className="mt-4">Anzeigen</Button>
               </div>
             </Card>
           </div>
