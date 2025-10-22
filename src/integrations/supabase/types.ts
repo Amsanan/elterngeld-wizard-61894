@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      antraege: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      antrag_geburtsurkunden: {
+        Row: {
+          antrag_id: string
+          created_at: string
+          geburtsurkunde_id: string
+          id: string
+        }
+        Insert: {
+          antrag_id: string
+          created_at?: string
+          geburtsurkunde_id: string
+          id?: string
+        }
+        Update: {
+          antrag_id?: string
+          created_at?: string
+          geburtsurkunde_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_geburtsurkunden_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: false
+            referencedRelation: "antraege"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "antrag_geburtsurkunden_geburtsurkunde_id_fkey"
+            columns: ["geburtsurkunde_id"]
+            isOneToOne: false
+            referencedRelation: "geburtsurkunden"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       geburtsurkunden: {
         Row: {
           ausstelldatum: string | null
