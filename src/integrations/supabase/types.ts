@@ -83,13 +83,18 @@ export type Database = {
           geburtsname: string | null
           geburtsort: string | null
           gueltig_bis: string | null
+          hausnummer: string | null
           id: string
           nachname: string | null
           person_type: string
+          plz: string | null
           staatsangehoerigkeit: string | null
+          strasse: string | null
           updated_at: string
           user_id: string
           vorname: string | null
+          wohnort: string | null
+          wohnungsnummer: string | null
         }
         Insert: {
           ausstelldatum?: string | null
@@ -102,13 +107,18 @@ export type Database = {
           geburtsname?: string | null
           geburtsort?: string | null
           gueltig_bis?: string | null
+          hausnummer?: string | null
           id?: string
           nachname?: string | null
           person_type: string
+          plz?: string | null
           staatsangehoerigkeit?: string | null
+          strasse?: string | null
           updated_at?: string
           user_id: string
           vorname?: string | null
+          wohnort?: string | null
+          wohnungsnummer?: string | null
         }
         Update: {
           ausstelldatum?: string | null
@@ -121,13 +131,18 @@ export type Database = {
           geburtsname?: string | null
           geburtsort?: string | null
           gueltig_bis?: string | null
+          hausnummer?: string | null
           id?: string
           nachname?: string | null
           person_type?: string
+          plz?: string | null
           staatsangehoerigkeit?: string | null
+          strasse?: string | null
           updated_at?: string
           user_id?: string
           vorname?: string | null
+          wohnort?: string | null
+          wohnungsnummer?: string | null
         }
         Relationships: []
       }

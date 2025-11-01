@@ -92,8 +92,8 @@ Deno.serve(async (req) => {
       const lines = ocrText.split('\n').map((l: string) => l.trim()).filter((l: string) => l);
 
       if (documentType === 'personalausweis') {
-        // Extract from ID card
-        // Nachname - look for pattern after "(a)" marker first, before any fallback
+        // Extract from ID card - Page 1 (Front)
+        // Nachname - look for pattern after "(a)" marker
         const nachnameMatch = ocrText.match(/\(a\)\s*([A-ZÄÖÜ][A-ZÄÖÜ\s]+?)(?=\n)/);
         if (nachnameMatch) extractedData.nachname = nachnameMatch[1].trim();
 
@@ -101,31 +101,58 @@ Deno.serve(async (req) => {
         const vornameMatch = ocrText.match(/(?:Vornamen|Given names)[^\n]*\n\s*([A-ZÄÖÜ][A-ZÄÖÜ\s]+?)(?=\n)/i);
         if (vornameMatch) extractedData.vorname = vornameMatch[1].trim();
 
-        // Geburtsname - only if explicitly present (not "at birth" text)
-        const geburtsnameMatch = ocrText.match(/(?:Geburtsname|Name at birth)[^\n]*\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-        if (geburtsnameMatch && !geburtsnameMatch[0].includes('at birth')) {
-          extractedData.geburtsname = geburtsnameMatch[1].trim();
+        // Geburtsname - look for text after the Geburtsname label, but skip if it's empty or shows form text
+        const geburtsnameMatch = ocrText.match(/\(b\][^\n]*\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
+        if (geburtsnameMatch && geburtsnameMatch[1].trim().length > 0) {
+          const geburtsname = geburtsnameMatch[1].trim();
+          // Only set if it's not a serial number or form text
+          if (!/^[A-Z0-9<]+$/.test(geburtsname) && geburtsname !== 'Name at birth') {
+            extractedData.geburtsname = geburtsname;
+          }
         }
 
-        // Geburtsdatum - find date in DD.MM.YYYY format
+        // Geburtsdatum - find date in DD.MM.YYYY format (first occurrence)
         const geburtsdatumMatch = ocrText.match(/(\d{2}\.\d{2}\.\d{4})/);
         if (geburtsdatumMatch) extractedData.geburtsdatum = geburtsdatumMatch[1];
 
-        // Geburtsort
-        const geburtsortMatch = ocrText.match(/Geburtsort[:\s]*\n?\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+        // Geburtsort - look after "Geburtsort" or "Place of birth"
+        const geburtsortMatch = ocrText.match(/(?:Geburtsort|Place of birth)[^\n]*\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
         if (geburtsortMatch) extractedData.geburtsort = geburtsortMatch[1].trim();
 
-        // Staatsangehörigkeit
-        const staatsMatch = ocrText.match(/Staatsangeh[öo]rigkeit[:\s]*\n?\s*(DEUTSCH|[A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+        // Staatsangehörigkeit - look for DEUTSCH or other nationality
+        const staatsMatch = ocrText.match(/(?:Staatsangeh[öo]rigkeit|Nationality)[^\n]*\n\s*(DEUTSCH|GERMAN|[A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
         if (staatsMatch) extractedData.staatsangehoerigkeit = staatsMatch[1].trim();
 
-        // Ausweisnummer
-        const ausweisMatch = ocrText.match(/(?:Ausweis-?Nr|Seriennummer)[.:\s]*\n?\s*([A-Z0-9]+)/i);
+        // Ausweisnummer - look for serial number pattern (letters and numbers like L3GF5CY11)
+        const ausweisMatch = ocrText.match(/\b([A-Z][0-9][A-Z0-9]{7,9})\b/);
         if (ausweisMatch) extractedData.ausweisnummer = ausweisMatch[1].trim();
 
-        // Gültig bis
-        const gueltigMatch = ocrText.match(/(?:G[üu]ltig bis|Ablaufdatum)[:\s]*\n?\s*(\d{1,2}\.\d{1,2}\.\d{2,4})/i);
-        if (gueltigMatch) extractedData.gueltig_bis = gueltigMatch[1];
+        // Gültig bis - find second date (first is birth date, second is expiry)
+        const allDates = ocrText.match(/\d{2}\.\d{2}\.\d{4}/g);
+        if (allDates && allDates.length > 1) {
+          extractedData.gueltig_bis = allDates[1]; // Second date is expiry
+        }
+
+        // Extract from ID card - Page 2 (Back) - Address information
+        // Anschrift/Address - look for postal code and city
+        const addressMatch = ocrText.match(/(?:Anschrift|Address)[^\n]*\n\s*(\d{5})\s+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
+        if (addressMatch) {
+          extractedData.plz = addressMatch[1].trim();
+          extractedData.wohnort = addressMatch[2].trim();
+        }
+
+        // Street and house number - look for street name followed by numbers
+        const streetMatch = ocrText.match(/(?:Anschrift|Address)[^\n]*\n[^\n]*\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)\s+(\d+[A-Za-z]?)\s*(?:\n|$)/i);
+        if (streetMatch) {
+          extractedData.strasse = streetMatch[1].trim();
+          extractedData.hausnummer = streetMatch[2].trim();
+        }
+
+        // Wohnungsnummer - look for additional number after street (if present on next line)
+        const wohnungMatch = ocrText.match(/(?:Anschrift|Address)[^\n]*\n[^\n]*\n[^\n]*\n\s*(\d+)\s*(?:\n|$)/i);
+        if (wohnungMatch && wohnungMatch[1] !== extractedData.hausnummer) {
+          extractedData.wohnungsnummer = wohnungMatch[1].trim();
+        }
 
       } else if (documentType === 'reisepass') {
         // Extract from passport (MRZ format)

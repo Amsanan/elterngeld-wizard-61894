@@ -164,6 +164,51 @@ const ElternDokumentResult = () => {
                 </div>
               )}
             </div>
+
+            {/* Address section */}
+            {(data.plz || data.wohnort || data.strasse || data.hausnummer || data.wohnungsnummer) && (
+              <>
+                <div className="border-t pt-6 mt-6">
+                  <h3 className="text-lg font-semibold mb-4">Adresse</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {data.strasse && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Straße</p>
+                        <p className="font-medium">{data.strasse}</p>
+                      </div>
+                    )}
+
+                    {data.hausnummer && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Hausnummer</p>
+                        <p className="font-medium">{data.hausnummer}</p>
+                      </div>
+                    )}
+
+                    {data.wohnungsnummer && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Wohnungsnummer</p>
+                        <p className="font-medium">{data.wohnungsnummer}</p>
+                      </div>
+                    )}
+
+                    {data.plz && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">PLZ</p>
+                        <p className="font-medium">{data.plz}</p>
+                      </div>
+                    )}
+
+                    {data.wohnort && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Wohnort</p>
+                        <p className="font-medium">{data.wohnort}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
 
           <div className="flex gap-4">
