@@ -5,6 +5,9 @@ import Dashboard from "./pages/Dashboard";
 import UploadGeburtsurkunde from "./pages/UploadGeburtsurkunde";
 import GeburtsurkunderResult from "./pages/GeburtsurkunderResult";
 import GeburtsurkunderList from "./pages/GeburtsurkunderList";
+import UploadElternDokument from "./pages/UploadElternDokument";
+import ElternDokumentResult from "./pages/ElternDokumentResult";
+import ElternDokumenteList from "./pages/ElternDokumenteList";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -17,6 +20,9 @@ function App() {
         <Route path="/upload-geburtsurkunde" element={<UploadGeburtsurkunde />} />
         <Route path="/geburtsurkunde-result" element={<GeburtsurkunderResult />} />
         <Route path="/geburtsurkunden-list" element={<GeburtsurkunderList />} />
+        <Route path="/upload-eltern-dokument" element={<UploadElternDokument />} />
+        <Route path="/eltern-dokument-result" element={<ElternDokumentResult />} />
+        <Route path="/eltern-dokumente-list" element={<ElternDokumenteList />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

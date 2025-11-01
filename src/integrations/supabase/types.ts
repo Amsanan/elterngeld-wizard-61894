@@ -71,6 +71,66 @@ export type Database = {
           },
         ]
       }
+      eltern_dokumente: {
+        Row: {
+          ausstelldatum: string | null
+          ausstellende_behoerde: string | null
+          ausweisnummer: string | null
+          created_at: string
+          document_type: string
+          file_path: string | null
+          geburtsdatum: string | null
+          geburtsname: string | null
+          geburtsort: string | null
+          gueltig_bis: string | null
+          id: string
+          nachname: string | null
+          person_type: string
+          staatsangehoerigkeit: string | null
+          updated_at: string
+          user_id: string
+          vorname: string | null
+        }
+        Insert: {
+          ausstelldatum?: string | null
+          ausstellende_behoerde?: string | null
+          ausweisnummer?: string | null
+          created_at?: string
+          document_type: string
+          file_path?: string | null
+          geburtsdatum?: string | null
+          geburtsname?: string | null
+          geburtsort?: string | null
+          gueltig_bis?: string | null
+          id?: string
+          nachname?: string | null
+          person_type: string
+          staatsangehoerigkeit?: string | null
+          updated_at?: string
+          user_id: string
+          vorname?: string | null
+        }
+        Update: {
+          ausstelldatum?: string | null
+          ausstellende_behoerde?: string | null
+          ausweisnummer?: string | null
+          created_at?: string
+          document_type?: string
+          file_path?: string | null
+          geburtsdatum?: string | null
+          geburtsname?: string | null
+          geburtsort?: string | null
+          gueltig_bis?: string | null
+          id?: string
+          nachname?: string | null
+          person_type?: string
+          staatsangehoerigkeit?: string | null
+          updated_at?: string
+          user_id?: string
+          vorname?: string | null
+        }
+        Relationships: []
+      }
       geburtsurkunden: {
         Row: {
           ausstelldatum: string | null

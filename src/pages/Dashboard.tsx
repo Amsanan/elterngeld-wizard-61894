@@ -118,6 +118,46 @@ const Dashboard = () => {
                 </Button>
               </div>
             </Card>
+
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/upload-eltern-dokument")}
+            >
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Eltern-Dokument hochladen</h3>
+                  <p className="text-muted-foreground">
+                    Personalausweis oder Reisepass der Eltern
+                  </p>
+                </div>
+                <Button className="mt-4">
+                  Jetzt starten
+                </Button>
+              </div>
+            </Card>
+
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/eltern-dokumente-list")}
+            >
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
+                  <List className="h-8 w-8 text-accent" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Meine Eltern-Dokumente</h3>
+                  <p className="text-muted-foreground">
+                    Alle hochgeladenen Personalausweise und Reisepässe
+                  </p>
+                </div>
+                <Button className="mt-4">
+                  Anzeigen
+                </Button>
+              </div>
+            </Card>
           </div>
 
           {/* Info Card */}
