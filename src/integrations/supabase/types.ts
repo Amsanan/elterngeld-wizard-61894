@@ -71,6 +71,63 @@ export type Database = {
           },
         ]
       }
+      einkommensteuerbescheide: {
+        Row: {
+          adresse: string | null
+          created_at: string
+          festgesetzte_steuer: string | null
+          file_path: string | null
+          id: string
+          jahreseinkommen: string | null
+          nachname: string | null
+          person_type: string
+          plz: string | null
+          steuerjahr: string | null
+          steuernummer: string | null
+          updated_at: string
+          user_id: string
+          vorname: string | null
+          wohnort: string | null
+          zu_versteuerndes_einkommen: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          created_at?: string
+          festgesetzte_steuer?: string | null
+          file_path?: string | null
+          id?: string
+          jahreseinkommen?: string | null
+          nachname?: string | null
+          person_type: string
+          plz?: string | null
+          steuerjahr?: string | null
+          steuernummer?: string | null
+          updated_at?: string
+          user_id: string
+          vorname?: string | null
+          wohnort?: string | null
+          zu_versteuerndes_einkommen?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          created_at?: string
+          festgesetzte_steuer?: string | null
+          file_path?: string | null
+          id?: string
+          jahreseinkommen?: string | null
+          nachname?: string | null
+          person_type?: string
+          plz?: string | null
+          steuerjahr?: string | null
+          steuernummer?: string | null
+          updated_at?: string
+          user_id?: string
+          vorname?: string | null
+          wohnort?: string | null
+          zu_versteuerndes_einkommen?: string | null
+        }
+        Relationships: []
+      }
       eltern_dokumente: {
         Row: {
           ausstelldatum: string | null

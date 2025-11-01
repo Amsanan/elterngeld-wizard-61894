@@ -8,6 +8,9 @@ import GeburtsurkunderList from "./pages/GeburtsurkunderList";
 import UploadElternDokument from "./pages/UploadElternDokument";
 import ElternDokumentResult from "./pages/ElternDokumentResult";
 import ElternDokumenteList from "./pages/ElternDokumenteList";
+import UploadSteuerbescheid from "./pages/UploadSteuerbescheid";
+import SteuerbescheidResult from "./pages/SteuerbescheidResult";
+import SteuerbescheideList from "./pages/SteuerbescheideList";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -23,6 +26,9 @@ function App() {
         <Route path="/upload-eltern-dokument" element={<UploadElternDokument />} />
         <Route path="/eltern-dokument-result" element={<ElternDokumentResult />} />
         <Route path="/eltern-dokumente-list" element={<ElternDokumenteList />} />
+        <Route path="/upload-steuerbescheid" element={<UploadSteuerbescheid />} />
+        <Route path="/steuerbescheid-result/:id" element={<SteuerbescheidResult />} />
+        <Route path="/steuerbescheide-list" element={<SteuerbescheideList />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
