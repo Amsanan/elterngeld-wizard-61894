@@ -72,73 +72,94 @@ serve(async (req) => {
     const arrayBuffer = await fileData.arrayBuffer();
     const base64File = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
-    // TODO: Call PaddleOCR API here
-    // For now, we'll use a placeholder that returns mock data
-    // Replace this with actual PaddleOCR API call
-    const paddleOcrApiKey = Deno.env.get('PADDLE_OCR_API_KEY');
+    const ocrSpaceApiKey = Deno.env.get('OCR_SPACE_API_KEY');
+    if (!ocrSpaceApiKey) {
+      throw new Error('OCR_SPACE_API_KEY not configured');
+    }
     
-    console.log('Calling PaddleOCR API...');
+    console.log('Calling OCR.space API...');
     
-    // Placeholder for PaddleOCR API call
-    // const ocrResponse = await fetch('PADDLE_OCR_API_ENDPOINT', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${paddleOcrApiKey}`,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     image: base64File,
-    //     // Add other required parameters
-    //   }),
-    // });
+    // Call OCR.space API
+    const formData = new FormData();
+    formData.append('base64Image', `data:application/pdf;base64,${base64File}`);
+    formData.append('language', 'ger');
+    formData.append('isOverlayRequired', 'false');
+    formData.append('detectOrientation', 'true');
+    formData.append('scale', 'true');
+    formData.append('OCREngine', '2');
 
-    // const ocrResult = await ocrResponse.json();
-    // console.log('OCR Result:', ocrResult);
+    const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
+      method: 'POST',
+      headers: {
+        'apikey': ocrSpaceApiKey,
+      },
+      body: formData,
+    });
 
-    // Parse OCR text using XML schema structure
-    // This is a placeholder - actual implementation will depend on PaddleOCR response format
-    const extractedData: ExtractedData = {
-      // These would be extracted from OCR text based on XML schema
-      // For now returning empty values
-    };
-
-    // Load XML schema to guide extraction
-    const { data: schemaData } = await supabase.storage
-      .from('xml-schemas')
-      .download('public/schemas/Geburtsurkunden.xml');
-
-    if (schemaData) {
-      const schemaText = await schemaData.text();
-      console.log('Loaded XML schema for guided extraction');
-      // TODO: Use schema to guide field extraction from OCR text
+    if (!ocrResponse.ok) {
+      const errorText = await ocrResponse.text();
+      console.error('OCR.space API error:', errorText);
+      throw new Error('OCR processing failed');
     }
 
-    // Insert extracted data into database
-    const { data: insertedData, error: insertError } = await supabase
-      .from('geburtsurkunden')
-      .insert({
-        user_id: user.id,
-        file_path: filePath,
-        ...extractedData,
-      })
-      .select()
-      .single();
+    const ocrResult = await ocrResponse.json();
+    console.log('OCR Result:', ocrResult);
 
-    if (insertError) {
-      console.error('Error inserting data:', insertError);
-      throw insertError;
+    if (!ocrResult.IsErroredOnProcessing && ocrResult.ParsedResults?.[0]?.ParsedText) {
+      const ocrText = ocrResult.ParsedResults[0].ParsedText;
+      console.log('Extracted text:', ocrText);
+      
+      // Parse OCR text to extract structured data
+      // This is a simple regex-based extraction - can be enhanced
+      const extractedData: ExtractedData = {};
+      
+      // Extract common patterns from German birth certificates
+      const vornameMatch = ocrText.match(/Vorname[n]?[:\s]+([^\n]+)/i);
+      if (vornameMatch) extractedData.kind_vorname = vornameMatch[1].trim();
+      
+      const nachnameMatch = ocrText.match(/(?:Nachname|Familienname|Name)[:\s]+([^\n]+)/i);
+      if (nachnameMatch) extractedData.kind_nachname = nachnameMatch[1].trim();
+      
+      const geburtsdatumMatch = ocrText.match(/(?:Geburtsdatum|geboren am)[:\s]+(\d{1,2}[.\-\/]\d{1,2}[.\-\/]\d{2,4})/i);
+      if (geburtsdatumMatch) extractedData.kind_geburtsdatum = geburtsdatumMatch[1].trim();
+      
+      const geburtsortMatch = ocrText.match(/(?:Geburtsort|geboren in)[:\s]+([^\n]+)/i);
+      if (geburtsortMatch) extractedData.kind_geburtsort = geburtsortMatch[1].trim();
+      
+      const urkundennummerMatch = ocrText.match(/(?:Urkunden-?nummer|Nr\.)[:\s]+([^\n]+)/i);
+      if (urkundennummerMatch) extractedData.urkundennummer = urkundennummerMatch[1].trim();
+
+      // Insert extracted data into database
+      const { data: insertedData, error: insertError } = await supabase
+        .from('geburtsurkunden')
+        .insert({
+          user_id: user.id,
+          file_path: filePath,
+          ...extractedData,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error inserting data:', insertError);
+        throw insertError;
+      }
+
+      console.log('Successfully extracted and saved data:', insertedData.id);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          data: insertedData,
+          message: 'Geburtsurkunde erfolgreich extrahiert',
+          ocrText: ocrText
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      throw new Error('OCR processing failed or no text extracted');
     }
 
-    console.log('Successfully extracted and saved data:', insertedData.id);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        data: insertedData,
-        message: 'Geburtsurkunde erfolgreich extrahiert'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
 
   } catch (error) {
     console.error('Error in extract-geburtsurkunde function:', error);
