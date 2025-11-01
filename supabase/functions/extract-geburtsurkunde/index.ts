@@ -68,19 +68,6 @@ serve(async (req) => {
 
     console.log('File downloaded, size:', fileData.size);
 
-    // Convert file to base64 for OCR (chunk-based to avoid stack overflow)
-    const arrayBuffer = await fileData.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    let binaryString = '';
-    const chunkSize = 8192;
-    
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.slice(i, i + chunkSize);
-      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
-    }
-    
-    const base64File = btoa(binaryString);
-
     const ocrSpaceApiKey = Deno.env.get('OCR_SPACE_API_KEY');
     if (!ocrSpaceApiKey) {
       throw new Error('OCR_SPACE_API_KEY not configured');
@@ -88,14 +75,15 @@ serve(async (req) => {
     
     console.log('Calling OCR.space API...');
     
-    // Call OCR.space API
+    // Call OCR.space API with file upload (not base64)
     const formData = new FormData();
-    formData.append('base64Image', `data:application/pdf;base64,${base64File}`);
+    formData.append('file', fileData, 'document.pdf');
     formData.append('language', 'ger');
     formData.append('isOverlayRequired', 'false');
     formData.append('detectOrientation', 'true');
     formData.append('scale', 'true');
     formData.append('OCREngine', '2');
+    formData.append('filetype', 'PDF');
 
     const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
@@ -112,7 +100,12 @@ serve(async (req) => {
     }
 
     const ocrResult = await ocrResponse.json();
-    console.log('OCR Result:', ocrResult);
+    console.log('OCR Result:', JSON.stringify(ocrResult, null, 2));
+
+    if (ocrResult.IsErroredOnProcessing) {
+      console.error('OCR Error:', ocrResult.ErrorMessage);
+      throw new Error(`OCR Error: ${ocrResult.ErrorMessage?.[0] || 'Unknown error'}`);
+    }
 
     if (!ocrResult.IsErroredOnProcessing && ocrResult.ParsedResults?.[0]?.ParsedText) {
       const ocrText = ocrResult.ParsedResults[0].ParsedText;
