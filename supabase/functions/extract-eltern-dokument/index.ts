@@ -74,6 +74,17 @@ Deno.serve(async (req) => {
     const ocrResult = await ocrResponse.json();
     console.log('OCR API response:', JSON.stringify(ocrResult, null, 2));
 
+    // Helper function to convert DD.MM.YYYY to YYYY-MM-DD
+    const convertDate = (dateStr: string): string => {
+      if (!dateStr) return '';
+      const match = dateStr.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+      if (match) {
+        const [, day, month, year] = match;
+        return `${year}-${month}-${day}`;
+      }
+      return dateStr;
+    };
+
     if (!ocrResult.IsErroredOnProcessing && ocrResult.ParsedResults?.length > 0) {
       // Combine text from all pages (front and back of ID card)
       const ocrText = ocrResult.ParsedResults
@@ -113,7 +124,7 @@ Deno.serve(async (req) => {
 
         // Geburtsdatum - find date in DD.MM.YYYY format (first occurrence)
         const geburtsdatumMatch = ocrText.match(/(\d{2}\.\d{2}\.\d{4})/);
-        if (geburtsdatumMatch) extractedData.geburtsdatum = geburtsdatumMatch[1];
+        if (geburtsdatumMatch) extractedData.geburtsdatum = convertDate(geburtsdatumMatch[1]);
 
         // Geburtsort - look after "Geburtsort" or "Place of birth"
         const geburtsortMatch = ocrText.match(/(?:Geburtsort|Place of birth)[^\n]*\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
@@ -130,7 +141,7 @@ Deno.serve(async (req) => {
         // Gültig bis - find second date (first is birth date, second is expiry)
         const allDates = ocrText.match(/\d{2}\.\d{2}\.\d{4}/g);
         if (allDates && allDates.length > 1) {
-          extractedData.gueltig_bis = allDates[1]; // Second date is expiry
+          extractedData.gueltig_bis = convertDate(allDates[1]); // Second date is expiry
         }
 
         // Extract from ID card - Page 2 (Back) - Address information
@@ -172,7 +183,7 @@ Deno.serve(async (req) => {
 
         // Geburtsdatum
         const geburtsdatumMatch = ocrText.match(/(?:Geburtsdatum|Date of birth)[:\s]*\n?\s*(\d{1,2}\.\d{1,2}\.\d{2,4})/i);
-        if (geburtsdatumMatch) extractedData.geburtsdatum = geburtsdatumMatch[1];
+        if (geburtsdatumMatch) extractedData.geburtsdatum = convertDate(geburtsdatumMatch[1]);
 
         // Reisepassnummer
         const passMatch = ocrText.match(/(?:Reisepass-?Nr|Passport No)[.:\s]*\n?\s*([A-Z0-9]+)/i);
@@ -180,7 +191,7 @@ Deno.serve(async (req) => {
 
         // Gültig bis
         const gueltigMatch = ocrText.match(/(?:G[üu]ltig bis|Date of expiry)[:\s]*\n?\s*(\d{1,2}\.\d{1,2}\.\d{2,4})/i);
-        if (gueltigMatch) extractedData.gueltig_bis = gueltigMatch[1];
+        if (gueltigMatch) extractedData.gueltig_bis = convertDate(gueltigMatch[1]);
 
         // Staatsangehörigkeit
         const staatsMatch = ocrText.match(/(?:Staatsangeh[öo]rigkeit|Nationality)[:\s]*\n?\s*(DEUTSCH|GERMAN|[A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
