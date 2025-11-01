@@ -49,19 +49,41 @@ Deno.serve(async (req) => {
       throw downloadError;
     }
 
-    // Perform OCR
-    // Extract original filename from path to preserve file extension
-    const fileName = filePath.split('/').pop() || 'document.pdf';
-    const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'pdf';
+    console.log('File downloaded, size:', fileData.size);
+
+    // Detect file type from path
+    const fileExtension = filePath.split('.').pop()?.toLowerCase() || '';
+    const isPDF = fileExtension === 'pdf';
     
+    console.log(`Processing ${fileExtension.toUpperCase()} file...`);
+    
+    // Convert to base64 for OCR.space (works better than FormData upload)
+    const arrayBuffer = await fileData.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    let binaryString = '';
+    const chunkSize = 8192;
+    
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.slice(i, Math.min(i + chunkSize, bytes.length));
+      binaryString += String.fromCharCode(...chunk);
+    }
+    
+    const base64File = btoa(binaryString);
+    const mimeType = isPDF ? 'application/pdf' : `image/${fileExtension}`;
+    
+    console.log('Calling OCR.space API with base64 encoding...');
+    
+    // Perform OCR with base64 encoding
     const formData = new FormData();
-    formData.append('file', fileData, fileName);
-    formData.append('filetype', fileExtension.toUpperCase());  // Explicitly set file type (PDF, JPG, PNG, etc.)
+    formData.append('base64Image', `data:${mimeType};base64,${base64File}`);
     formData.append('language', 'ger');
     formData.append('isOverlayRequired', 'false');
     formData.append('detectOrientation', 'true');
     formData.append('scale', 'true');
     formData.append('OCREngine', '2');
+    if (isPDF) {
+      formData.append('filetype', 'PDF');
+    }
 
     const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
