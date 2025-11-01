@@ -52,9 +52,11 @@ Deno.serve(async (req) => {
     // Perform OCR
     // Extract original filename from path to preserve file extension
     const fileName = filePath.split('/').pop() || 'document.pdf';
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'pdf';
     
     const formData = new FormData();
-    formData.append('file', fileData, fileName);  // Include filename so OCR can detect file type
+    formData.append('file', fileData, fileName);
+    formData.append('filetype', fileExtension.toUpperCase());  // Explicitly set file type (PDF, JPG, PNG, etc.)
     formData.append('language', 'ger');
     formData.append('isOverlayRequired', 'false');
     formData.append('detectOrientation', 'true');
