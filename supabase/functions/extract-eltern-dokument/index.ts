@@ -74,9 +74,12 @@ Deno.serve(async (req) => {
     const ocrResult = await ocrResponse.json();
     console.log('OCR API response:', JSON.stringify(ocrResult, null, 2));
 
-    if (!ocrResult.IsErroredOnProcessing && ocrResult.ParsedResults?.[0]) {
-      const ocrText = ocrResult.ParsedResults[0].ParsedText;
-      console.log('OCR Text:', ocrText);
+    if (!ocrResult.IsErroredOnProcessing && ocrResult.ParsedResults?.length > 0) {
+      // Combine text from all pages (front and back of ID card)
+      const ocrText = ocrResult.ParsedResults
+        .map((result: any) => result.ParsedText)
+        .join('\n\n');
+      console.log('OCR Text (all pages):', ocrText);
 
       // Extract data based on document type
       const extractedData: any = {
