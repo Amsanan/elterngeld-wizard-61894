@@ -76,13 +76,28 @@ serve(async (req) => {
     // Detect file type from path
     const fileExtension = filePath.split('.').pop()?.toLowerCase() || '';
     const isPDF = fileExtension === 'pdf';
-    const fileName = isPDF ? 'document.pdf' : `document.${fileExtension}`;
     
-    console.log(`Calling OCR.space API for ${fileExtension.toUpperCase()} file...`);
+    console.log(`Processing ${fileExtension.toUpperCase()} file...`);
     
-    // Call OCR.space API with file upload
+    // Convert to base64 for OCR.space (works better than FormData upload)
+    const arrayBuffer = await fileData.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    let binaryString = '';
+    const chunkSize = 8192;
+    
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.slice(i, Math.min(i + chunkSize, bytes.length));
+      binaryString += String.fromCharCode(...chunk);
+    }
+    
+    const base64File = btoa(binaryString);
+    const mimeType = isPDF ? 'application/pdf' : `image/${fileExtension}`;
+    
+    console.log('Calling OCR.space API with base64 encoding...');
+    
+    // Call OCR.space API with base64
     const formData = new FormData();
-    formData.append('file', fileData, fileName);
+    formData.append('base64Image', `data:${mimeType};base64,${base64File}`);
     formData.append('language', 'ger');
     formData.append('isOverlayRequired', 'false');
     formData.append('detectOrientation', 'true');
