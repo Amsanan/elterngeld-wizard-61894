@@ -74,55 +74,112 @@ export type Database = {
       einkommensteuerbescheide: {
         Row: {
           adresse: string | null
+          altersvorsorgeaufwendungen: string | null
+          bescheiddatum: string | null
+          bruttoarbeitslohn: string | null
           created_at: string
+          einkuenfte_nichtselbstaendig: string | null
+          einkuenfte_selbstaendig: string | null
           festgesetzte_steuer: string | null
           file_path: string | null
+          finanzamt_adresse: string | null
+          finanzamt_name: string | null
+          gemeinsame_veranlagung: boolean | null
+          gesamtbetrag_der_einkuenfte: string | null
           id: string
           jahreseinkommen: string | null
+          krankenversicherung: string | null
           nachname: string | null
           person_type: string
+          pflegeversicherung: string | null
           plz: string | null
+          solidaritaetszuschlag: string | null
+          sonderausgaben: string | null
+          steuer_id_nummer: string | null
+          steuerabzug_vom_lohn: string | null
           steuerjahr: string | null
           steuernummer: string | null
+          summe_der_einkuenfte: string | null
           updated_at: string
           user_id: string
+          verbleibende_steuer: string | null
+          vorauszahlungen: string | null
           vorname: string | null
+          werbungskosten: string | null
           wohnort: string | null
           zu_versteuerndes_einkommen: string | null
         }
         Insert: {
           adresse?: string | null
+          altersvorsorgeaufwendungen?: string | null
+          bescheiddatum?: string | null
+          bruttoarbeitslohn?: string | null
           created_at?: string
+          einkuenfte_nichtselbstaendig?: string | null
+          einkuenfte_selbstaendig?: string | null
           festgesetzte_steuer?: string | null
           file_path?: string | null
+          finanzamt_adresse?: string | null
+          finanzamt_name?: string | null
+          gemeinsame_veranlagung?: boolean | null
+          gesamtbetrag_der_einkuenfte?: string | null
           id?: string
           jahreseinkommen?: string | null
+          krankenversicherung?: string | null
           nachname?: string | null
           person_type: string
+          pflegeversicherung?: string | null
           plz?: string | null
+          solidaritaetszuschlag?: string | null
+          sonderausgaben?: string | null
+          steuer_id_nummer?: string | null
+          steuerabzug_vom_lohn?: string | null
           steuerjahr?: string | null
           steuernummer?: string | null
+          summe_der_einkuenfte?: string | null
           updated_at?: string
           user_id: string
+          verbleibende_steuer?: string | null
+          vorauszahlungen?: string | null
           vorname?: string | null
+          werbungskosten?: string | null
           wohnort?: string | null
           zu_versteuerndes_einkommen?: string | null
         }
         Update: {
           adresse?: string | null
+          altersvorsorgeaufwendungen?: string | null
+          bescheiddatum?: string | null
+          bruttoarbeitslohn?: string | null
           created_at?: string
+          einkuenfte_nichtselbstaendig?: string | null
+          einkuenfte_selbstaendig?: string | null
           festgesetzte_steuer?: string | null
           file_path?: string | null
+          finanzamt_adresse?: string | null
+          finanzamt_name?: string | null
+          gemeinsame_veranlagung?: boolean | null
+          gesamtbetrag_der_einkuenfte?: string | null
           id?: string
           jahreseinkommen?: string | null
+          krankenversicherung?: string | null
           nachname?: string | null
           person_type?: string
+          pflegeversicherung?: string | null
           plz?: string | null
+          solidaritaetszuschlag?: string | null
+          sonderausgaben?: string | null
+          steuer_id_nummer?: string | null
+          steuerabzug_vom_lohn?: string | null
           steuerjahr?: string | null
           steuernummer?: string | null
+          summe_der_einkuenfte?: string | null
           updated_at?: string
           user_id?: string
+          verbleibende_steuer?: string | null
+          vorauszahlungen?: string | null
           vorname?: string | null
+          werbungskosten?: string | null
           wohnort?: string | null
           zu_versteuerndes_einkommen?: string | null
         }

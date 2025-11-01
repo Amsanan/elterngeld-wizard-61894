@@ -70,6 +70,29 @@ const SteuerbescheidResult = () => {
           </h1>
 
           <div className="space-y-4">
+            {data.gemeinsame_veranlagung && (
+              <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-md mb-4">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  Gemeinsame Veranlagung (Ehepaar)
+                </p>
+              </div>
+            )}
+            
+            {data.finanzamt_name && (
+              <div>
+                <p className="text-sm text-muted-foreground">Finanzamt</p>
+                <p className="font-medium">{data.finanzamt_name}</p>
+                {data.finanzamt_adresse && <p className="text-sm">{data.finanzamt_adresse}</p>}
+              </div>
+            )}
+
+            {data.bescheiddatum && (
+              <div>
+                <p className="text-sm text-muted-foreground">Bescheiddatum</p>
+                <p className="font-medium">{new Date(data.bescheiddatum).toLocaleDateString("de-DE")}</p>
+              </div>
+            )}
+
             {data.vorname && (
               <div>
                 <p className="text-sm text-muted-foreground">Vorname</p>
@@ -94,6 +117,12 @@ const SteuerbescheidResult = () => {
                 <p className="font-medium">{data.steuernummer}</p>
               </div>
             )}
+            {data.steuer_id_nummer && (
+              <div>
+                <p className="text-sm text-muted-foreground">Steuer-ID</p>
+                <p className="font-medium">{data.steuer_id_nummer}</p>
+              </div>
+            )}
             {data.plz && (
               <div>
                 <p className="text-sm text-muted-foreground">PLZ</p>
@@ -106,24 +135,74 @@ const SteuerbescheidResult = () => {
                 <p className="font-medium">{data.wohnort}</p>
               </div>
             )}
-            {data.jahreseinkommen && (
-              <div>
-                <p className="text-sm text-muted-foreground">Jahreseinkommen</p>
-                <p className="font-medium">{data.jahreseinkommen} EUR</p>
-              </div>
-            )}
-            {data.zu_versteuerndes_einkommen && (
-              <div>
-                <p className="text-sm text-muted-foreground">Zu versteuerndes Einkommen</p>
-                <p className="font-medium">{data.zu_versteuerndes_einkommen} EUR</p>
-              </div>
-            )}
-            {data.festgesetzte_steuer && (
-              <div>
-                <p className="text-sm text-muted-foreground">Festgesetzte Steuer</p>
-                <p className="font-medium">{data.festgesetzte_steuer} EUR</p>
-              </div>
-            )}
+
+            <div className="border-t pt-4 mt-4">
+              <h3 className="font-semibold mb-3">Einkünfte</h3>
+              {data.bruttoarbeitslohn && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Bruttoarbeitslohn</p>
+                  <p className="font-medium">{data.bruttoarbeitslohn} EUR</p>
+                </div>
+              )}
+              {data.einkuenfte_selbstaendig && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Einkünfte aus selbständiger Arbeit</p>
+                  <p className="font-medium">{data.einkuenfte_selbstaendig} EUR</p>
+                </div>
+              )}
+              {data.werbungskosten && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Werbungskosten</p>
+                  <p className="font-medium">{data.werbungskosten} EUR</p>
+                </div>
+              )}
+              {data.summe_der_einkuenfte && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Summe der Einkünfte</p>
+                  <p className="font-medium">{data.summe_der_einkuenfte} EUR</p>
+                </div>
+              )}
+              {data.gesamtbetrag_der_einkuenfte && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Gesamtbetrag der Einkünfte</p>
+                  <p className="font-medium">{data.gesamtbetrag_der_einkuenfte} EUR</p>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <h3 className="font-semibold mb-3">Steuerberechnung</h3>
+              {data.zu_versteuerndes_einkommen && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Zu versteuerndes Einkommen</p>
+                  <p className="font-medium">{data.zu_versteuerndes_einkommen} EUR</p>
+                </div>
+              )}
+              {data.festgesetzte_steuer && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Festgesetzte Einkommensteuer</p>
+                  <p className="font-medium text-lg">{data.festgesetzte_steuer} EUR</p>
+                </div>
+              )}
+              {data.solidaritaetszuschlag && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Solidaritätszuschlag</p>
+                  <p className="font-medium">{data.solidaritaetszuschlag} EUR</p>
+                </div>
+              )}
+              {data.steuerabzug_vom_lohn && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Steuerabzug vom Lohn</p>
+                  <p className="font-medium">{data.steuerabzug_vom_lohn} EUR</p>
+                </div>
+              )}
+              {data.verbleibende_steuer && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Verbleibende Steuer</p>
+                  <p className="font-medium text-lg text-red-600 dark:text-red-400">{data.verbleibende_steuer} EUR</p>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mt-6">

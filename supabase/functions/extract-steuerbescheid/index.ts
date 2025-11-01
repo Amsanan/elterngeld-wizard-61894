@@ -95,6 +95,25 @@ Deno.serve(async (req) => {
       const steuernummerMatch = ocrText.match(/(?:Steuernummer|St[.-]Nr\.?)[:\s]+(\d{2,3}\/\d{3,4}\/\d{4,5}|\d{10,13})/i);
       if (steuernummerMatch) extractedData.steuernummer = steuernummerMatch[1];
 
+      // Extract Steuer-IdNr (Tax ID number)
+      const idNrMatch = ocrText.match(/IdNr\.?\s+(?:Ehemann|Ehefrau|Steuerpflichtige)?\s*(\d{2}\s?\d{3}\s?\d{3}\s?\d{3})/i);
+      if (idNrMatch) extractedData.steuer_id_nummer = idNrMatch[1].replace(/\s/g, "");
+
+      // Extract Finanzamt (tax office)
+      const finanzamtMatch = ocrText.match(/Finanzamt\s+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|\d{5})/i);
+      if (finanzamtMatch) extractedData.finanzamt_name = finanzamtMatch[1].trim();
+
+      // Extract Finanzamt address
+      const finanzamtAdresseMatch = ocrText.match(/Finanzamt[^\n]+\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s.]+?\d+)/i);
+      if (finanzamtAdresseMatch) extractedData.finanzamt_adresse = finanzamtAdresseMatch[1].trim();
+
+      // Extract Bescheiddatum (date of assessment)
+      const bescheiddatumMatch = ocrText.match(/(?:vom|Bescheid für \d{4}.*?vom)\s+(\d{2}\.\d{2}\.\d{4})/i);
+      if (bescheiddatumMatch) {
+        const [day, month, year] = bescheiddatumMatch[1].split(".");
+        extractedData.bescheiddatum = `${year}-${month}-${day}`;
+      }
+
       // Extract name - look for patterns after "Name" or "Steuerpflichtige/r"
       const nachnameMatch = ocrText.match(/(?:Name|Nachname|Steuerpflichtige(?:r)?)[:\s]+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|,)/i);
       if (nachnameMatch) extractedData.nachname = nachnameMatch[1].trim();
@@ -109,17 +128,53 @@ Deno.serve(async (req) => {
         extractedData.wohnort = plzWohnortMatch[2].trim();
       }
 
-      // Extract Jahreseinkommen (annual income)
-      const jahreseinkommenMatch = ocrText.match(/(?:Summe der Einkünfte|Gesamtbetrag der Einkünfte)[:\s]+(?:EUR\s+)?([0-9.,]+)/i);
-      if (jahreseinkommenMatch) extractedData.jahreseinkommen = jahreseinkommenMatch[1].replace(/\./g, "").replace(",", ".");
+      // Extract Gesamtbetrag der Einkünfte
+      const gesamtbetragMatch = ocrText.match(/Gesamtbetrag der Einkünfte[^\d]*?([0-9.,]+)/i);
+      if (gesamtbetragMatch) extractedData.gesamtbetrag_der_einkuenfte = gesamtbetragMatch[1].replace(/\./g, "").replace(",", ".");
+
+      // Extract Summe der Einkünfte
+      const summeEinkuenfteMatch = ocrText.match(/Summe der Einkünfte[^\d]*?([0-9.,]+)/i);
+      if (summeEinkuenfteMatch) extractedData.summe_der_einkuenfte = summeEinkuenfteMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract zu versteuerndes Einkommen (taxable income)
-      const zvEMatch = ocrText.match(/(?:zu versteuerndes Einkommen|Einkommen)[:\s]+(?:EUR\s+)?([0-9.,]+)/i);
+      const zvEMatch = ocrText.match(/zu versteuerndes Einkommen[^\d]*?([0-9.,]+)/i);
       if (zvEMatch) extractedData.zu_versteuerndes_einkommen = zvEMatch[1].replace(/\./g, "").replace(",", ".");
 
-      // Extract festgesetzte Steuer (assessed tax)
-      const steuerMatch = ocrText.match(/(?:festgesetzte|festzusetzende)\s+(?:Einkommensteuer|Steuer)[:\s]+(?:EUR\s+)?([0-9.,]+)/i);
+      // Extract festgesetzte Einkommensteuer
+      const steuerMatch = ocrText.match(/(?:festzusetzende|Festgesetzt werden)\s+(?:Einkommensteuer)[^\d]*?€?\s*([0-9.,]+)/i);
       if (steuerMatch) extractedData.festgesetzte_steuer = steuerMatch[1].replace(/\./g, "").replace(",", ".");
+
+      // Extract Solidaritätszuschlag
+      const soliMatch = ocrText.match(/Solidaritätszuschlag[^\d]*?€?\s*([0-9.,]+)/i);
+      if (soliMatch) extractedData.solidaritaetszuschlag = soliMatch[1].replace(/\./g, "").replace(",", ".");
+
+      // Extract Steuerabzug vom Lohn
+      const steuerabzugMatch = ocrText.match(/(?:ab\s+)?Steuerabzug vom Lohn[^\d]*?€?\s*([0-9.,]+)/i);
+      if (steuerabzugMatch) extractedData.steuerabzug_vom_lohn = steuerabzugMatch[1].replace(/\./g, "").replace(",", ".");
+
+      // Extract verbleibende Steuer
+      const verbleibendeMatch = ocrText.match(/verbleibende Steuer[^\d]*?€?\s*([0-9.,]+)/i);
+      if (verbleibendeMatch) extractedData.verbleibende_steuer = verbleibendeMatch[1].replace(/\./g, "").replace(",", ".");
+
+      // Extract Einkünfte aus selbständiger Arbeit
+      const selbstaendigMatch = ocrText.match(/Einkünfte aus selbständiger Arbeit[^\d]*?([0-9.,]+)/i);
+      if (selbstaendigMatch) extractedData.einkuenfte_selbstaendig = selbstaendigMatch[1].replace(/\./g, "").replace(",", ".");
+
+      // Extract Einkünfte aus nichtselbständiger Arbeit (Bruttoarbeitslohn)
+      const bruttoMatch = ocrText.match(/Bruttoarbeitslohn[^\d]*?([0-9.,]+)/i);
+      if (bruttoMatch) {
+        extractedData.bruttoarbeitslohn = bruttoMatch[1].replace(/\./g, "").replace(",", ".");
+        extractedData.einkuenfte_nichtselbstaendig = bruttoMatch[1].replace(/\./g, "").replace(",", ".");
+      }
+
+      // Extract Werbungskosten
+      const werbungskostenMatch = ocrText.match(/(?:ab\s+)?Werbungskosten[^\d]*?([0-9.,]+)/i);
+      if (werbungskostenMatch) extractedData.werbungskosten = werbungskostenMatch[1].replace(/\./g, "").replace(",", ".");
+
+      // Check for gemeinsame Veranlagung (joint assessment)
+      if (ocrText.match(/(?:Ehemann|Ehefrau|Splittingtarif)/i)) {
+        extractedData.gemeinsame_veranlagung = true;
+      }
 
       // Insert into database
       const { data: insertedData, error: insertError } = await supabase
