@@ -68,9 +68,18 @@ serve(async (req) => {
 
     console.log('File downloaded, size:', fileData.size);
 
-    // Convert file to base64 for OCR
+    // Convert file to base64 for OCR (chunk-based to avoid stack overflow)
     const arrayBuffer = await fileData.arrayBuffer();
-    const base64File = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const bytes = new Uint8Array(arrayBuffer);
+    let binaryString = '';
+    const chunkSize = 8192;
+    
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.slice(i, i + chunkSize);
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    
+    const base64File = btoa(binaryString);
 
     const ocrSpaceApiKey = Deno.env.get('OCR_SPACE_API_KEY');
     if (!ocrSpaceApiKey) {
