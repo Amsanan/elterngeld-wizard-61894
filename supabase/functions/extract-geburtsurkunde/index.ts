@@ -73,17 +73,24 @@ serve(async (req) => {
       throw new Error('OCR_SPACE_API_KEY not configured');
     }
     
-    console.log('Calling OCR.space API...');
+    // Detect file type from path
+    const fileExtension = filePath.split('.').pop()?.toLowerCase() || '';
+    const isPDF = fileExtension === 'pdf';
+    const fileName = isPDF ? 'document.pdf' : `document.${fileExtension}`;
     
-    // Call OCR.space API with file upload (not base64)
+    console.log(`Calling OCR.space API for ${fileExtension.toUpperCase()} file...`);
+    
+    // Call OCR.space API with file upload
     const formData = new FormData();
-    formData.append('file', fileData, 'document.pdf');
+    formData.append('file', fileData, fileName);
     formData.append('language', 'ger');
     formData.append('isOverlayRequired', 'false');
     formData.append('detectOrientation', 'true');
     formData.append('scale', 'true');
     formData.append('OCREngine', '2');
-    formData.append('filetype', 'PDF');
+    if (isPDF) {
+      formData.append('filetype', 'PDF');
+    }
 
     const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
