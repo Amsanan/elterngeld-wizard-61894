@@ -99,17 +99,23 @@ const Dashboard = () => {
               </div>
             </Card>
 
-            <Card className="p-8 opacity-50">
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/geburtsurkunden-list")}
+            >
               <div className="flex flex-col items-center text-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
                   <List className="h-8 w-8 text-accent" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-2 text-foreground">Meine Anträge</h3>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Meine Geburtsurkunden</h3>
                   <p className="text-muted-foreground">
-                    Funktion in Entwicklung
+                    Alle hochgeladenen Geburtsurkunden anzeigen
                   </p>
                 </div>
+                <Button className="mt-4">
+                  Anzeigen
+                </Button>
               </div>
             </Card>
           </div>

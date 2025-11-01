@@ -3,6 +3,8 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import UploadGeburtsurkunde from "./pages/UploadGeburtsurkunde";
+import GeburtsurkunderResult from "./pages/GeburtsurkunderResult";
+import GeburtsurkunderList from "./pages/GeburtsurkunderList";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -13,6 +15,8 @@ function App() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/upload-geburtsurkunde" element={<UploadGeburtsurkunde />} />
+        <Route path="/geburtsurkunde-result" element={<GeburtsurkunderResult />} />
+        <Route path="/geburtsurkunden-list" element={<GeburtsurkunderList />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

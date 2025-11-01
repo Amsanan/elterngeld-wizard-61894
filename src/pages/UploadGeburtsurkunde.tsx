@@ -69,6 +69,12 @@ const UploadGeburtsurkunde = () => {
           title: "Erfolgreich verarbeitet",
           description: "Die Geburtsurkunde wurde extrahiert und gespeichert.",
         });
+        
+        // Navigate to result page with the extracted data ID
+        if (extractData?.data?.id) {
+          navigate(`/geburtsurkunde-result?id=${extractData.data.id}`);
+          return;
+        }
       }
 
       setFile(null);
