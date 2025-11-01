@@ -13,6 +13,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const ocrApiKey = Deno.env.get('OCR_SPACE_API_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     
@@ -48,141 +49,136 @@ Deno.serve(async (req) => {
       throw downloadError;
     }
 
-    console.log('File downloaded, size:', fileData.size);
+    // Perform OCR
+    // Extract original filename from path to preserve file extension
+    const fileName = filePath.split('/').pop() || 'document.pdf';
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'pdf';
+    
+    const formData = new FormData();
+    formData.append('file', fileData, fileName);
+    formData.append('filetype', fileExtension.toUpperCase());  // Explicitly set file type (PDF, JPG, PNG, etc.)
+    formData.append('language', 'ger');
+    formData.append('isOverlayRequired', 'false');
+    formData.append('detectOrientation', 'true');
+    formData.append('scale', 'true');
+    formData.append('OCREngine', '2');
 
-    // Detect file type from path
-    const fileExtension = filePath.split('.').pop()?.toLowerCase() || '';
-    const isPDF = fileExtension === 'pdf';
-    
-    console.log(`Processing ${fileExtension.toUpperCase()} file...`);
-    
-    // Convert to base64 for AI processing
-    const arrayBuffer = await fileData.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    let binaryString = '';
-    const chunkSize = 8192;
-    
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.slice(i, Math.min(i + chunkSize, bytes.length));
-      binaryString += String.fromCharCode(...chunk);
-    }
-    
-    const base64File = btoa(binaryString);
-    const mimeType = isPDF ? 'application/pdf' : `image/${fileExtension}`;
-    
-    console.log('Using Lovable AI for OCR extraction...');
-    
-    // Use Lovable AI for OCR (no file size limit, no API key needed from user)
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    if (!lovableApiKey) {
-      throw new Error('LOVABLE_API_KEY not configured');
-    }
-
-    const aiPrompt = documentType === 'personalausweis' 
-      ? `Extract all information from this German ID card (Personalausweis). Return a JSON object with these fields:
-      - nachname (last name)
-      - vorname (first name)
-      - geburtsname (birth name, if present)
-      - geburtsdatum (date of birth in DD.MM.YYYY format)
-      - geburtsort (place of birth)
-      - staatsangehoerigkeit (nationality)
-      - ausweisnummer (ID card number)
-      - gueltig_bis (expiry date in DD.MM.YYYY format)
-      
-      Return ONLY valid JSON, no markdown formatting.`
-      : `Extract all information from this German passport (Reisepass). Return a JSON object with these fields:
-      - nachname (last name)
-      - vorname (first name)
-      - geburtsdatum (date of birth in DD.MM.YYYY format)
-      - geburtsort (place of birth, if visible)
-      - staatsangehoerigkeit (nationality)
-      - ausweisnummer (passport number)
-      - gueltig_bis (expiry date in DD.MM.YYYY format)
-      
-      Return ONLY valid JSON, no markdown formatting.`;
-
-    const aiResponse = await fetch('https://api.lovable.app/v1/ai/generate', {
+    const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
+        'apikey': ocrApiKey,
       },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: aiPrompt },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:${mimeType};base64,${base64File}`
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 1000,
-      }),
+      body: formData,
     });
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('Lovable AI error:', errorText);
-      throw new Error('AI processing failed');
+    const ocrResult = await ocrResponse.json();
+    console.log('OCR API response:', JSON.stringify(ocrResult, null, 2));
+
+    if (!ocrResult.IsErroredOnProcessing && ocrResult.ParsedResults?.[0]) {
+      const ocrText = ocrResult.ParsedResults[0].ParsedText;
+      console.log('OCR Text:', ocrText);
+
+      // Extract data based on document type
+      const extractedData: any = {
+        user_id: user.id,
+        document_type: documentType,
+        person_type: personType,
+        file_path: filePath,
+      };
+
+      const lines = ocrText.split('\n').map((l: string) => l.trim()).filter((l: string) => l);
+
+      if (documentType === 'personalausweis') {
+        // Extract from ID card
+        // Nachname
+        const nachnameMatch = ocrText.match(/(?:Nachname|Name)[:\s]*\n?\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+        if (nachnameMatch) extractedData.nachname = nachnameMatch[1].trim();
+
+        // Vorname
+        const vornameMatch = ocrText.match(/(?:Vorname|Vornamen)[:\s]*\n?\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+        if (vornameMatch) extractedData.vorname = vornameMatch[1].trim();
+
+        // Geburtsname
+        const geburtsnameMatch = ocrText.match(/Geburtsname[:\s]*\n?\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+        if (geburtsnameMatch) extractedData.geburtsname = geburtsnameMatch[1].trim();
+
+        // Geburtsdatum
+        const geburtsdatumMatch = ocrText.match(/Geburtsdatum[:\s]*\n?\s*(\d{1,2}\.\d{1,2}\.\d{2,4})/i);
+        if (geburtsdatumMatch) extractedData.geburtsdatum = geburtsdatumMatch[1];
+
+        // Geburtsort
+        const geburtsortMatch = ocrText.match(/Geburtsort[:\s]*\n?\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+        if (geburtsortMatch) extractedData.geburtsort = geburtsortMatch[1].trim();
+
+        // Staatsangehörigkeit
+        const staatsMatch = ocrText.match(/Staatsangeh[öo]rigkeit[:\s]*\n?\s*(DEUTSCH|[A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+        if (staatsMatch) extractedData.staatsangehoerigkeit = staatsMatch[1].trim();
+
+        // Ausweisnummer
+        const ausweisMatch = ocrText.match(/(?:Ausweis-?Nr|Seriennummer)[.:\s]*\n?\s*([A-Z0-9]+)/i);
+        if (ausweisMatch) extractedData.ausweisnummer = ausweisMatch[1].trim();
+
+        // Gültig bis
+        const gueltigMatch = ocrText.match(/(?:G[üu]ltig bis|Ablaufdatum)[:\s]*\n?\s*(\d{1,2}\.\d{1,2}\.\d{2,4})/i);
+        if (gueltigMatch) extractedData.gueltig_bis = gueltigMatch[1];
+
+      } else if (documentType === 'reisepass') {
+        // Extract from passport (MRZ format)
+        // Try to find MRZ lines (Machine Readable Zone)
+        const mrzMatch = ocrText.match(/P<D<<([A-Z<]+)<<([A-Z<\s]+)/);
+        if (mrzMatch) {
+          extractedData.nachname = mrzMatch[1].replace(/</g, ' ').trim();
+          extractedData.vorname = mrzMatch[2].replace(/</g, ' ').trim();
+        } else {
+          // Fallback to regular text extraction
+          const nachnameMatch = ocrText.match(/(?:Name|Nachname|Surname)[:\s]*\n?\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+          if (nachnameMatch) extractedData.nachname = nachnameMatch[1].trim();
+
+          const vornameMatch = ocrText.match(/(?:Vorname|Given names)[:\s]*\n?\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+          if (vornameMatch) extractedData.vorname = vornameMatch[1].trim();
+        }
+
+        // Geburtsdatum
+        const geburtsdatumMatch = ocrText.match(/(?:Geburtsdatum|Date of birth)[:\s]*\n?\s*(\d{1,2}\.\d{1,2}\.\d{2,4})/i);
+        if (geburtsdatumMatch) extractedData.geburtsdatum = geburtsdatumMatch[1];
+
+        // Reisepassnummer
+        const passMatch = ocrText.match(/(?:Reisepass-?Nr|Passport No)[.:\s]*\n?\s*([A-Z0-9]+)/i);
+        if (passMatch) extractedData.ausweisnummer = passMatch[1].trim();
+
+        // Gültig bis
+        const gueltigMatch = ocrText.match(/(?:G[üu]ltig bis|Date of expiry)[:\s]*\n?\s*(\d{1,2}\.\d{1,2}\.\d{2,4})/i);
+        if (gueltigMatch) extractedData.gueltig_bis = gueltigMatch[1];
+
+        // Staatsangehörigkeit
+        const staatsMatch = ocrText.match(/(?:Staatsangeh[öo]rigkeit|Nationality)[:\s]*\n?\s*(DEUTSCH|GERMAN|[A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+        if (staatsMatch) extractedData.staatsangehoerigkeit = staatsMatch[1].trim();
+      }
+
+      // Insert into database
+      const { data: insertedData, error: insertError } = await supabase
+        .from('eltern_dokumente')
+        .insert(extractedData)
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        throw insertError;
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: insertedData,
+          message: 'Dokument erfolgreich extrahiert',
+          ocrText: ocrText,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      throw new Error('OCR processing failed');
     }
-
-    const aiResult = await aiResponse.json();
-    console.log('AI response:', JSON.stringify(aiResult, null, 2));
-    
-    const aiText = aiResult.choices?.[0]?.message?.content;
-    if (!aiText) {
-      throw new Error('No content in AI response');
-    }
-
-    // Parse the JSON response
-    let extractedData: any;
-    try {
-      // Remove markdown code blocks if present
-      const jsonText = aiText.replace(/```json\n?|\n?```/g, '').trim();
-      extractedData = JSON.parse(jsonText);
-      console.log('Extracted data:', extractedData);
-    } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', aiText);
-      throw new Error('Failed to parse extracted data');
-    }
-
-    // Add metadata to extracted data
-    const finalData: any = {
-      user_id: user.id,
-      document_type: documentType,
-      person_type: personType,
-      file_path: filePath,
-      ...extractedData,
-    };
-
-    // Insert into database
-    const { data: insertedData, error: insertError } = await supabase
-      .from('eltern_dokumente')
-      .insert(finalData)
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error('Insert error:', insertError);
-      throw insertError;
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: insertedData,
-        message: 'Dokument erfolgreich extrahiert',
-        ocrText: JSON.stringify(extractedData, null, 2),
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error: any) {
     console.error('Error:', error);
     return new Response(
