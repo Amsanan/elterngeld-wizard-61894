@@ -90,28 +90,22 @@ Deno.serve(async (req) => {
 
       if (documentType === 'personalausweis') {
         // Extract from ID card
-        // Nachname - look for pattern after "(a)" marker
-        let nachnameMatch = ocrText.match(/\(a\)\s*([A-ZÄÖÜ][A-Z]+)/);
-        if (!nachnameMatch) {
-          // Fallback: try traditional pattern
-          nachnameMatch = ocrText.match(/(?:^|\n)(?:Nachname|Name)[:\s/]*\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|$)/i);
-        }
+        // Nachname - look for pattern after "(a)" marker first, before any fallback
+        const nachnameMatch = ocrText.match(/\(a\)\s*([A-ZÄÖÜ][A-ZÄÖÜ\s]+?)(?=\n)/);
         if (nachnameMatch) extractedData.nachname = nachnameMatch[1].trim();
 
-        // Vorname - look for pattern after "Vornamen"
-        let vornameMatch = ocrText.match(/Vornamen[^\n]*\n\s*([A-ZÄÖÜ][A-Z]+)/i);
-        if (!vornameMatch) {
-          // Fallback: try traditional pattern
-          vornameMatch = ocrText.match(/(?:Vorname|Given names)[:\s/]*\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|$)/i);
-        }
+        // Vorname - look for pattern after "Vornamen" or "Given names"
+        const vornameMatch = ocrText.match(/(?:Vornamen|Given names)[^\n]*\n\s*([A-ZÄÖÜ][A-ZÄÖÜ\s]+?)(?=\n)/i);
         if (vornameMatch) extractedData.vorname = vornameMatch[1].trim();
 
-        // Geburtsname
-        const geburtsnameMatch = ocrText.match(/Geburtsname[^\n]*\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
-        if (geburtsnameMatch) extractedData.geburtsname = geburtsnameMatch[1].trim();
+        // Geburtsname - only if explicitly present (not "at birth" text)
+        const geburtsnameMatch = ocrText.match(/(?:Geburtsname|Name at birth)[^\n]*\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
+        if (geburtsnameMatch && !geburtsnameMatch[0].includes('at birth')) {
+          extractedData.geburtsname = geburtsnameMatch[1].trim();
+        }
 
-        // Geburtsdatum - handle multiple date formats
-        let geburtsdatumMatch = ocrText.match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
+        // Geburtsdatum - find date in DD.MM.YYYY format
+        const geburtsdatumMatch = ocrText.match(/(\d{2}\.\d{2}\.\d{4})/);
         if (geburtsdatumMatch) extractedData.geburtsdatum = geburtsdatumMatch[1];
 
         // Geburtsort
