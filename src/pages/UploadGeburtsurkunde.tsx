@@ -44,10 +44,32 @@ const UploadGeburtsurkunde = () => {
 
       if (uploadError) throw uploadError;
 
+      // Call extraction function
       toast({
-        title: "Upload erfolgreich",
-        description: "Die Geburtsurkunde wurde hochgeladen.",
+        title: "Verarbeitung läuft",
+        description: "Die Geburtsurkunde wird mit OCR verarbeitet...",
       });
+
+      const { data: extractData, error: extractError } = await supabase.functions.invoke(
+        'extract-geburtsurkunde',
+        {
+          body: { filePath: fileName }
+        }
+      );
+
+      if (extractError) {
+        console.error("Extraction error:", extractError);
+        toast({
+          title: "Verarbeitung teilweise erfolgreich",
+          description: "Die Datei wurde hochgeladen, aber die OCR-Verarbeitung hatte Probleme.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erfolgreich verarbeitet",
+          description: "Die Geburtsurkunde wurde extrahiert und gespeichert.",
+        });
+      }
 
       setFile(null);
       // Reset file input
