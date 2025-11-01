@@ -139,6 +139,11 @@ serve(async (req) => {
       // Split into lines for better parsing
       const lines = ocrText.split('\n').map((l: string) => l.trim()).filter((l: string) => l);
       
+      // Find the "Kind" section boundary to avoid picking up Mutter/Vater labels
+      const kindIdx = lines.findIndex((l: string) => l.match(/^Kind\s*$/i));
+      const mutterIdx = lines.findIndex((l: string) => l.match(/^Mutter\s*$/i));
+      const kindSection = kindIdx >= 0 && mutterIdx > kindIdx ? lines.slice(kindIdx, mutterIdx) : lines;
+      
       // Extract Standesamt/Behörde
       const standesamtMatch = ocrText.match(/Standesamt\s+([^\n]+)/i);
       if (standesamtMatch) extractedData.behoerde_name = standesamtMatch[1].trim();
@@ -147,32 +152,41 @@ serve(async (req) => {
       const registerMatch = ocrText.match(/(?:Registernummer|Register-?Nr\.?)[:\s]*([A-Z]?\s*\d+\/\d+)/i);
       if (registerMatch) extractedData.urkundennummer = registerMatch[1].trim();
       
-      // Extract Kind Familienname - look for line after "Familienname"
-      const familiennameIdx = lines.findIndex((l: string) => l.match(/^Familienname\s*$/i));
-      if (familiennameIdx >= 0 && familiennameIdx + 1 < lines.length) {
-        extractedData.kind_nachname = lines[familiennameIdx + 1];
+      // Extract Kind Familienname - look ONLY in Kind section
+      // Try inline pattern first (most reliable for Kind section)
+      const nachnameInlineMatch = ocrText.match(/Kind[\s\S]*?Familienname\s+([A-Za-zäöüÄÖÜß]+)(?:\s|$)/i);
+      if (nachnameInlineMatch) {
+        extractedData.kind_nachname = nachnameInlineMatch[1].trim();
       } else {
-        // Fallback: try inline pattern
-        const nachnameMatch = ocrText.match(/Familienname[:\s]+([^\n]+)/i);
-        if (nachnameMatch) extractedData.kind_nachname = nachnameMatch[1].trim();
+        // Fallback: look for line after "Familienname" in Kind section only
+        const familiennameIdx = kindSection.findIndex((l: string) => l.match(/^Familienname\s*$/i));
+        if (familiennameIdx >= 0 && familiennameIdx + 1 < kindSection.length) {
+          const nextLine = kindSection[familiennameIdx + 1];
+          if (!nextLine.match(/^(Geburtsname|Vorname|Religion|Geschlecht)/i)) {
+            extractedData.kind_nachname = nextLine;
+          }
+        }
       }
       
-      // Extract Kind Vorname(n) - look for line after "Vorname(n)"
-      const vornameIdx = lines.findIndex((l: string) => l.match(/^Vorname\(n\)\s*$/i));
-      if (vornameIdx >= 0 && vornameIdx + 1 < lines.length) {
-        extractedData.kind_vorname = lines[vornameIdx + 1];
+      // Extract Kind Vorname(n) - look for line after "Vorname(n)" in Kind section
+      const vornameIdx = kindSection.findIndex((l: string) => l.match(/^Vorname\(n\)\s*$/i));
+      if (vornameIdx >= 0 && vornameIdx + 1 < kindSection.length) {
+        const nextLine = kindSection[vornameIdx + 1];
+        if (!nextLine.match(/^(Geburtsname|Familienname|Religion|Geschlecht)/i)) {
+          extractedData.kind_vorname = nextLine;
+        }
       } else {
         // Fallback: try inline pattern (but skip "(n)" in capture)
-        const vornameMatch = ocrText.match(/Vorname\(n\)[:\s]*\n?\s*([^\n]+)/i);
+        const vornameMatch = ocrText.match(/Kind[\s\S]*?Vorname\(n\)[:\s]*\n?\s*([A-Za-zäöüÄÖÜß]+)/i);
         if (vornameMatch && vornameMatch[1] !== '(n)') {
           extractedData.kind_vorname = vornameMatch[1].trim();
         }
       }
       
       // Extract Geburtstag - look for line after "Geburtstag"
-      const geburtstagIdx = lines.findIndex((l: string) => l.match(/^Geburtstag\s*$/i));
-      if (geburtstagIdx >= 0 && geburtstagIdx + 1 < lines.length) {
-        const dateStr = lines[geburtstagIdx + 1];
+      const geburtstagIdx = kindSection.findIndex((l: string) => l.match(/^Geburtstag\s*$/i));
+      if (geburtstagIdx >= 0 && geburtstagIdx + 1 < kindSection.length) {
+        const dateStr = kindSection[geburtstagIdx + 1];
         if (dateStr.match(/\d{1,2}\.\d{1,2}\.\d{2,4}/)) {
           extractedData.kind_geburtsdatum = dateStr;
         }
@@ -183,9 +197,9 @@ serve(async (req) => {
       }
       
       // Extract Geburtsort
-      const geburtsortIdx = lines.findIndex((l: string) => l.match(/^Geburtsort\s*$/i));
-      if (geburtsortIdx >= 0 && geburtsortIdx + 1 < lines.length) {
-        extractedData.kind_geburtsort = lines[geburtsortIdx + 1];
+      const geburtsortIdx = kindSection.findIndex((l: string) => l.match(/^Geburtsort\s*$/i));
+      if (geburtsortIdx >= 0 && geburtsortIdx + 1 < kindSection.length) {
+        extractedData.kind_geburtsort = kindSection[geburtsortIdx + 1];
       } else {
         const geburtsortMatch = ocrText.match(/Geburtsort[:\s]+([^\n]+)/i);
         if (geburtsortMatch) extractedData.kind_geburtsort = geburtsortMatch[1].trim();
