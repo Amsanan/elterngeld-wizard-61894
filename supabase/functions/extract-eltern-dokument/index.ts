@@ -90,20 +90,28 @@ Deno.serve(async (req) => {
 
       if (documentType === 'personalausweis') {
         // Extract from ID card
-        // Nachname
-        const nachnameMatch = ocrText.match(/(?:Nachname|Name)[:\s]*\n?\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+        // Nachname - look for pattern after "(a)" marker
+        let nachnameMatch = ocrText.match(/\(a\)\s*([A-ZÄÖÜ][A-Z]+)/);
+        if (!nachnameMatch) {
+          // Fallback: try traditional pattern
+          nachnameMatch = ocrText.match(/(?:^|\n)(?:Nachname|Name)[:\s/]*\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|$)/i);
+        }
         if (nachnameMatch) extractedData.nachname = nachnameMatch[1].trim();
 
-        // Vorname
-        const vornameMatch = ocrText.match(/(?:Vorname|Vornamen)[:\s]*\n?\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+        // Vorname - look for pattern after "Vornamen"
+        let vornameMatch = ocrText.match(/Vornamen[^\n]*\n\s*([A-ZÄÖÜ][A-Z]+)/i);
+        if (!vornameMatch) {
+          // Fallback: try traditional pattern
+          vornameMatch = ocrText.match(/(?:Vorname|Given names)[:\s/]*\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|$)/i);
+        }
         if (vornameMatch) extractedData.vorname = vornameMatch[1].trim();
 
         // Geburtsname
-        const geburtsnameMatch = ocrText.match(/Geburtsname[:\s]*\n?\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
+        const geburtsnameMatch = ocrText.match(/Geburtsname[^\n]*\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
         if (geburtsnameMatch) extractedData.geburtsname = geburtsnameMatch[1].trim();
 
-        // Geburtsdatum
-        const geburtsdatumMatch = ocrText.match(/Geburtsdatum[:\s]*\n?\s*(\d{1,2}\.\d{1,2}\.\d{2,4})/i);
+        // Geburtsdatum - handle multiple date formats
+        let geburtsdatumMatch = ocrText.match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
         if (geburtsdatumMatch) extractedData.geburtsdatum = geburtsdatumMatch[1];
 
         // Geburtsort
