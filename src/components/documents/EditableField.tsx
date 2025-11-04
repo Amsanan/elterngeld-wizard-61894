@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
+import { ConfidenceBadge } from "./ConfidenceBadge";
 
 interface EditableFieldProps {
   label: string;
@@ -11,6 +12,7 @@ interface EditableFieldProps {
   fieldName: string;
   type?: "text" | "date" | "number";
   onUpdate?: (value: string) => void;
+  confidenceScore?: number;
 }
 
 export const EditableField = ({
@@ -22,6 +24,7 @@ export const EditableField = ({
   fieldName,
   type = "text",
   onUpdate,
+  confidenceScore,
 }: EditableFieldProps) => {
   const [localValue, setLocalValue] = useState(value || "");
 
@@ -58,7 +61,12 @@ export const EditableField = ({
 
   return (
     <div>
-      <p className="text-sm text-muted-foreground mb-1">{label}</p>
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        {confidenceScore !== undefined && !isEditing && (
+          <ConfidenceBadge score={confidenceScore} />
+        )}
+      </div>
       {isEditing ? (
         <Input
           type={type}

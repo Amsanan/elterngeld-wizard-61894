@@ -4,29 +4,71 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Edit2, Trash2, Save } from "lucide-react";
 import { ConfidenceBadge } from "@/components/documents/ConfidenceBadge";
+import { EditableField } from "@/components/documents/EditableField";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const SteuerbescheidResult = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const confidenceScores = data?.confidence_scores || {};
   
-  const renderFieldWithConfidence = (label: string, value: string | null, fieldKey: string, suffix = "") => {
-    if (!value) return null;
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("einkommensteuerbescheide")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast.success("Steuerbescheid erfolgreich gelöscht");
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast.error("Fehler beim Löschen");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+  
+  const handleUpdate = (field: string, value: string) => {
+    setData((prev: any) => ({ ...prev, [field]: value }));
+  };
+  
+  const renderFieldWithConfidence = (label: string, value: string | null, fieldKey: string, suffix = "", type: "text" | "date" | "number" = "text") => {
+    if (!value && !isEditing) return null;
     const score = confidenceScores[fieldKey];
     
     return (
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          {score !== undefined && <ConfidenceBadge score={score} />}
-        </div>
-        <p className="font-medium">{value}{suffix}</p>
-      </div>
+      <EditableField
+        label={label}
+        value={value}
+        isEditing={isEditing}
+        documentId={id!}
+        tableName="einkommensteuerbescheide"
+        fieldName={fieldKey}
+        type={type}
+        onUpdate={(newValue) => handleUpdate(fieldKey, newValue)}
+        confidenceScore={score}
+      />
     );
   };
 
@@ -75,11 +117,51 @@ const SteuerbescheidResult = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Button variant="ghost" onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Zurück
           </Button>
+          <div className="flex gap-2">
+            <Button
+              variant={isEditing ? "default" : "outline"}
+              onClick={() => setIsEditing(!isEditing)}
+            >
+              {isEditing ? (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Fertig
+                </>
+              ) : (
+                <>
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  Bearbeiten
+                </>
+              )}
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isDeleting}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Löschen
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Sind Sie sicher?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Diese Aktion kann nicht rückgängig gemacht werden. Der Steuerbescheid wird dauerhaft gelöscht.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>
+                    Löschen
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
 
         <Card className="p-6">
@@ -101,26 +183,9 @@ const SteuerbescheidResult = () => {
               </div>
             )}
             
-            {data.finanzamt_name && (
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm text-muted-foreground">Finanzamt</p>
-                  {confidenceScores.finanzamt_name && (
-                    <ConfidenceBadge score={confidenceScores.finanzamt_name} />
-                  )}
-                </div>
-                <p className="font-medium">{data.finanzamt_name}</p>
-                {data.finanzamt_adresse && (
-                  <p className="text-sm mt-1">{data.finanzamt_adresse}</p>
-                )}
-              </div>
-            )}
-
-            {renderFieldWithConfidence(
-              "Bescheiddatum",
-              data.bescheiddatum ? new Date(data.bescheiddatum).toLocaleDateString("de-DE") : null,
-              "bescheiddatum"
-            )}
+            {renderFieldWithConfidence("Finanzamt", data.finanzamt_name, "finanzamt_name")}
+            {renderFieldWithConfidence("Finanzamt Adresse", data.finanzamt_adresse, "finanzamt_adresse")}
+            {renderFieldWithConfidence("Bescheiddatum", data.bescheiddatum, "bescheiddatum", "", "date")}
             {renderFieldWithConfidence("Vorname", data.vorname, "vorname")}
             {renderFieldWithConfidence("Nachname", data.nachname, "nachname")}
             {renderFieldWithConfidence("Steuerjahr", data.steuerjahr, "steuerjahr")}
@@ -131,43 +196,20 @@ const SteuerbescheidResult = () => {
 
             <div className="border-t pt-4 mt-4">
               <h3 className="font-semibold mb-3">Einkünfte</h3>
-              {renderFieldWithConfidence("Bruttoarbeitslohn", data.bruttoarbeitslohn, "bruttoarbeitslohn", " EUR")}
-              {renderFieldWithConfidence("Einkünfte aus selbständiger Arbeit", data.einkuenfte_selbstaendig, "einkuenfte_selbstaendig", " EUR")}
-              {renderFieldWithConfidence("Werbungskosten", data.werbungskosten, "werbungskosten", " EUR")}
-              {renderFieldWithConfidence("Summe der Einkünfte", data.summe_der_einkuenfte, "summe_der_einkuenfte", " EUR")}
-              {renderFieldWithConfidence("Gesamtbetrag der Einkünfte", data.gesamtbetrag_der_einkuenfte, "gesamtbetrag_der_einkuenfte", " EUR")}
+              {renderFieldWithConfidence("Bruttoarbeitslohn", data.bruttoarbeitslohn, "bruttoarbeitslohn", " EUR", "number")}
+              {renderFieldWithConfidence("Einkünfte aus selbständiger Arbeit", data.einkuenfte_selbstaendig, "einkuenfte_selbstaendig", " EUR", "number")}
+              {renderFieldWithConfidence("Werbungskosten", data.werbungskosten, "werbungskosten", " EUR", "number")}
+              {renderFieldWithConfidence("Summe der Einkünfte", data.summe_der_einkuenfte, "summe_der_einkuenfte", " EUR", "number")}
+              {renderFieldWithConfidence("Gesamtbetrag der Einkünfte", data.gesamtbetrag_der_einkuenfte, "gesamtbetrag_der_einkuenfte", " EUR", "number")}
             </div>
 
             <div className="border-t pt-4 mt-4">
               <h3 className="font-semibold mb-3">Steuerberechnung</h3>
-              {renderFieldWithConfidence("Zu versteuerndes Einkommen", data.zu_versteuerndes_einkommen, "zu_versteuerndes_einkommen", " EUR")}
-              
-              {data.festgesetzte_steuer && (
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-muted-foreground">Festgesetzte Einkommensteuer</p>
-                    {confidenceScores.festgesetzte_steuer && (
-                      <ConfidenceBadge score={confidenceScores.festgesetzte_steuer} />
-                    )}
-                  </div>
-                  <p className="font-medium text-lg">{data.festgesetzte_steuer} EUR</p>
-                </div>
-              )}
-              
-              {renderFieldWithConfidence("Solidaritätszuschlag", data.solidaritaetszuschlag, "solidaritaetszuschlag", " EUR")}
-              {renderFieldWithConfidence("Steuerabzug vom Lohn", data.steuerabzug_vom_lohn, "steuerabzug_vom_lohn", " EUR")}
-              
-              {data.verbleibende_steuer && (
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-muted-foreground">Verbleibende Steuer</p>
-                    {confidenceScores.verbleibende_steuer && (
-                      <ConfidenceBadge score={confidenceScores.verbleibende_steuer} />
-                    )}
-                  </div>
-                  <p className="font-medium text-lg text-red-600 dark:text-red-400">{data.verbleibende_steuer} EUR</p>
-                </div>
-              )}
+              {renderFieldWithConfidence("Zu versteuerndes Einkommen", data.zu_versteuerndes_einkommen, "zu_versteuerndes_einkommen", " EUR", "number")}
+              {renderFieldWithConfidence("Festgesetzte Einkommensteuer", data.festgesetzte_steuer, "festgesetzte_steuer", " EUR", "number")}
+              {renderFieldWithConfidence("Solidaritätszuschlag", data.solidaritaetszuschlag, "solidaritaetszuschlag", " EUR", "number")}
+              {renderFieldWithConfidence("Steuerabzug vom Lohn", data.steuerabzug_vom_lohn, "steuerabzug_vom_lohn", " EUR", "number")}
+              {renderFieldWithConfidence("Verbleibende Steuer", data.verbleibende_steuer, "verbleibende_steuer", " EUR", "number")}
             </div>
           </div>
 

@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, List, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { DocumentActions } from "@/components/documents/DocumentActions";
+import { EditableField } from "@/components/documents/EditableField";
 
 const ArbeitgeberbescheinigungResult = () => {
   const [searchParams] = useSearchParams();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -96,18 +99,33 @@ const ArbeitgeberbescheinigungResult = () => {
                 Allgemeine Informationen
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Elternteil</p>
-                  <p className="font-medium text-foreground">{data.person_type || "Nicht verfügbar"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Arbeitgeber</p>
-                  <p className="font-medium text-foreground">{data.arbeitgeber_name || "Nicht verfügbar"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Arbeitgeber-Adresse</p>
-                  <p className="font-medium text-foreground">{data.arbeitgeber_adresse || "Nicht verfügbar"}</p>
-                </div>
+                <EditableField
+                  label="Elternteil"
+                  value={data.person_type}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="arbeitgeberbescheinigungen"
+                  fieldName="person_type"
+                  onUpdate={(value) => setData({ ...data, person_type: value })}
+                />
+                <EditableField
+                  label="Arbeitgeber"
+                  value={data.arbeitgeber_name}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="arbeitgeberbescheinigungen"
+                  fieldName="arbeitgeber_name"
+                  onUpdate={(value) => setData({ ...data, arbeitgeber_name: value })}
+                />
+                <EditableField
+                  label="Arbeitgeber-Adresse"
+                  value={data.arbeitgeber_adresse}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="arbeitgeberbescheinigungen"
+                  fieldName="arbeitgeber_adresse"
+                  onUpdate={(value) => setData({ ...data, arbeitgeber_adresse: value })}
+                />
               </div>
             </div>
 
@@ -116,34 +134,71 @@ const ArbeitgeberbescheinigungResult = () => {
                 Beschäftigungsdetails
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Beschäftigungsbeginn</p>
-                  <p className="font-medium text-foreground">{formatDate(data.beschaeftigungsbeginn)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Beschäftigungsende</p>
-                  <p className="font-medium text-foreground">{formatDate(data.beschaeftigungsende)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Wochenstunden</p>
-                  <p className="font-medium text-foreground">{data.wochenstunden || "Nicht verfügbar"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Bruttogehalt</p>
-                  <p className="font-medium text-foreground">
-                    {data.bruttogehalt ? `${data.bruttogehalt} €` : "Nicht verfügbar"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Ausstelldatum</p>
-                  <p className="font-medium text-foreground">{formatDate(data.ausstelldatum)}</p>
-                </div>
+                <EditableField
+                  label="Beschäftigungsbeginn"
+                  value={data.beschaeftigungsbeginn}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="arbeitgeberbescheinigungen"
+                  fieldName="beschaeftigungsbeginn"
+                  type="date"
+                  onUpdate={(value) => setData({ ...data, beschaeftigungsbeginn: value })}
+                />
+                <EditableField
+                  label="Beschäftigungsende"
+                  value={data.beschaeftigungsende}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="arbeitgeberbescheinigungen"
+                  fieldName="beschaeftigungsende"
+                  type="date"
+                  onUpdate={(value) => setData({ ...data, beschaeftigungsende: value })}
+                />
+                <EditableField
+                  label="Wochenstunden"
+                  value={data.wochenstunden?.toString()}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="arbeitgeberbescheinigungen"
+                  fieldName="wochenstunden"
+                  type="number"
+                  onUpdate={(value) => setData({ ...data, wochenstunden: value })}
+                />
+                <EditableField
+                  label="Bruttogehalt"
+                  value={data.bruttogehalt?.toString()}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="arbeitgeberbescheinigungen"
+                  fieldName="bruttogehalt"
+                  type="number"
+                  onUpdate={(value) => setData({ ...data, bruttogehalt: value })}
+                />
+                <EditableField
+                  label="Ausstelldatum"
+                  value={data.ausstelldatum}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="arbeitgeberbescheinigungen"
+                  fieldName="ausstelldatum"
+                  type="date"
+                  onUpdate={(value) => setData({ ...data, ausstelldatum: value })}
+                />
               </div>
             </div>
           </div>
         </Card>
 
-        <div className="max-w-4xl mx-auto mt-6 flex gap-4">
+        <div className="max-w-4xl mx-auto mt-6">
+          <DocumentActions
+            documentId={searchParams.get("id")!}
+            tableName="arbeitgeberbescheinigungen"
+            listRoute="/arbeitgeberbescheinigungen-list"
+            onEditToggle={setIsEditing}
+          />
+        </div>
+
+        <div className="max-w-4xl mx-auto mt-4 flex gap-4">
           <Button
             variant="outline"
             onClick={() => navigate("/arbeitgeberbescheinigungen-list")}
