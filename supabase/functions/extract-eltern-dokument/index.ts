@@ -193,21 +193,23 @@ Deno.serve(async (req) => {
           extractedData.vorname = givenNames;
           console.log("Extracted from MRZ - Surname:", surname, "Given names:", givenNames);
         } else {
-          // Fallback: Look for surname pattern (usually all caps line after PB)
-          const surnameMatch = ocrText.match(/\n([A-Z]{4,}SUNDARAM|[A-Z]{10,})\n/);
-          if (surnameMatch) {
-            extractedData.nachname = surnameMatch[1].trim();
-          }
-          
-          // Look for given names - specifically after "Other Names" or on the next line after surname
-          const givenNamesMatch = ocrText.match(/(?:Other Names|Given names)[^\n]*\n\s*([A-Z][A-Za-z\s]+)/i);
-          if (givenNamesMatch) {
-            extractedData.vorname = givenNamesMatch[1].trim();
+          // Fallback: Look for surname followed by given name on separate lines
+          // Pattern: SURNAME on one line, GIVENNAME on next line
+          const namePattern = ocrText.match(/\n([A-Z]{10,})\n([A-Z][A-Z]+)\n/);
+          if (namePattern) {
+            extractedData.nachname = namePattern[1].trim();
+            extractedData.vorname = namePattern[2].trim();
+            console.log("Extracted from pattern - Surname:", namePattern[1], "Given name:", namePattern[2]);
           } else {
-            // Try to find first name in caps after surname
-            const altGivenMatch = ocrText.match(/SUNDARAM\n([A-Z]+)\n/);
-            if (altGivenMatch) {
-              extractedData.vorname = altGivenMatch[1].trim();
+            // Try to find names after labels
+            const surnameMatch = ocrText.match(/(?:Surname|Last Name)[^\n]*\n\s*([A-Z][A-Za-z\s]+)/i);
+            if (surnameMatch) {
+              extractedData.nachname = surnameMatch[1].trim();
+            }
+            
+            const givenNamesMatch = ocrText.match(/(?:Other Names|Given names)[^\n]*\n\s*([A-Z][A-Za-z\s]+)/i);
+            if (givenNamesMatch) {
+              extractedData.vorname = givenNamesMatch[1].trim();
             }
           }
         }
