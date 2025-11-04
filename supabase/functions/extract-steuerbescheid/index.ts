@@ -94,6 +94,7 @@ Deno.serve(async (req) => {
           formData.append("isOverlayRequired", "false");
           formData.append("detectOrientation", "true");
           formData.append("scale", "true");
+          formData.append("isTable", "true");
           formData.append("OCREngine", "2");
 
           const ocrResponse = await fetch("https://apipro1.ocr.space/parse/image", {
@@ -127,6 +128,7 @@ Deno.serve(async (req) => {
         formData.append("isOverlayRequired", "false");
         formData.append("detectOrientation", "true");
         formData.append("scale", "true");
+        formData.append("isTable", "true");
         formData.append("OCREngine", "2");
 
         const ocrResponse = await fetch("https://apipro1.ocr.space/parse/image", {
