@@ -340,6 +340,7 @@ export type Database = {
           altersvorsorgeaufwendungen: string | null
           bescheiddatum: string | null
           bruttoarbeitslohn: string | null
+          confidence_scores: Json | null
           created_at: string
           einkuenfte_nichtselbstaendig: string | null
           einkuenfte_selbstaendig: string | null
@@ -377,6 +378,7 @@ export type Database = {
           altersvorsorgeaufwendungen?: string | null
           bescheiddatum?: string | null
           bruttoarbeitslohn?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           einkuenfte_nichtselbstaendig?: string | null
           einkuenfte_selbstaendig?: string | null
@@ -414,6 +416,7 @@ export type Database = {
           altersvorsorgeaufwendungen?: string | null
           bescheiddatum?: string | null
           bruttoarbeitslohn?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           einkuenfte_nichtselbstaendig?: string | null
           einkuenfte_selbstaendig?: string | null

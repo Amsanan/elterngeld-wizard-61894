@@ -173,102 +173,191 @@ Deno.serve(async (req) => {
     if (allOcrText.trim().length > 0) {
       console.log("Final combined OCR Text length:", allOcrText.length);
 
-      // Extract data from tax assessment
+      // Extract data from tax assessment with confidence scores
       const extractedData: any = {
         user_id: user.id,
         person_type: personType,
         file_path: filePath,
       };
+      
+      const confidenceScores: any = {};
 
-      // Extract Steuerjahr (tax year) - look for patterns like "2023" or "Veranlagungszeitraum 2023"
+      // Helper function to calculate confidence score
+      const calculateConfidence = (match: RegExpMatchArray | null, fieldName: string, isNumeric = false): number => {
+        if (!match) return 0;
+        
+        let score = 0;
+        
+        // Base score for finding a match
+        score += 40;
+        
+        // Score for match quality
+        const matchedText = match[1];
+        if (matchedText && matchedText.trim().length > 0) {
+          score += 20;
+          
+          // For numeric fields, check format validity
+          if (isNumeric) {
+            const hasValidFormat = /^[0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?$/.test(matchedText);
+            if (hasValidFormat) score += 20;
+            else score += 10;
+          } else {
+            // For text fields, longer matches with proper capitalization are more confident
+            if (matchedText.length > 3) score += 10;
+            if (/^[A-ZÄÖÜ]/.test(matchedText)) score += 10;
+          }
+        }
+        
+        // Score for match context (the part before the captured group)
+        const fullMatch = match[0];
+        if (fullMatch.includes(':') || fullMatch.includes('€')) score += 10;
+        
+        // Reduce score if match contains suspicious patterns
+        if (matchedText && /\d{2}\.\d{2}\.\d{4}/.test(matchedText) && isNumeric) {
+          // Looks like a date was matched instead of a number
+          score -= 30;
+        }
+        
+        return Math.max(0, Math.min(100, score));
+      };
+
+      // Extract Steuerjahr (tax year)
       const steuerjahrMatch = allOcrText.match(/(?:Veranlagungszeitraum|Steuerjahr|für)\s+(\d{4})/i);
-      if (steuerjahrMatch) extractedData.steuerjahr = steuerjahrMatch[1];
+      if (steuerjahrMatch) {
+        extractedData.steuerjahr = steuerjahrMatch[1];
+        confidenceScores.steuerjahr = calculateConfidence(steuerjahrMatch, 'steuerjahr');
+      }
 
-      // Extract Steuernummer - German tax numbers have various formats
+      // Extract Steuernummer
       const steuernummerMatch = allOcrText.match(/(?:Steuernummer|St[.-]Nr\.?)[:\s]+(\d{2,3}\/\d{3,4}\/\d{4,5}|\d{10,13})/i);
-      if (steuernummerMatch) extractedData.steuernummer = steuernummerMatch[1];
+      if (steuernummerMatch) {
+        extractedData.steuernummer = steuernummerMatch[1];
+        confidenceScores.steuernummer = calculateConfidence(steuernummerMatch, 'steuernummer');
+      }
 
       // Extract Steuer-IdNr (Tax ID number)
       const idNrMatch = allOcrText.match(/IdNr\.?\s+(?:Ehemann|Ehefrau|Steuerpflichtige)?\s*(\d{2}\s?\d{3}\s?\d{3}\s?\d{3})/i);
-      if (idNrMatch) extractedData.steuer_id_nummer = idNrMatch[1].replace(/\s/g, "");
+      if (idNrMatch) {
+        extractedData.steuer_id_nummer = idNrMatch[1].replace(/\s/g, "");
+        confidenceScores.steuer_id_nummer = calculateConfidence(idNrMatch, 'steuer_id_nummer');
+      }
 
       // Extract Finanzamt (tax office)
       const finanzamtMatch = allOcrText.match(/Finanzamt\s+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|\d{5})/i);
-      if (finanzamtMatch) extractedData.finanzamt_name = finanzamtMatch[1].trim();
+      if (finanzamtMatch) {
+        extractedData.finanzamt_name = finanzamtMatch[1].trim();
+        confidenceScores.finanzamt_name = calculateConfidence(finanzamtMatch, 'finanzamt_name');
+      }
 
       // Extract Finanzamt address - look for street name and number
       const finanzamtAdresseMatch = allOcrText.match(/Finanzamt\s+[^\n]+\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß]+(?:allee|straße|str\.|weg|platz)[^\n]*?\d+)/i);
-      if (finanzamtAdresseMatch) extractedData.finanzamt_adresse = finanzamtAdresseMatch[1].trim();
+      if (finanzamtAdresseMatch) {
+        extractedData.finanzamt_adresse = finanzamtAdresseMatch[1].trim();
+        confidenceScores.finanzamt_adresse = calculateConfidence(finanzamtAdresseMatch, 'finanzamt_adresse');
+      }
 
       // Extract Bescheiddatum (date of assessment)
       const bescheiddatumMatch = allOcrText.match(/(?:vom|Bescheid für \d{4}.*?vom)\s+(\d{2}\.\d{2}\.\d{4})/i);
       if (bescheiddatumMatch) {
         const [day, month, year] = bescheiddatumMatch[1].split(".");
         extractedData.bescheiddatum = `${year}-${month}-${day}`;
+        confidenceScores.bescheiddatum = calculateConfidence(bescheiddatumMatch, 'bescheiddatum');
       }
 
-      // Extract name - look for patterns after "Name" or "Steuerpflichtige/r"
+      // Extract name
       const nachnameMatch = allOcrText.match(/(?:Name|Nachname|Steuerpflichtige(?:r)?)[:\s]+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|,)/i);
-      if (nachnameMatch) extractedData.nachname = nachnameMatch[1].trim();
+      if (nachnameMatch) {
+        extractedData.nachname = nachnameMatch[1].trim();
+        confidenceScores.nachname = calculateConfidence(nachnameMatch, 'nachname');
+      }
 
       const vornameMatch = allOcrText.match(/(?:Vorname)[:\s]+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|,)/i);
-      if (vornameMatch) extractedData.vorname = vornameMatch[1].trim();
+      if (vornameMatch) {
+        extractedData.vorname = vornameMatch[1].trim();
+        confidenceScores.vorname = calculateConfidence(vornameMatch, 'vorname');
+      }
 
       // Extract address
       const plzWohnortMatch = allOcrText.match(/(\d{5})\s+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n)/i);
       if (plzWohnortMatch) {
         extractedData.plz = plzWohnortMatch[1];
         extractedData.wohnort = plzWohnortMatch[2].trim();
+        confidenceScores.plz = calculateConfidence(plzWohnortMatch, 'plz');
+        confidenceScores.wohnort = calculateConfidence(plzWohnortMatch, 'wohnort');
       }
 
-      // Extract Gesamtbetrag der Einkünfte
+      // Extract financial amounts with confidence
       const gesamtbetragMatch = allOcrText.match(/Gesamtbetrag der Einkünfte[^\d]*?([0-9.,]+)/i);
-      if (gesamtbetragMatch) extractedData.gesamtbetrag_der_einkuenfte = gesamtbetragMatch[1].replace(/\./g, "").replace(",", ".");
+      if (gesamtbetragMatch) {
+        extractedData.gesamtbetrag_der_einkuenfte = gesamtbetragMatch[1].replace(/\./g, "").replace(",", ".");
+        confidenceScores.gesamtbetrag_der_einkuenfte = calculateConfidence(gesamtbetragMatch, 'gesamtbetrag_der_einkuenfte', true);
+      }
 
-      // Extract Summe der Einkünfte
       const summeEinkuenfteMatch = allOcrText.match(/Summe der Einkünfte[^\d]*?([0-9.,]+)/i);
-      if (summeEinkuenfteMatch) extractedData.summe_der_einkuenfte = summeEinkuenfteMatch[1].replace(/\./g, "").replace(",", ".");
+      if (summeEinkuenfteMatch) {
+        extractedData.summe_der_einkuenfte = summeEinkuenfteMatch[1].replace(/\./g, "").replace(",", ".");
+        confidenceScores.summe_der_einkuenfte = calculateConfidence(summeEinkuenfteMatch, 'summe_der_einkuenfte', true);
+      }
 
-      // Extract zu versteuerndes Einkommen (taxable income)
       const zvEMatch = allOcrText.match(/zu versteuerndes Einkommen[^\d]*?([0-9.,]+)/i);
-      if (zvEMatch) extractedData.zu_versteuerndes_einkommen = zvEMatch[1].replace(/\./g, "").replace(",", ".");
+      if (zvEMatch) {
+        extractedData.zu_versteuerndes_einkommen = zvEMatch[1].replace(/\./g, "").replace(",", ".");
+        confidenceScores.zu_versteuerndes_einkommen = calculateConfidence(zvEMatch, 'zu_versteuerndes_einkommen', true);
+      }
 
-      // Extract festgesetzte Einkommensteuer
       const steuerMatch = allOcrText.match(/(?:festzusetzende|Festgesetzt werden)\s+(?:Einkommensteuer)[^\d]*?€?\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i);
-      if (steuerMatch) extractedData.festgesetzte_steuer = steuerMatch[1].replace(/\./g, "").replace(",", ".");
+      if (steuerMatch) {
+        extractedData.festgesetzte_steuer = steuerMatch[1].replace(/\./g, "").replace(",", ".");
+        confidenceScores.festgesetzte_steuer = calculateConfidence(steuerMatch, 'festgesetzte_steuer', true);
+      }
 
-      // Extract Solidaritätszuschlag - look in the table format
       const soliMatch = allOcrText.match(/Solidaritätszuschlag[^\d]*?€?\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i);
-      if (soliMatch) extractedData.solidaritaetszuschlag = soliMatch[1].replace(/\./g, "").replace(",", ".");
+      if (soliMatch) {
+        extractedData.solidaritaetszuschlag = soliMatch[1].replace(/\./g, "").replace(",", ".");
+        confidenceScores.solidaritaetszuschlag = calculateConfidence(soliMatch, 'solidaritaetszuschlag', true);
+      }
 
-      // Extract Steuerabzug vom Lohn
       const steuerabzugMatch = allOcrText.match(/(?:ab\s+)?Steuerabzug vom Lohn[^\d]*?€?\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i);
-      if (steuerabzugMatch) extractedData.steuerabzug_vom_lohn = steuerabzugMatch[1].replace(/\./g, "").replace(",", ".");
+      if (steuerabzugMatch) {
+        extractedData.steuerabzug_vom_lohn = steuerabzugMatch[1].replace(/\./g, "").replace(",", ".");
+        confidenceScores.steuerabzug_vom_lohn = calculateConfidence(steuerabzugMatch, 'steuerabzug_vom_lohn', true);
+      }
 
-      // Extract verbleibende Steuer
       const verbleibendeMatch = allOcrText.match(/verbleibende Steuer[^\d]*?€?\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i);
-      if (verbleibendeMatch) extractedData.verbleibende_steuer = verbleibendeMatch[1].replace(/\./g, "").replace(",", ".");
+      if (verbleibendeMatch) {
+        extractedData.verbleibende_steuer = verbleibendeMatch[1].replace(/\./g, "").replace(",", ".");
+        confidenceScores.verbleibende_steuer = calculateConfidence(verbleibendeMatch, 'verbleibende_steuer', true);
+      }
 
-      // Extract Einkünfte aus selbständiger Arbeit
       const selbstaendigMatch = allOcrText.match(/Einkünfte aus selbständiger Arbeit[^\d]*?([0-9.,]+)/i);
-      if (selbstaendigMatch) extractedData.einkuenfte_selbstaendig = selbstaendigMatch[1].replace(/\./g, "").replace(",", ".");
+      if (selbstaendigMatch) {
+        extractedData.einkuenfte_selbstaendig = selbstaendigMatch[1].replace(/\./g, "").replace(",", ".");
+        confidenceScores.einkuenfte_selbstaendig = calculateConfidence(selbstaendigMatch, 'einkuenfte_selbstaendig', true);
+      }
 
-      // Extract Einkünfte aus nichtselbständiger Arbeit (Bruttoarbeitslohn)
-      // Look for the total or individual amounts for Ehemann and Ehefrau
       const bruttoMatch = allOcrText.match(/Bruttoarbeitslohn[^\d]*?([0-9]{2,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i);
       if (bruttoMatch) {
         extractedData.bruttoarbeitslohn = bruttoMatch[1].replace(/\./g, "").replace(",", ".");
         extractedData.einkuenfte_nichtselbstaendig = bruttoMatch[1].replace(/\./g, "").replace(",", ".");
+        const conf = calculateConfidence(bruttoMatch, 'bruttoarbeitslohn', true);
+        confidenceScores.bruttoarbeitslohn = conf;
+        confidenceScores.einkuenfte_nichtselbstaendig = conf;
       }
 
-      // Extract Werbungskosten
       const werbungskostenMatch = allOcrText.match(/(?:ab\s+)?Werbungskosten[^\d]*?([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i);
-      if (werbungskostenMatch) extractedData.werbungskosten = werbungskostenMatch[1].replace(/\./g, "").replace(",", ".");
+      if (werbungskostenMatch) {
+        extractedData.werbungskosten = werbungskostenMatch[1].replace(/\./g, "").replace(",", ".");
+        confidenceScores.werbungskosten = calculateConfidence(werbungskostenMatch, 'werbungskosten', true);
+      }
 
       // Check for gemeinsame Veranlagung (joint assessment)
       if (allOcrText.match(/(?:Ehemann|Ehefrau|Splittingtarif)/i)) {
         extractedData.gemeinsame_veranlagung = true;
+        confidenceScores.gemeinsame_veranlagung = 90; // High confidence if pattern found
       }
+
+      // Add confidence scores to extracted data
+      extractedData.confidence_scores = confidenceScores;
 
       // Insert into database
       console.log("Attempting database insert with data:", JSON.stringify(extractedData, null, 2));
