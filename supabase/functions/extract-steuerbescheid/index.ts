@@ -76,13 +76,12 @@ Deno.serve(async (req) => {
     const ocrResult = await ocrResponse.json();
     console.log("OCR API response:", JSON.stringify(ocrResult, null, 2));
 
-    // Check for OCR errors first
-    if (ocrResult.IsErroredOnProcessing) {
-      console.error("OCR processing error:", ocrResult.ErrorMessage);
-      throw new Error(`OCR Error: ${ocrResult.ErrorMessage || 'Unknown error'}`);
-    }
-
+    // Check if we have parsed results - proceed even with page limit warnings
     if (ocrResult.ParsedResults?.length > 0) {
+      // Log warning if there was a page limit issue but we still have data
+      if (ocrResult.IsErroredOnProcessing) {
+        console.warn("OCR warning:", ocrResult.ErrorMessage, "- Proceeding with available pages");
+      }
       console.log("OCR successful, ParsedResults found:", ocrResult.ParsedResults.length, "pages");
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
       console.log("Combined OCR Text length:", ocrText.length);
@@ -208,13 +207,13 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     } else {
-      console.error("OCR failed - ParsedResults missing or empty");
-      console.error("OCR Result structure:", JSON.stringify({
-        hasIsErroredOnProcessing: 'IsErroredOnProcessing' in ocrResult,
-        IsErroredOnProcessing: ocrResult.IsErroredOnProcessing,
-        hasParsedResults: 'ParsedResults' in ocrResult,
-        ParsedResultsLength: ocrResult.ParsedResults?.length
-      }));
+      // No parsed results at all
+      console.error("OCR failed - No ParsedResults");
+      if (ocrResult.IsErroredOnProcessing) {
+        console.error("OCR Error:", ocrResult.ErrorMessage);
+        throw new Error(`OCR Error: ${ocrResult.ErrorMessage?.[0] || ocrResult.ErrorMessage || 'Processing failed'}`);
+      }
+      console.error("OCR Result structure:", JSON.stringify(ocrResult, null, 2));
       throw new Error("OCR processing failed - no text extracted");
     }
   } catch (error: any) {
