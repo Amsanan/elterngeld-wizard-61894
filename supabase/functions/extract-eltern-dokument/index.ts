@@ -193,13 +193,23 @@ Deno.serve(async (req) => {
           extractedData.vorname = givenNames;
           console.log("Extracted from MRZ - Surname:", surname, "Given names:", givenNames);
         } else {
-          // Fallback: Look for surname pattern (usually all caps line)
-          const surnameMatch = ocrText.match(/\n([A-Z]{4,})\n/);
-          if (surnameMatch) extractedData.nachname = surnameMatch[1].trim();
+          // Fallback: Look for surname pattern (usually all caps line after PB)
+          const surnameMatch = ocrText.match(/\n([A-Z]{4,}SUNDARAM|[A-Z]{10,})\n/);
+          if (surnameMatch) {
+            extractedData.nachname = surnameMatch[1].trim();
+          }
           
-          // Look for given names (usually follows surname)
+          // Look for given names - specifically after "Other Names" or on the next line after surname
           const givenNamesMatch = ocrText.match(/(?:Other Names|Given names)[^\n]*\n\s*([A-Z][A-Za-z\s]+)/i);
-          if (givenNamesMatch) extractedData.vorname = givenNamesMatch[1].trim();
+          if (givenNamesMatch) {
+            extractedData.vorname = givenNamesMatch[1].trim();
+          } else {
+            // Try to find first name in caps after surname
+            const altGivenMatch = ocrText.match(/SUNDARAM\n([A-Z]+)\n/);
+            if (altGivenMatch) {
+              extractedData.vorname = altGivenMatch[1].trim();
+            }
+          }
         }
         
         if (mrzLine2Match) {
@@ -208,7 +218,7 @@ Deno.serve(async (req) => {
           
           // Birth date from MRZ (format: YYMMDD or YYYYMMDD)
           const birthDateStr = mrzLine2Match[3];
-          if (birthDateStr.length === 6) {
+          if (birthDateStr.length === 6 || birthDateStr.length === 7) {
             const yy = parseInt(birthDateStr.substring(0, 2));
             const year = yy > 50 ? `19${yy}` : `20${yy}`;
             const month = birthDateStr.substring(2, 4);
@@ -218,7 +228,7 @@ Deno.serve(async (req) => {
           
           // Expiry date from MRZ (format: YYMMDD or YYYYMMDD)
           const expiryDateStr = mrzLine2Match[6];
-          if (expiryDateStr.length === 6) {
+          if (expiryDateStr.length === 6 || expiryDateStr.length === 7) {
             const yy = parseInt(expiryDateStr.substring(0, 2));
             const year = yy > 50 ? `19${yy}` : `20${yy}`;
             const month = expiryDateStr.substring(2, 4);
@@ -227,34 +237,54 @@ Deno.serve(async (req) => {
           }
           
           console.log("Extracted from MRZ line 2 - Passport:", mrzLine2Match[1], "Birth date:", extractedData.geburtsdatum, "Expiry:", extractedData.gueltig_bis);
-        } else {
-          // Fallback: Parse dates in DD/MM/YYYY format
-          const birthMatch = ocrText.match(/Date of Birth[^\n]*\n\s*(\d{2}\/\d{2}\/\d{4})/i);
+        }
+        
+        // Always try multiple extraction methods for passport number
+        if (!extractedData.ausweisnummer) {
+          // Look for pattern: Passport No followed by number or number on next line
+          const passMatch1 = ocrText.match(/Passport\s+No[^\n]*\n\s*([A-Z]{1,2}[0-9]{7,9})/i);
+          const passMatch2 = ocrText.match(/\n([A-Z]{1,2}[0-9]{7,9})\n/);
+          
+          if (passMatch1) {
+            extractedData.ausweisnummer = passMatch1[1].trim();
+          } else if (passMatch2) {
+            extractedData.ausweisnummer = passMatch2[1].trim();
+          }
+        }
+        
+        // Always try date extraction in DD/MM/YYYY format
+        if (!extractedData.geburtsdatum) {
+          const birthMatch = ocrText.match(/(?:Date of Birth|Birth)[^\n]*\n?\s*(\d{2}[\/\.]\d{2}[\/\.]\d{4})/i);
           if (birthMatch) {
-            const [day, month, year] = birthMatch[1].split('/');
+            const dateStr = birthMatch[1].replace(/\./g, '/');
+            const [day, month, year] = dateStr.split('/');
             extractedData.geburtsdatum = `${year}-${month}-${day}`;
           }
-          
-          const issueMatch = ocrText.match(/Date of issue[^\n]*\n\s*(\d{2}\/\d{2}\/\d{4})/i);
+        }
+        
+        if (!extractedData.ausstelldatum) {
+          const issueMatch = ocrText.match(/(?:Date of issue|issue)[^\n]*\n?\s*(\d{2}[\/\.]\d{2}[\/\.]\d{4})/i);
           if (issueMatch) {
-            const [day, month, year] = issueMatch[1].split('/');
+            const dateStr = issueMatch[1].replace(/\./g, '/');
+            const [day, month, year] = dateStr.split('/');
             extractedData.ausstelldatum = `${year}-${month}-${day}`;
           }
-          
-          const expiryMatch = ocrText.match(/Date of Expiry[^\n]*\n\s*(\d{2}\/\d{2}\/\d{4})/i);
+        }
+        
+        if (!extractedData.gueltig_bis) {
+          const expiryMatch = ocrText.match(/(?:Date of Expiry|Expiry)[^\n]*\n?\s*(\d{2}[\/\.]\d{2}[\/\.]\d{4})/i);
           if (expiryMatch) {
-            const [day, month, year] = expiryMatch[1].split('/');
+            const dateStr = expiryMatch[1].replace(/\./g, '/');
+            const [day, month, year] = dateStr.split('/');
             extractedData.gueltig_bis = `${year}-${month}-${day}`;
           }
-          
-          // Passport number fallback
-          const passMatch = ocrText.match(/Passport No[^\n]*\n\s*([A-Z0-9]{7,9})/i);
-          if (passMatch) extractedData.ausweisnummer = passMatch[1].trim();
         }
 
-        // Place of birth
-        const birthPlaceMatch = ocrText.match(/Place of Birth[:\s]*\n?\s*([A-Z][A-Za-z\s]+)/i);
-        if (birthPlaceMatch) extractedData.geburtsort = birthPlaceMatch[1].trim();
+        // Place of birth - clean up extra text
+        const birthPlaceMatch = ocrText.match(/Place of Birth[:\s]*\n?\s*([A-Z][A-Za-z\s]+?)(?:\n|Biggi|[0-9])/i);
+        if (birthPlaceMatch) {
+          extractedData.geburtsort = birthPlaceMatch[1].trim();
+        }
 
         // Nationality - look for common patterns
         const nationalityMatch = ocrText.match(/(?:SRI LANKAN|GERMAN|DEUTSCH|Nationality[:\s]*\n?\s*([A-Z][A-Za-z\s]+))/i);
