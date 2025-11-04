@@ -182,13 +182,15 @@ Deno.serve(async (req) => {
         // MRZ Line 1: P<COUNTRY<<SURNAME<<GIVENNAMES<<<
         // MRZ Line 2: PASSPORTNUMBER<COUNTRY<BIRTHDATE<SEX<EXPIRYDATE<PERSONALNUMBER
         
-        const mrzLine1Match = ocrText.match(/P[<B][A-Z]{3}([A-Z<]+)<<([A-Z<]+)/);
+        // Updated regex: capture country, then surname (no < chars), then << separator, then given names
+        const mrzLine1Match = ocrText.match(/P[<B]([A-Z]{3})([A-Z]+)<<([A-Z<]+)/);
         const mrzLine2Match = ocrText.match(/([A-Z0-9]{9})<[0-9<]([A-Z]{3})(\d{6,7})(\d)([MF<])(\d{6,7})/);
         
         if (mrzLine1Match) {
           // Extract names from MRZ line 1
-          const surname = mrzLine1Match[1].replace(/</g, " ").trim();
-          const givenNames = mrzLine1Match[2].replace(/</g, " ").trim();
+          // Group 2 = Surname, Group 3 = Given names
+          const surname = mrzLine1Match[2].trim();
+          const givenNames = mrzLine1Match[3].replace(/</g, " ").trim();
           extractedData.nachname = surname;
           extractedData.vorname = givenNames;
           console.log("Extracted from MRZ - Surname:", surname, "Given names:", givenNames);
