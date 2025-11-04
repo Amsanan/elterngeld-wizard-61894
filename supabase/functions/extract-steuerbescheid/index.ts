@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const ocrApiKey = Deno.env.get("OCR_SPACE_API_KEY")!;
+    const ocrApiKey = Deno.env.get("OCR_SPACE_API_KEY2")!;
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     formData.append("scale", "true");
     formData.append("OCREngine", "2");
 
-    const ocrResponse = await fetch("https://api.ocr.space/parse/image", {
+    const ocrResponse = await fetch("https://apipro1.ocr.space/parse/image", {
       method: "POST",
       headers: {
         apikey: ocrApiKey,

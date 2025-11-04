@@ -68,7 +68,7 @@ serve(async (req) => {
 
     console.log('File downloaded, size:', fileData.size);
 
-    const ocrSpaceApiKey = Deno.env.get('OCR_SPACE_API_KEY');
+    const ocrSpaceApiKey = Deno.env.get('OCR_SPACE_API_KEY2');
     if (!ocrSpaceApiKey) {
       throw new Error('OCR_SPACE_API_KEY not configured');
     }
@@ -107,7 +107,7 @@ serve(async (req) => {
       formData.append('filetype', 'PDF');
     }
 
-    const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
+    const ocrResponse = await fetch('https://apipro1.ocr.space/parse/image', {
       method: 'POST',
       headers: {
         'apikey': ocrSpaceApiKey,
