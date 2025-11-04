@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
       data: { user },
     } = (await req.headers.get("Authorization"))
       ? await supabase.auth.getUser(req.headers.get("Authorization")!.replace("Bearer ", ""))
-      : { data: { user: null }, error: null };
+      : { data: { user: null } };
 
     if (!user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
