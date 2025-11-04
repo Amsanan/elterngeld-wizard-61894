@@ -198,6 +198,46 @@ const Dashboard = () => {
                 </Button>
               </div>
             </Card>
+
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/upload-arbeitgeberbescheinigung")}
+            >
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Arbeitgeberbescheinigung</h3>
+                  <p className="text-muted-foreground">
+                    Bescheinigung vom Arbeitgeber hochladen
+                  </p>
+                </div>
+                <Button className="mt-4">
+                  Jetzt starten
+                </Button>
+              </div>
+            </Card>
+
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/upload-gehaltsnachweis")}
+            >
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Gehaltsnachweis</h3>
+                  <p className="text-muted-foreground">
+                    Gehaltsabrechnung hochladen
+                  </p>
+                </div>
+                <Button className="mt-4">
+                  Jetzt starten
+                </Button>
+              </div>
+            </Card>
           </div>
 
           {/* Info Card */}
