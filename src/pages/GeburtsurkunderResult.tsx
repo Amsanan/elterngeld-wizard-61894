@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, FileText, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { DocumentActions } from "@/components/documents/DocumentActions";
+import { EditableField } from "@/components/documents/EditableField";
 
 const GeburtsurkunderResult = () => {
   const [searchParams] = useSearchParams();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const resultId = searchParams.get("id");
@@ -96,26 +99,52 @@ const GeburtsurkunderResult = () => {
               Kind - Extrahierte Daten
             </h2>
             <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Vorname</p>
-                <p className="font-medium text-foreground">{data.kind_vorname || "Nicht extrahiert"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Nachname</p>
-                <p className="font-medium text-foreground">{data.kind_nachname || "Nicht extrahiert"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Geburtsdatum</p>
-                <p className="font-medium text-foreground">{formatDate(data.kind_geburtsdatum)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Geburtsort</p>
-                <p className="font-medium text-foreground">{data.kind_geburtsort || "Nicht extrahiert"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Geburtsnummer</p>
-                <p className="font-medium text-foreground">{data.kind_geburtsnummer || "Nicht extrahiert"}</p>
-              </div>
+              <EditableField
+                label="Vorname"
+                value={data.kind_vorname}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="kind_vorname"
+                onUpdate={(value) => setData({ ...data, kind_vorname: value })}
+              />
+              <EditableField
+                label="Nachname"
+                value={data.kind_nachname}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="kind_nachname"
+                onUpdate={(value) => setData({ ...data, kind_nachname: value })}
+              />
+              <EditableField
+                label="Geburtsdatum"
+                value={data.kind_geburtsdatum}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="kind_geburtsdatum"
+                type="date"
+                onUpdate={(value) => setData({ ...data, kind_geburtsdatum: value })}
+              />
+              <EditableField
+                label="Geburtsort"
+                value={data.kind_geburtsort}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="kind_geburtsort"
+                onUpdate={(value) => setData({ ...data, kind_geburtsort: value })}
+              />
+              <EditableField
+                label="Geburtsnummer"
+                value={data.kind_geburtsnummer}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="kind_geburtsnummer"
+                onUpdate={(value) => setData({ ...data, kind_geburtsnummer: value })}
+              />
             </div>
           </Card>
 
@@ -123,18 +152,33 @@ const GeburtsurkunderResult = () => {
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4 text-foreground">Mutter</h2>
             <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Vorname</p>
-                <p className="font-medium text-foreground">{data.mutter_vorname || "Nicht extrahiert"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Nachname</p>
-                <p className="font-medium text-foreground">{data.mutter_nachname || "Nicht extrahiert"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Geburtsname</p>
-                <p className="font-medium text-foreground">{data.mutter_geburtsname || "Nicht extrahiert"}</p>
-              </div>
+              <EditableField
+                label="Vorname"
+                value={data.mutter_vorname}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="mutter_vorname"
+                onUpdate={(value) => setData({ ...data, mutter_vorname: value })}
+              />
+              <EditableField
+                label="Nachname"
+                value={data.mutter_nachname}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="mutter_nachname"
+                onUpdate={(value) => setData({ ...data, mutter_nachname: value })}
+              />
+              <EditableField
+                label="Geburtsname"
+                value={data.mutter_geburtsname}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="mutter_geburtsname"
+                onUpdate={(value) => setData({ ...data, mutter_geburtsname: value })}
+              />
             </div>
           </Card>
 
@@ -142,14 +186,24 @@ const GeburtsurkunderResult = () => {
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4 text-foreground">Vater</h2>
             <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Vorname</p>
-                <p className="font-medium text-foreground">{data.vater_vorname || "Nicht extrahiert"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Nachname</p>
-                <p className="font-medium text-foreground">{data.vater_nachname || "Nicht extrahiert"}</p>
-              </div>
+              <EditableField
+                label="Vorname"
+                value={data.vater_vorname}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="vater_vorname"
+                onUpdate={(value) => setData({ ...data, vater_vorname: value })}
+              />
+              <EditableField
+                label="Nachname"
+                value={data.vater_nachname}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="vater_nachname"
+                onUpdate={(value) => setData({ ...data, vater_nachname: value })}
+              />
             </div>
           </Card>
 
@@ -157,28 +211,55 @@ const GeburtsurkunderResult = () => {
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4 text-foreground">Urkunden-Details</h2>
             <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Urkundennummer</p>
-                <p className="font-medium text-foreground">{data.urkundennummer || "Nicht extrahiert"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Behörde</p>
-                <p className="font-medium text-foreground">{data.behoerde_name || "Nicht extrahiert"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Ausstelldatum</p>
-                <p className="font-medium text-foreground">{formatDate(data.ausstelldatum)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Verwendungszweck</p>
-                <p className="font-medium text-foreground">{data.verwendungszweck || "Nicht extrahiert"}</p>
-              </div>
+              <EditableField
+                label="Urkundennummer"
+                value={data.urkundennummer}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="urkundennummer"
+                onUpdate={(value) => setData({ ...data, urkundennummer: value })}
+              />
+              <EditableField
+                label="Behörde"
+                value={data.behoerde_name}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="behoerde_name"
+                onUpdate={(value) => setData({ ...data, behoerde_name: value })}
+              />
+              <EditableField
+                label="Ausstelldatum"
+                value={data.ausstelldatum}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="ausstelldatum"
+                type="date"
+                onUpdate={(value) => setData({ ...data, ausstelldatum: value })}
+              />
+              <EditableField
+                label="Verwendungszweck"
+                value={data.verwendungszweck}
+                isEditing={isEditing}
+                documentId={resultId!}
+                tableName="geburtsurkunden"
+                fieldName="verwendungszweck"
+                onUpdate={(value) => setData({ ...data, verwendungszweck: value })}
+              />
             </div>
           </Card>
 
-          {/* Actions */}
-          <div className="flex gap-4">
-            <Button onClick={() => navigate("/geburtsurkunden-list")} className="flex-1">
+          <DocumentActions
+            documentId={resultId!}
+            tableName="geburtsurkunden"
+            listRoute="/geburtsurkunden-list"
+            onEditToggle={setIsEditing}
+          />
+
+          <div className="flex gap-4 mt-4">
+            <Button onClick={() => navigate("/geburtsurkunden-list")} variant="outline" className="flex-1">
               Alle Geburtsurkunden anzeigen
             </Button>
             <Button onClick={() => navigate("/upload-geburtsurkunde")} variant="outline" className="flex-1">
