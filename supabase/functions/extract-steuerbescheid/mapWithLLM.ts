@@ -32,10 +32,18 @@ const TABLE_SCHEMA = {
     { name: "verbleibende_steuer", type: "string", description: "Remaining tax as decimal string" },
     { name: "einkuenfte_selbstaendig", type: "string", description: "Self-employment income as decimal string" },
     { name: "bruttoarbeitslohn", type: "string", description: "Gross salary as decimal string" },
-    { name: "einkuenfte_nichtselbstaendig", type: "string", description: "Non-self-employment income as decimal string" },
+    {
+      name: "einkuenfte_nichtselbstaendig",
+      type: "string",
+      description: "Non-self-employment income as decimal string",
+    },
     { name: "werbungskosten", type: "string", description: "Business expenses as decimal string" },
-    { name: "gemeinsame_veranlagung", type: "boolean", description: "Joint assessment (true if Ehemann/Ehefrau/Splittingtarif mentioned)" },
-  ]
+    {
+      name: "gemeinsame_veranlagung",
+      type: "boolean",
+      description: "Joint assessment (true if Ehemann/Ehefrau/Splittingtarif mentioned)",
+    },
+  ],
 };
 
 const SYSTEM_PROMPT = `You are a specialized German tax document data extractor. Extract data from Einkommensteuerbescheid (income tax assessment) OCR text.
@@ -59,10 +67,10 @@ Output format:
 }`;
 
 export async function mapWithLLM({ schema, ocrText, overlayLines }: MapWithLLMParams): Promise<MappingResult> {
-  const apiKey = Deno.env.get("OPENROUTER_API_KEY");
-  
+  const apiKey = Deno.env.get("OCR_SPACE_API_KEY2");
+
   if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY not configured");
+    throw new Error("OCR_SPACE_API_KEY2 not configured");
   }
 
   const userPrompt = `Extract data from this German tax assessment document.
@@ -73,14 +81,14 @@ ${JSON.stringify(schema || TABLE_SCHEMA, null, 2)}
 OCR TEXT:
 ${ocrText}
 
-${overlayLines && overlayLines.length > 0 ? `\nOVERLAY DATA (positional word/line info):\n${JSON.stringify(overlayLines.slice(0, 50), null, 2)}` : ''}
+${overlayLines && overlayLines.length > 0 ? `\nOVERLAY DATA (positional word/line info):\n${JSON.stringify(overlayLines.slice(0, 50), null, 2)}` : ""}
 
 Return extracted data as JSON only.`;
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": "https://lovable.dev",
     },
@@ -88,11 +96,11 @@ Return extracted data as JSON only.`;
       model: "google/gemini-2.0-flash-exp:free",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userPrompt }
+        { role: "user", content: userPrompt },
       ],
       temperature: 0.1,
-      response_format: { type: "json_object" }
-    })
+      response_format: { type: "json_object" },
+    }),
   });
 
   if (!response.ok) {
@@ -121,12 +129,12 @@ Return extracted data as JSON only.`;
   }
 
   // Normalize number formats (remove unknown fields, keep only schema fields)
-  const validFields = new Set(TABLE_SCHEMA.columns.map(c => c.name));
+  const validFields = new Set(TABLE_SCHEMA.columns.map((c) => c.name));
   const normalizedData: Record<string, any> = {};
 
   for (const [key, value] of Object.entries(parsed.data)) {
     if (!validFields.has(key)) continue;
-    
+
     if (value === null || value === undefined) continue;
 
     // Normalize string numbers (already in correct format from LLM)
@@ -136,6 +144,6 @@ Return extracted data as JSON only.`;
   return {
     data: normalizedData,
     confidence: parsed.confidence || {},
-    provenance: parsed.provenance || {}
+    provenance: parsed.provenance || {},
   };
 }
