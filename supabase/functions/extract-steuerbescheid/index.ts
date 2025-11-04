@@ -76,9 +76,16 @@ Deno.serve(async (req) => {
     const ocrResult = await ocrResponse.json();
     console.log("OCR API response:", JSON.stringify(ocrResult, null, 2));
 
-    if (ocrResult.ParsedResults?.length > 0 && !ocrResult.IsErroredOnProcessing) {
+    // Check for OCR errors first
+    if (ocrResult.IsErroredOnProcessing) {
+      console.error("OCR processing error:", ocrResult.ErrorMessage);
+      throw new Error(`OCR Error: ${ocrResult.ErrorMessage || 'Unknown error'}`);
+    }
+
+    if (ocrResult.ParsedResults?.length > 0) {
+      console.log("OCR successful, ParsedResults found:", ocrResult.ParsedResults.length, "pages");
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
-      console.log("OCR Text:", ocrText);
+      console.log("Combined OCR Text length:", ocrText.length);
 
       // Extract data from tax assessment
       const extractedData: any = {
@@ -177,6 +184,7 @@ Deno.serve(async (req) => {
       }
 
       // Insert into database
+      console.log("Attempting database insert with data:", JSON.stringify(extractedData, null, 2));
       const { data: insertedData, error: insertError } = await supabase
         .from("einkommensteuerbescheide")
         .insert(extractedData)
@@ -188,6 +196,8 @@ Deno.serve(async (req) => {
         throw insertError;
       }
 
+      console.log("Successfully inserted data with ID:", insertedData.id);
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -198,7 +208,14 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     } else {
-      throw new Error("OCR processing failed");
+      console.error("OCR failed - ParsedResults missing or empty");
+      console.error("OCR Result structure:", JSON.stringify({
+        hasIsErroredOnProcessing: 'IsErroredOnProcessing' in ocrResult,
+        IsErroredOnProcessing: ocrResult.IsErroredOnProcessing,
+        hasParsedResults: 'ParsedResults' in ocrResult,
+        ParsedResultsLength: ocrResult.ParsedResults?.length
+      }));
+      throw new Error("OCR processing failed - no text extracted");
     }
   } catch (error: any) {
     console.error("Error:", error);
