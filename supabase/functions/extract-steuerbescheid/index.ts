@@ -196,8 +196,8 @@ Deno.serve(async (req) => {
       const finanzamtMatch = allOcrText.match(/Finanzamt\s+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|\d{5})/i);
       if (finanzamtMatch) extractedData.finanzamt_name = finanzamtMatch[1].trim();
 
-      // Extract Finanzamt address
-      const finanzamtAdresseMatch = allOcrText.match(/Finanzamt[^\n]+\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s.]+?\d+)/i);
+      // Extract Finanzamt address - look for street name and number
+      const finanzamtAdresseMatch = allOcrText.match(/Finanzamt\s+[^\n]+\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß]+(?:allee|straße|str\.|weg|platz)[^\n]*?\d+)/i);
       if (finanzamtAdresseMatch) extractedData.finanzamt_adresse = finanzamtAdresseMatch[1].trim();
 
       // Extract Bescheiddatum (date of assessment)
@@ -234,19 +234,19 @@ Deno.serve(async (req) => {
       if (zvEMatch) extractedData.zu_versteuerndes_einkommen = zvEMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract festgesetzte Einkommensteuer
-      const steuerMatch = allOcrText.match(/(?:festzusetzende|Festgesetzt werden)\s+(?:Einkommensteuer)[^\d]*?€?\s*([0-9.,]+)/i);
+      const steuerMatch = allOcrText.match(/(?:festzusetzende|Festgesetzt werden)\s+(?:Einkommensteuer)[^\d]*?€?\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i);
       if (steuerMatch) extractedData.festgesetzte_steuer = steuerMatch[1].replace(/\./g, "").replace(",", ".");
 
-      // Extract Solidaritätszuschlag
-      const soliMatch = allOcrText.match(/Solidaritätszuschlag[^\d]*?€?\s*([0-9.,]+)/i);
+      // Extract Solidaritätszuschlag - look in the table format
+      const soliMatch = allOcrText.match(/Solidaritätszuschlag[^\d]*?€?\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i);
       if (soliMatch) extractedData.solidaritaetszuschlag = soliMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract Steuerabzug vom Lohn
-      const steuerabzugMatch = allOcrText.match(/(?:ab\s+)?Steuerabzug vom Lohn[^\d]*?€?\s*([0-9.,]+)/i);
+      const steuerabzugMatch = allOcrText.match(/(?:ab\s+)?Steuerabzug vom Lohn[^\d]*?€?\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i);
       if (steuerabzugMatch) extractedData.steuerabzug_vom_lohn = steuerabzugMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract verbleibende Steuer
-      const verbleibendeMatch = allOcrText.match(/verbleibende Steuer[^\d]*?€?\s*([0-9.,]+)/i);
+      const verbleibendeMatch = allOcrText.match(/verbleibende Steuer[^\d]*?€?\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i);
       if (verbleibendeMatch) extractedData.verbleibende_steuer = verbleibendeMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract Einkünfte aus selbständiger Arbeit
@@ -254,14 +254,15 @@ Deno.serve(async (req) => {
       if (selbstaendigMatch) extractedData.einkuenfte_selbstaendig = selbstaendigMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract Einkünfte aus nichtselbständiger Arbeit (Bruttoarbeitslohn)
-      const bruttoMatch = allOcrText.match(/Bruttoarbeitslohn[^\d]*?([0-9.,]+)/i);
+      // Look for the total or individual amounts for Ehemann and Ehefrau
+      const bruttoMatch = allOcrText.match(/Bruttoarbeitslohn[^\d]*?([0-9]{2,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i);
       if (bruttoMatch) {
         extractedData.bruttoarbeitslohn = bruttoMatch[1].replace(/\./g, "").replace(",", ".");
         extractedData.einkuenfte_nichtselbstaendig = bruttoMatch[1].replace(/\./g, "").replace(",", ".");
       }
 
       // Extract Werbungskosten
-      const werbungskostenMatch = allOcrText.match(/(?:ab\s+)?Werbungskosten[^\d]*?([0-9.,]+)/i);
+      const werbungskostenMatch = allOcrText.match(/(?:ab\s+)?Werbungskosten[^\d]*?([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/i);
       if (werbungskostenMatch) extractedData.werbungskosten = werbungskostenMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Check for gemeinsame Veranlagung (joint assessment)
