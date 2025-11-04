@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     const ocrResult = await ocrResponse.json();
     console.log("OCR API response:", JSON.stringify(ocrResult, null, 2));
 
-    if (!ocrResult.IsErroredOnProcessing && ocrResult.ParsedResults?.length > 0) {
+    if (ocrResult.ParsedResults?.length > 0 && !ocrResult.IsErroredOnProcessing) {
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
       console.log("OCR Text:", ocrText);
 

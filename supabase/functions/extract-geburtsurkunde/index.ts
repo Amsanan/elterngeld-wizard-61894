@@ -129,7 +129,7 @@ serve(async (req) => {
       throw new Error(`OCR Error: ${ocrResult.ErrorMessage?.[0] || 'Unknown error'}`);
     }
 
-    if (!ocrResult.IsErroredOnProcessing && ocrResult.ParsedResults?.[0]?.ParsedText) {
+    if (ocrResult.ParsedResults?.[0]?.ParsedText && !ocrResult.IsErroredOnProcessing) {
       const ocrText = ocrResult.ParsedResults[0].ParsedText;
       console.log('Extracted text:', ocrText);
       

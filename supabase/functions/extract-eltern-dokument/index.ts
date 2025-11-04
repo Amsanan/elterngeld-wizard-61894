@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       return dateStr;
     };
 
-    if (!ocrResult.IsErroredOnProcessing && ocrResult.ParsedResults?.length > 0) {
+    if (ocrResult.ParsedResults?.length > 0 && !ocrResult.IsErroredOnProcessing) {
       // Combine text from all pages (front and back of ID card)
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
       console.log("OCR Text (all pages):", ocrText);
