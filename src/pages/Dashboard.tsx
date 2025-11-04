@@ -238,6 +238,166 @@ const Dashboard = () => {
                 </Button>
               </div>
             </Card>
+
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/upload-mutterschaftsgeld")}
+            >
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Mutterschaftsgeld</h3>
+                  <p className="text-muted-foreground">
+                    Bescheid über Mutterschaftsgeld
+                  </p>
+                </div>
+                <Button className="mt-4">
+                  Jetzt starten
+                </Button>
+              </div>
+            </Card>
+
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/upload-selbststaendigen-nachweis")}
+            >
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Selbstständigen-Nachweis</h3>
+                  <p className="text-muted-foreground">
+                    Einkommensnachweis für Selbstständige
+                  </p>
+                </div>
+                <Button className="mt-4">
+                  Jetzt starten
+                </Button>
+              </div>
+            </Card>
+
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/upload-leistungsbescheid")}
+            >
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Leistungsbescheid</h3>
+                  <p className="text-muted-foreground">
+                    ALG, Bürgergeld oder Krankengeld
+                  </p>
+                </div>
+                <Button className="mt-4">
+                  Jetzt starten
+                </Button>
+              </div>
+            </Card>
+
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/upload-bankverbindung")}
+            >
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Bankverbindung</h3>
+                  <p className="text-muted-foreground">
+                    Kontoauszug oder Bankbestätigung
+                  </p>
+                </div>
+                <Button className="mt-4">
+                  Jetzt starten
+                </Button>
+              </div>
+            </Card>
+
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/upload-meldebescheinigung")}
+            >
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Meldebescheinigung</h3>
+                  <p className="text-muted-foreground">
+                    Meldebestätigung vom Einwohnermeldeamt
+                  </p>
+                </div>
+                <Button className="mt-4">
+                  Jetzt starten
+                </Button>
+              </div>
+            </Card>
+
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/upload-krankenversicherung")}
+            >
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Krankenversicherung</h3>
+                  <p className="text-muted-foreground">
+                    Versicherungsnachweis der Krankenkasse
+                  </p>
+                </div>
+                <Button className="mt-4">
+                  Jetzt starten
+                </Button>
+              </div>
+            </Card>
+
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/upload-ehe-sorgerecht")}
+            >
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Ehe-/Sorgerechtsdokument</h3>
+                  <p className="text-muted-foreground">
+                    Heiratsurkunde oder Sorgerechtsbescheinigung
+                  </p>
+                </div>
+                <Button className="mt-4">
+                  Jetzt starten
+                </Button>
+              </div>
+            </Card>
+
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate("/upload-adoptions-pflege")}
+            >
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Adoptions-/Pflegedokument</h3>
+                  <p className="text-muted-foreground">
+                    Adoptionsbeschluss oder Pflegeerlaubnis
+                  </p>
+                </div>
+                <Button className="mt-4">
+                  Jetzt starten
+                </Button>
+              </div>
+            </Card>
           </div>
 
           {/* Info Card */}
