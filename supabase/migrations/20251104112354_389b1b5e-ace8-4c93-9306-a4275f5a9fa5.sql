@@ -1,0 +1,11 @@
+-- Extend profiles table with additional user information
+ALTER TABLE public.profiles
+ADD COLUMN IF NOT EXISTS vorname TEXT,
+ADD COLUMN IF NOT EXISTS nachname TEXT,
+ADD COLUMN IF NOT EXISTS geburtsdatum DATE,
+ADD COLUMN IF NOT EXISTS steuer_id TEXT,
+ADD COLUMN IF NOT EXISTS telefon TEXT,
+ADD COLUMN IF NOT EXISTS strasse TEXT,
+ADD COLUMN IF NOT EXISTS hausnummer TEXT,
+ADD COLUMN IF NOT EXISTS plz TEXT,
+ADD COLUMN IF NOT EXISTS wohnort TEXT;
