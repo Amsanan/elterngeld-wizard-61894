@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { PDFDocument } from "https://esm.sh/pdf-lib@1.17.1";
+import { mapWithLLM } from "./mapWithLLM.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -57,6 +58,7 @@ Deno.serve(async (req) => {
     const fileExtension = fileName.split(".").pop()?.toLowerCase() || "pdf";
 
     let allOcrText = "";
+    let allOverlayLines: any[] = [];
 
     // If it's a PDF, check page count and split if needed
     if (fileExtension === "pdf") {
@@ -111,6 +113,14 @@ Deno.serve(async (req) => {
           if (ocrResult.ParsedResults?.length > 0) {
             const chunkText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
             allOcrText += chunkText + "\n\n";
+            
+            // Collect overlay data for LLM
+            for (const result of ocrResult.ParsedResults) {
+              if (result.TextOverlay?.Lines) {
+                allOverlayLines.push(...result.TextOverlay.Lines);
+              }
+            }
+            
             console.log(`Chunk ${i} OCR successful, text length: ${chunkText.length}`);
           } else {
             console.warn(`Chunk ${i} OCR failed or empty`);
@@ -142,6 +152,11 @@ Deno.serve(async (req) => {
         const ocrResult = await ocrResponse.json();
         if (ocrResult.ParsedResults?.length > 0) {
           allOcrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
+          for (const result of ocrResult.ParsedResults) {
+            if (result.TextOverlay?.Lines) {
+              allOverlayLines.push(...result.TextOverlay.Lines);
+            }
+          }
         }
       }
     } else {
@@ -169,21 +184,60 @@ Deno.serve(async (req) => {
 
       if (ocrResult.ParsedResults?.length > 0) {
         allOcrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
+        for (const result of ocrResult.ParsedResults) {
+          if (result.TextOverlay?.Lines) {
+            allOverlayLines.push(...result.TextOverlay.Lines);
+          }
+        }
       }
     }
 
     // Check if we have any OCR text
     if (allOcrText.trim().length > 0) {
       console.log("Final combined OCR Text length:", allOcrText.length);
+      console.log("Overlay lines collected:", allOverlayLines.length);
 
       // Extract data from tax assessment with confidence scores
-      const extractedData: any = {
+      let extractedData: any = {
         user_id: user.id,
         person_type: personType,
         file_path: filePath,
       };
 
-      const confidenceScores: any = {};
+      let confidenceScores: any = {};
+
+      // Try LLM mapping first if enabled
+      const useLLM = Deno.env.get("USE_LLM_MAPPING") === "true";
+      
+      if (useLLM) {
+        try {
+          console.log("Attempting LLM-based extraction...");
+          const llmResult = await mapWithLLM({
+            schema: null, // uses default schema
+            ocrText: allOcrText,
+            overlayLines: allOverlayLines
+          });
+          
+          extractedData = {
+            ...extractedData,
+            ...llmResult.data,
+            llm_confidence: llmResult.confidence,
+            llm_provenance: llmResult.provenance
+          };
+          
+          confidenceScores = llmResult.confidence || {};
+          
+          console.log("LLM extraction successful:", Object.keys(llmResult.data).length, "fields extracted");
+        } catch (llmError) {
+          console.error("LLM extraction failed, falling back to regex:", llmError);
+          // Continue to fallback logic below
+        }
+      }
+      
+      // Fallback: Use regex/overlay extraction if LLM disabled or failed
+      if (!useLLM || Object.keys(extractedData).length <= 3) {
+        console.log("Using regex-based extraction...");
+        confidenceScores = {};
 
       // Helper function to calculate confidence score
       const calculateConfidence = (match: RegExpMatchArray | null, fieldName: string, isNumeric = false): number => {
@@ -382,9 +436,12 @@ Deno.serve(async (req) => {
         extractedData.gemeinsame_veranlagung = true;
         confidenceScores.gemeinsame_veranlagung = 90; // High confidence if pattern found
       }
+      } // End of regex fallback block
 
-      // Add confidence scores to extracted data
-      extractedData.confidence_scores = confidenceScores;
+      // Add confidence scores to extracted data (applies to both LLM and regex paths)
+      if (Object.keys(confidenceScores).length > 0) {
+        extractedData.confidence_scores = confidenceScores;
+      }
 
       // Insert into database
       console.log("Attempting database insert with data:", JSON.stringify(extractedData, null, 2));
