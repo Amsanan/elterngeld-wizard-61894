@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { PDFDocument } from "https://esm.sh/pdf-lib@1.17.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,39 +53,125 @@ Deno.serve(async (req) => {
       throw downloadError;
     }
 
-    // Perform OCR
     const fileName = filePath.split("/").pop() || "document.pdf";
     const fileExtension = fileName.split(".").pop()?.toLowerCase() || "pdf";
 
-    const formData = new FormData();
-    formData.append("file", fileData, fileName);
-    formData.append("filetype", fileExtension.toUpperCase());
-    formData.append("language", "ger");
-    formData.append("isOverlayRequired", "false");
-    formData.append("detectOrientation", "true");
-    formData.append("scale", "true");
-    formData.append("OCREngine", "2");
+    let allOcrText = "";
 
-    const ocrResponse = await fetch("https://apipro1.ocr.space/parse/image", {
-      method: "POST",
-      headers: {
-        apikey: ocrApiKey,
-      },
-      body: formData,
-    });
+    // If it's a PDF, check page count and split if needed
+    if (fileExtension === "pdf") {
+      try {
+        const arrayBuffer = await fileData.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(arrayBuffer);
+        const totalPages = pdfDoc.getPageCount();
+        console.log(`PDF has ${totalPages} pages`);
 
-    const ocrResult = await ocrResponse.json();
-    console.log("OCR API response:", JSON.stringify(ocrResult, null, 2));
+        // Process in chunks of 3 pages
+        const chunkSize = 3;
+        const chunks = Math.ceil(totalPages / chunkSize);
 
-    // Check if we have parsed results - proceed even with page limit warnings
-    if (ocrResult.ParsedResults?.length > 0) {
-      // Log warning if there was a page limit issue but we still have data
-      if (ocrResult.IsErroredOnProcessing) {
-        console.warn("OCR warning:", ocrResult.ErrorMessage, "- Proceeding with available pages");
+        for (let i = 0; i < chunks; i++) {
+          const startPage = i * chunkSize;
+          const endPage = Math.min((i + 1) * chunkSize, totalPages);
+          console.log(`Processing pages ${startPage + 1} to ${endPage}`);
+
+          // Create a new PDF with just these pages
+          const chunkPdf = await PDFDocument.create();
+          const copiedPages = await chunkPdf.copyPages(
+            pdfDoc,
+            Array.from({ length: endPage - startPage }, (_, idx) => startPage + idx)
+          );
+          copiedPages.forEach((page) => chunkPdf.addPage(page));
+
+          const chunkBytes = await chunkPdf.save();
+          const chunkBlob = new Blob([new Uint8Array(chunkBytes)], { type: "application/pdf" });
+
+          // Perform OCR on this chunk
+          const formData = new FormData();
+          formData.append("file", chunkBlob, `chunk_${i}.pdf`);
+          formData.append("filetype", "PDF");
+          formData.append("language", "ger");
+          formData.append("isOverlayRequired", "false");
+          formData.append("detectOrientation", "true");
+          formData.append("scale", "true");
+          formData.append("OCREngine", "2");
+
+          const ocrResponse = await fetch("https://apipro1.ocr.space/parse/image", {
+            method: "POST",
+            headers: {
+              apikey: ocrApiKey,
+            },
+            body: formData,
+          });
+
+          const ocrResult = await ocrResponse.json();
+          console.log(`OCR result for chunk ${i}:`, JSON.stringify(ocrResult, null, 2));
+
+          if (ocrResult.ParsedResults?.length > 0) {
+            const chunkText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
+            allOcrText += chunkText + "\n\n";
+            console.log(`Chunk ${i} OCR successful, text length: ${chunkText.length}`);
+          } else {
+            console.warn(`Chunk ${i} OCR failed or empty`);
+          }
+        }
+
+        console.log(`All chunks processed. Total OCR text length: ${allOcrText.length}`);
+      } catch (pdfError) {
+        console.error("PDF processing error, falling back to single upload:", pdfError);
+        // Fall back to single upload if PDF splitting fails
+        const formData = new FormData();
+        formData.append("file", fileData, fileName);
+        formData.append("filetype", fileExtension.toUpperCase());
+        formData.append("language", "ger");
+        formData.append("isOverlayRequired", "false");
+        formData.append("detectOrientation", "true");
+        formData.append("scale", "true");
+        formData.append("OCREngine", "2");
+
+        const ocrResponse = await fetch("https://apipro1.ocr.space/parse/image", {
+          method: "POST",
+          headers: {
+            apikey: ocrApiKey,
+          },
+          body: formData,
+        });
+
+        const ocrResult = await ocrResponse.json();
+        if (ocrResult.ParsedResults?.length > 0) {
+          allOcrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
+        }
       }
-      console.log("OCR successful, ParsedResults found:", ocrResult.ParsedResults.length, "pages");
-      const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
-      console.log("Combined OCR Text length:", ocrText.length);
+    } else {
+      // For images, process normally
+      const formData = new FormData();
+      formData.append("file", fileData, fileName);
+      formData.append("filetype", fileExtension.toUpperCase());
+      formData.append("language", "ger");
+      formData.append("isOverlayRequired", "false");
+      formData.append("detectOrientation", "true");
+      formData.append("scale", "true");
+      formData.append("OCREngine", "2");
+
+      const ocrResponse = await fetch("https://apipro1.ocr.space/parse/image", {
+        method: "POST",
+        headers: {
+          apikey: ocrApiKey,
+        },
+        body: formData,
+      });
+
+      const ocrResult = await ocrResponse.json();
+      console.log("OCR API response:", JSON.stringify(ocrResult, null, 2));
+
+      if (ocrResult.ParsedResults?.length > 0) {
+        allOcrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
+      }
+    }
+
+    // Check if we have any OCR text
+    if (allOcrText.trim().length > 0) {
+      console.log("Final combined OCR Text length:", allOcrText.length);
 
       // Extract data from tax assessment
       const extractedData: any = {
@@ -94,91 +181,91 @@ Deno.serve(async (req) => {
       };
 
       // Extract Steuerjahr (tax year) - look for patterns like "2023" or "Veranlagungszeitraum 2023"
-      const steuerjahrMatch = ocrText.match(/(?:Veranlagungszeitraum|Steuerjahr|für)\s+(\d{4})/i);
+      const steuerjahrMatch = allOcrText.match(/(?:Veranlagungszeitraum|Steuerjahr|für)\s+(\d{4})/i);
       if (steuerjahrMatch) extractedData.steuerjahr = steuerjahrMatch[1];
 
       // Extract Steuernummer - German tax numbers have various formats
-      const steuernummerMatch = ocrText.match(/(?:Steuernummer|St[.-]Nr\.?)[:\s]+(\d{2,3}\/\d{3,4}\/\d{4,5}|\d{10,13})/i);
+      const steuernummerMatch = allOcrText.match(/(?:Steuernummer|St[.-]Nr\.?)[:\s]+(\d{2,3}\/\d{3,4}\/\d{4,5}|\d{10,13})/i);
       if (steuernummerMatch) extractedData.steuernummer = steuernummerMatch[1];
 
       // Extract Steuer-IdNr (Tax ID number)
-      const idNrMatch = ocrText.match(/IdNr\.?\s+(?:Ehemann|Ehefrau|Steuerpflichtige)?\s*(\d{2}\s?\d{3}\s?\d{3}\s?\d{3})/i);
+      const idNrMatch = allOcrText.match(/IdNr\.?\s+(?:Ehemann|Ehefrau|Steuerpflichtige)?\s*(\d{2}\s?\d{3}\s?\d{3}\s?\d{3})/i);
       if (idNrMatch) extractedData.steuer_id_nummer = idNrMatch[1].replace(/\s/g, "");
 
       // Extract Finanzamt (tax office)
-      const finanzamtMatch = ocrText.match(/Finanzamt\s+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|\d{5})/i);
+      const finanzamtMatch = allOcrText.match(/Finanzamt\s+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|\d{5})/i);
       if (finanzamtMatch) extractedData.finanzamt_name = finanzamtMatch[1].trim();
 
       // Extract Finanzamt address
-      const finanzamtAdresseMatch = ocrText.match(/Finanzamt[^\n]+\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s.]+?\d+)/i);
+      const finanzamtAdresseMatch = allOcrText.match(/Finanzamt[^\n]+\n\s*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s.]+?\d+)/i);
       if (finanzamtAdresseMatch) extractedData.finanzamt_adresse = finanzamtAdresseMatch[1].trim();
 
       // Extract Bescheiddatum (date of assessment)
-      const bescheiddatumMatch = ocrText.match(/(?:vom|Bescheid für \d{4}.*?vom)\s+(\d{2}\.\d{2}\.\d{4})/i);
+      const bescheiddatumMatch = allOcrText.match(/(?:vom|Bescheid für \d{4}.*?vom)\s+(\d{2}\.\d{2}\.\d{4})/i);
       if (bescheiddatumMatch) {
         const [day, month, year] = bescheiddatumMatch[1].split(".");
         extractedData.bescheiddatum = `${year}-${month}-${day}`;
       }
 
       // Extract name - look for patterns after "Name" or "Steuerpflichtige/r"
-      const nachnameMatch = ocrText.match(/(?:Name|Nachname|Steuerpflichtige(?:r)?)[:\s]+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|,)/i);
+      const nachnameMatch = allOcrText.match(/(?:Name|Nachname|Steuerpflichtige(?:r)?)[:\s]+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|,)/i);
       if (nachnameMatch) extractedData.nachname = nachnameMatch[1].trim();
 
-      const vornameMatch = ocrText.match(/(?:Vorname)[:\s]+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|,)/i);
+      const vornameMatch = allOcrText.match(/(?:Vorname)[:\s]+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n|,)/i);
       if (vornameMatch) extractedData.vorname = vornameMatch[1].trim();
 
       // Extract address
-      const plzWohnortMatch = ocrText.match(/(\d{5})\s+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n)/i);
+      const plzWohnortMatch = allOcrText.match(/(\d{5})\s+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?:\n)/i);
       if (plzWohnortMatch) {
         extractedData.plz = plzWohnortMatch[1];
         extractedData.wohnort = plzWohnortMatch[2].trim();
       }
 
       // Extract Gesamtbetrag der Einkünfte
-      const gesamtbetragMatch = ocrText.match(/Gesamtbetrag der Einkünfte[^\d]*?([0-9.,]+)/i);
+      const gesamtbetragMatch = allOcrText.match(/Gesamtbetrag der Einkünfte[^\d]*?([0-9.,]+)/i);
       if (gesamtbetragMatch) extractedData.gesamtbetrag_der_einkuenfte = gesamtbetragMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract Summe der Einkünfte
-      const summeEinkuenfteMatch = ocrText.match(/Summe der Einkünfte[^\d]*?([0-9.,]+)/i);
+      const summeEinkuenfteMatch = allOcrText.match(/Summe der Einkünfte[^\d]*?([0-9.,]+)/i);
       if (summeEinkuenfteMatch) extractedData.summe_der_einkuenfte = summeEinkuenfteMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract zu versteuerndes Einkommen (taxable income)
-      const zvEMatch = ocrText.match(/zu versteuerndes Einkommen[^\d]*?([0-9.,]+)/i);
+      const zvEMatch = allOcrText.match(/zu versteuerndes Einkommen[^\d]*?([0-9.,]+)/i);
       if (zvEMatch) extractedData.zu_versteuerndes_einkommen = zvEMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract festgesetzte Einkommensteuer
-      const steuerMatch = ocrText.match(/(?:festzusetzende|Festgesetzt werden)\s+(?:Einkommensteuer)[^\d]*?€?\s*([0-9.,]+)/i);
+      const steuerMatch = allOcrText.match(/(?:festzusetzende|Festgesetzt werden)\s+(?:Einkommensteuer)[^\d]*?€?\s*([0-9.,]+)/i);
       if (steuerMatch) extractedData.festgesetzte_steuer = steuerMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract Solidaritätszuschlag
-      const soliMatch = ocrText.match(/Solidaritätszuschlag[^\d]*?€?\s*([0-9.,]+)/i);
+      const soliMatch = allOcrText.match(/Solidaritätszuschlag[^\d]*?€?\s*([0-9.,]+)/i);
       if (soliMatch) extractedData.solidaritaetszuschlag = soliMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract Steuerabzug vom Lohn
-      const steuerabzugMatch = ocrText.match(/(?:ab\s+)?Steuerabzug vom Lohn[^\d]*?€?\s*([0-9.,]+)/i);
+      const steuerabzugMatch = allOcrText.match(/(?:ab\s+)?Steuerabzug vom Lohn[^\d]*?€?\s*([0-9.,]+)/i);
       if (steuerabzugMatch) extractedData.steuerabzug_vom_lohn = steuerabzugMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract verbleibende Steuer
-      const verbleibendeMatch = ocrText.match(/verbleibende Steuer[^\d]*?€?\s*([0-9.,]+)/i);
+      const verbleibendeMatch = allOcrText.match(/verbleibende Steuer[^\d]*?€?\s*([0-9.,]+)/i);
       if (verbleibendeMatch) extractedData.verbleibende_steuer = verbleibendeMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract Einkünfte aus selbständiger Arbeit
-      const selbstaendigMatch = ocrText.match(/Einkünfte aus selbständiger Arbeit[^\d]*?([0-9.,]+)/i);
+      const selbstaendigMatch = allOcrText.match(/Einkünfte aus selbständiger Arbeit[^\d]*?([0-9.,]+)/i);
       if (selbstaendigMatch) extractedData.einkuenfte_selbstaendig = selbstaendigMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Extract Einkünfte aus nichtselbständiger Arbeit (Bruttoarbeitslohn)
-      const bruttoMatch = ocrText.match(/Bruttoarbeitslohn[^\d]*?([0-9.,]+)/i);
+      const bruttoMatch = allOcrText.match(/Bruttoarbeitslohn[^\d]*?([0-9.,]+)/i);
       if (bruttoMatch) {
         extractedData.bruttoarbeitslohn = bruttoMatch[1].replace(/\./g, "").replace(",", ".");
         extractedData.einkuenfte_nichtselbstaendig = bruttoMatch[1].replace(/\./g, "").replace(",", ".");
       }
 
       // Extract Werbungskosten
-      const werbungskostenMatch = ocrText.match(/(?:ab\s+)?Werbungskosten[^\d]*?([0-9.,]+)/i);
+      const werbungskostenMatch = allOcrText.match(/(?:ab\s+)?Werbungskosten[^\d]*?([0-9.,]+)/i);
       if (werbungskostenMatch) extractedData.werbungskosten = werbungskostenMatch[1].replace(/\./g, "").replace(",", ".");
 
       // Check for gemeinsame Veranlagung (joint assessment)
-      if (ocrText.match(/(?:Ehemann|Ehefrau|Splittingtarif)/i)) {
+      if (allOcrText.match(/(?:Ehemann|Ehefrau|Splittingtarif)/i)) {
         extractedData.gemeinsame_veranlagung = true;
       }
 
@@ -202,19 +289,14 @@ Deno.serve(async (req) => {
           success: true,
           data: insertedData,
           message: "Steuerbescheid erfolgreich extrahiert",
-          ocrText: ocrText,
+          ocrText: allOcrText,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     } else {
       // No parsed results at all
-      console.error("OCR failed - No ParsedResults");
-      if (ocrResult.IsErroredOnProcessing) {
-        console.error("OCR Error:", ocrResult.ErrorMessage);
-        throw new Error(`OCR Error: ${ocrResult.ErrorMessage?.[0] || ocrResult.ErrorMessage || 'Processing failed'}`);
-      }
-      console.error("OCR Result structure:", JSON.stringify(ocrResult, null, 2));
-      throw new Error("OCR processing failed - no text extracted");
+      console.error("OCR failed - No text extracted from any pages");
+      throw new Error("OCR processing failed - no text extracted from document");
     }
   } catch (error: any) {
     console.error("Error:", error);
