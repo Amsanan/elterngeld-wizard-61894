@@ -57,7 +57,6 @@ Deno.serve(async (req) => {
     const fileExtension = fileName.split(".").pop()?.toLowerCase() || "pdf";
 
     let allOcrText = "";
-    let allOcrResults: any[] = []; // Store overlay data for position-based extraction
 
     // If it's a PDF, check page count and split if needed
     if (fileExtension === "pdf") {
@@ -110,9 +109,6 @@ Deno.serve(async (req) => {
           console.log(`OCR result for chunk ${i}:`, JSON.stringify(ocrResult, null, 2));
 
           if (ocrResult.ParsedResults?.length > 0) {
-            // Store overlay data for position-based extraction
-            allOcrResults.push(...ocrResult.ParsedResults);
-            
             const chunkText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
             allOcrText += chunkText + "\n\n";
             console.log(`Chunk ${i} OCR successful, text length: ${chunkText.length}`);
@@ -145,7 +141,6 @@ Deno.serve(async (req) => {
 
         const ocrResult = await ocrResponse.json();
         if (ocrResult.ParsedResults?.length > 0) {
-          allOcrResults.push(...ocrResult.ParsedResults);
           allOcrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
         }
       }
@@ -173,7 +168,6 @@ Deno.serve(async (req) => {
       console.log("OCR API response:", JSON.stringify(ocrResult, null, 2));
 
       if (ocrResult.ParsedResults?.length > 0) {
-        allOcrResults.push(...ocrResult.ParsedResults);
         allOcrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
       }
     }
@@ -181,7 +175,6 @@ Deno.serve(async (req) => {
     // Check if we have any OCR text
     if (allOcrText.trim().length > 0) {
       console.log("Final combined OCR Text length:", allOcrText.length);
-      console.log("Overlay results collected:", allOcrResults.length);
 
       // Extract data from tax assessment with confidence scores
       const extractedData: any = {
@@ -191,40 +184,6 @@ Deno.serve(async (req) => {
       };
 
       const confidenceScores: any = {};
-
-      // Helper function to find value to the right of a label using overlay data
-      const findValueByPosition = (labelText: string, allOcrResults: any[]): { value: string | null; confidence: number } => {
-        for (const result of allOcrResults) {
-          if (!result.TextOverlay?.Lines) continue;
-
-          for (let i = 0; i < result.TextOverlay.Lines.length; i++) {
-            const line = result.TextOverlay.Lines[i];
-            if (!line.Words) continue;
-
-            // Find label word
-            const labelIndex = line.Words.findIndex((w: any) => 
-              w.WordText && w.WordText.toLowerCase().includes(labelText.toLowerCase())
-            );
-
-            if (labelIndex === -1) continue;
-
-            // Look for value word(s) to the right on same line
-            const labelWord = line.Words[labelIndex];
-            const potentialValues = line.Words.slice(labelIndex + 1).filter((w: any) => {
-              if (!w.Left || !labelWord.Left) return false;
-              // Word must be to the right and within reasonable distance
-              return w.Left > labelWord.Left && (w.Left - (labelWord.Left + labelWord.Width)) < 200;
-            });
-
-            if (potentialValues.length > 0) {
-              const value = potentialValues.map((w: any) => w.WordText).join(" ").trim();
-              const avgConfidence = potentialValues.reduce((sum: number, w: any) => sum + (w.Confidence || 0), 0) / potentialValues.length;
-              return { value, confidence: Math.round(avgConfidence) };
-            }
-          }
-        }
-        return { value: null, confidence: 0 };
-      };
 
       // Helper function to calculate confidence score
       const calculateConfidence = (match: RegExpMatchArray | null, fieldName: string, isNumeric = false): number => {
@@ -265,17 +224,11 @@ Deno.serve(async (req) => {
         return Math.max(0, Math.min(100, score));
       };
 
-      // Extract Steuerjahr (tax year) - try overlay first, then regex
-      let steuerjahrResult = findValueByPosition("für", allOcrResults);
-      if (steuerjahrResult.value && /\d{4}/.test(steuerjahrResult.value)) {
-        extractedData.steuerjahr = steuerjahrResult.value.match(/\d{4}/)?.[0];
-        confidenceScores.steuerjahr = steuerjahrResult.confidence;
-      } else {
-        const steuerjahrMatch = allOcrText.match(/(?:Veranlagungszeitraum|Steuerjahr|für)\s+(\d{4})/i);
-        if (steuerjahrMatch) {
-          extractedData.steuerjahr = steuerjahrMatch[1];
-          confidenceScores.steuerjahr = calculateConfidence(steuerjahrMatch, "steuerjahr");
-        }
+      // Extract Steuerjahr (tax year)
+      const steuerjahrMatch = allOcrText.match(/(?:Veranlagungszeitraum|Steuerjahr|für)\s+(\d{4})/i);
+      if (steuerjahrMatch) {
+        extractedData.steuerjahr = steuerjahrMatch[1];
+        confidenceScores.steuerjahr = calculateConfidence(steuerjahrMatch, "steuerjahr");
       }
 
       // Extract Steuernummer
@@ -344,45 +297,27 @@ Deno.serve(async (req) => {
         confidenceScores.wohnort = calculateConfidence(plzWohnortMatch, "wohnort");
       }
 
-      // Extract financial amounts with confidence - try overlay first
-      let gesamtbetragResult = findValueByPosition("Gesamtbetrag der Einkünfte", allOcrResults);
-      if (gesamtbetragResult.value && /[0-9.,]+/.test(gesamtbetragResult.value)) {
-        extractedData.gesamtbetrag_der_einkuenfte = gesamtbetragResult.value.replace(/\./g, "").replace(",", ".");
-        confidenceScores.gesamtbetrag_der_einkuenfte = gesamtbetragResult.confidence;
-      } else {
-        const gesamtbetragMatch = allOcrText.match(/Gesamtbetrag der Einkünfte[^\d]*?([0-9.,]+)/i);
-        if (gesamtbetragMatch) {
-          extractedData.gesamtbetrag_der_einkuenfte = gesamtbetragMatch[1].replace(/\./g, "").replace(",", ".");
-          confidenceScores.gesamtbetrag_der_einkuenfte = calculateConfidence(
-            gesamtbetragMatch,
-            "gesamtbetrag_der_einkuenfte",
-            true,
-          );
-        }
+      // Extract financial amounts with confidence
+      const gesamtbetragMatch = allOcrText.match(/Gesamtbetrag der Einkünfte[^\d]*?([0-9.,]+)/i);
+      if (gesamtbetragMatch) {
+        extractedData.gesamtbetrag_der_einkuenfte = gesamtbetragMatch[1].replace(/\./g, "").replace(",", ".");
+        confidenceScores.gesamtbetrag_der_einkuenfte = calculateConfidence(
+          gesamtbetragMatch,
+          "gesamtbetrag_der_einkuenfte",
+          true,
+        );
       }
 
-      let summeEinkuenfteResult = findValueByPosition("Summe der Einkünfte", allOcrResults);
-      if (summeEinkuenfteResult.value && /[0-9.,]+/.test(summeEinkuenfteResult.value)) {
-        extractedData.summe_der_einkuenfte = summeEinkuenfteResult.value.replace(/\./g, "").replace(",", ".");
-        confidenceScores.summe_der_einkuenfte = summeEinkuenfteResult.confidence;
-      } else {
-        const summeEinkuenfteMatch = allOcrText.match(/Summe der Einkünfte[^\d]*?([0-9.,]+)/i);
-        if (summeEinkuenfteMatch) {
-          extractedData.summe_der_einkuenfte = summeEinkuenfteMatch[1].replace(/\./g, "").replace(",", ".");
-          confidenceScores.summe_der_einkuenfte = calculateConfidence(summeEinkuenfteMatch, "summe_der_einkuenfte", true);
-        }
+      const summeEinkuenfteMatch = allOcrText.match(/Summe der Einkünfte[^\d]*?([0-9.,]+)/i);
+      if (summeEinkuenfteMatch) {
+        extractedData.summe_der_einkuenfte = summeEinkuenfteMatch[1].replace(/\./g, "").replace(",", ".");
+        confidenceScores.summe_der_einkuenfte = calculateConfidence(summeEinkuenfteMatch, "summe_der_einkuenfte", true);
       }
 
-      let zvEResult = findValueByPosition("zu versteuerndes Einkommen", allOcrResults);
-      if (zvEResult.value && /[0-9.,]+/.test(zvEResult.value)) {
-        extractedData.zu_versteuerndes_einkommen = zvEResult.value.replace(/\./g, "").replace(",", ".");
-        confidenceScores.zu_versteuerndes_einkommen = zvEResult.confidence;
-      } else {
-        const zvEMatch = allOcrText.match(/zu versteuerndes Einkommen[^\d]*?([0-9.,]+)/i);
-        if (zvEMatch) {
-          extractedData.zu_versteuerndes_einkommen = zvEMatch[1].replace(/\./g, "").replace(",", ".");
-          confidenceScores.zu_versteuerndes_einkommen = calculateConfidence(zvEMatch, "zu_versteuerndes_einkommen", true);
-        }
+      const zvEMatch = allOcrText.match(/zu versteuerndes Einkommen[^\d]*?([0-9.,]+)/i);
+      if (zvEMatch) {
+        extractedData.zu_versteuerndes_einkommen = zvEMatch[1].replace(/\./g, "").replace(",", ".");
+        confidenceScores.zu_versteuerndes_einkommen = calculateConfidence(zvEMatch, "zu_versteuerndes_einkommen", true);
       }
 
       const steuerMatch = allOcrText.match(
