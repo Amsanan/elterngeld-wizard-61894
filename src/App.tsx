@@ -23,6 +23,24 @@ import MutterschaftsgeldList from "./pages/MutterschaftsgeldList";
 import UploadSelbststaendigenNachweis from "./pages/UploadSelbststaendigenNachweis";
 import SelbststaendigenNachweisResult from "./pages/SelbststaendigenNachweisResult";
 import SelbststaendigenNachweiseList from "./pages/SelbststaendigenNachweiseList";
+import UploadLeistungsbescheid from "./pages/UploadLeistungsbescheid";
+import LeistungsbescheidResult from "./pages/LeistungsbescheidResult";
+import LeistungsbescheideList from "./pages/LeistungsbescheideList";
+import UploadBankverbindung from "./pages/UploadBankverbindung";
+import BankverbindungResult from "./pages/BankverbindungResult";
+import BankverbindungenList from "./pages/BankverbindungenList";
+import UploadMeldebescheinigung from "./pages/UploadMeldebescheinigung";
+import MeldebescheinigungResult from "./pages/MeldebescheinigungResult";
+import MeldebescheinigungenList from "./pages/MeldebescheinigungenList";
+import UploadKrankenversicherung from "./pages/UploadKrankenversicherung";
+import KrankenversicherungResult from "./pages/KrankenversicherungResult";
+import KrankenversicherungList from "./pages/KrankenversicherungList";
+import UploadEheSorgerecht from "./pages/UploadEheSorgerecht";
+import EheSorgerechtResult from "./pages/EheSorgerechtResult";
+import EheSorgerechtList from "./pages/EheSorgerechtList";
+import UploadAdoptionsPflege from "./pages/UploadAdoptionsPflege";
+import AdoptionsPflegeResult from "./pages/AdoptionsPflegeResult";
+import AdoptionsPflegeList from "./pages/AdoptionsPflegeList";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -53,6 +71,24 @@ function App() {
         <Route path="/upload-selbststaendigen-nachweis" element={<UploadSelbststaendigenNachweis />} />
         <Route path="/selbststaendigen-nachweis-result" element={<SelbststaendigenNachweisResult />} />
         <Route path="/selbststaendigen-nachweise-list" element={<SelbststaendigenNachweiseList />} />
+        <Route path="/upload-leistungsbescheid" element={<UploadLeistungsbescheid />} />
+        <Route path="/leistungsbescheid-result" element={<LeistungsbescheidResult />} />
+        <Route path="/leistungsbescheide-list" element={<LeistungsbescheideList />} />
+        <Route path="/upload-bankverbindung" element={<UploadBankverbindung />} />
+        <Route path="/bankverbindung-result" element={<BankverbindungResult />} />
+        <Route path="/bankverbindungen-list" element={<BankverbindungenList />} />
+        <Route path="/upload-meldebescheinigung" element={<UploadMeldebescheinigung />} />
+        <Route path="/meldebescheinigung-result" element={<MeldebescheinigungResult />} />
+        <Route path="/meldebescheinigungen-list" element={<MeldebescheinigungenList />} />
+        <Route path="/upload-krankenversicherung" element={<UploadKrankenversicherung />} />
+        <Route path="/krankenversicherung-result" element={<KrankenversicherungResult />} />
+        <Route path="/krankenversicherung-list" element={<KrankenversicherungList />} />
+        <Route path="/upload-ehe-sorgerecht" element={<UploadEheSorgerecht />} />
+        <Route path="/ehe-sorgerecht-result" element={<EheSorgerechtResult />} />
+        <Route path="/ehe-sorgerecht-list" element={<EheSorgerechtList />} />
+        <Route path="/upload-adoptions-pflege" element={<UploadAdoptionsPflege />} />
+        <Route path="/adoptions-pflege-result" element={<AdoptionsPflegeResult />} />
+        <Route path="/adoptions-pflege-list" element={<AdoptionsPflegeList />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
