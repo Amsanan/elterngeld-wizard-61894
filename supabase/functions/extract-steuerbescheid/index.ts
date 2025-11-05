@@ -197,6 +197,10 @@ Deno.serve(async (req) => {
     if (allOcrText.trim().length > 0) {
       console.log("Final combined OCR Text length:", allOcrText.length);
       console.log("Overlay lines collected:", allOverlayLines.length);
+      console.log("Combined OCR Space Response JSON:", JSON.stringify({
+        ocrText: allOcrText,
+        overlayLines: allOverlayLines
+      }, null, 2));
 
       // Extract data from tax assessment with confidence scores
       let extractedData: any = {

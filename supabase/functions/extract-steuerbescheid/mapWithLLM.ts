@@ -173,6 +173,7 @@ Return extracted data as JSON only.`;
   }
 
   console.log("Extracted data fields:", Object.keys(parsed.data));
+  console.log("Full LLM Response JSON:", JSON.stringify(parsed, null, 2));
 
   // Normalize number formats (remove unknown fields, keep only schema fields)
   const validFields = new Set(TABLE_SCHEMA.columns.map((c) => c.name));
