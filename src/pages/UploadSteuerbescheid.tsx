@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
@@ -13,6 +14,7 @@ const UploadSteuerbescheid = () => {
   const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
   const [personType, setPersonType] = useState<"mutter" | "vater">("mutter");
+  const [useLLM, setUseLLM] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,6 +53,7 @@ const UploadSteuerbescheid = () => {
         body: {
           filePath: fileName,
           personType: personType,
+          useLLM: useLLM,
         },
       });
 
@@ -92,6 +95,20 @@ const UploadSteuerbescheid = () => {
                   <Label htmlFor="vater">Vater</Label>
                 </div>
               </RadioGroup>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="llm-mode">KI-gestützte Extraktion (LLM)</Label>
+                <div className="text-sm text-muted-foreground">
+                  Nutze erweiterte KI für präzisere Datenextraktion
+                </div>
+              </div>
+              <Switch
+                id="llm-mode"
+                checked={useLLM}
+                onCheckedChange={setUseLLM}
+              />
             </div>
 
             <div>

@@ -33,7 +33,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { filePath, personType } = await req.json();
+    const { filePath, personType, useLLM = false } = await req.json();
+    console.log('Processing request with useLLM:', useLLM);
 
     if (!filePath || !personType) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -206,10 +207,13 @@ Deno.serve(async (req) => {
 
       let confidenceScores: any = {};
 
-      // Try LLM mapping first if enabled
-      const useLLM = Deno.env.get("USE_LLM_MAPPING") === "true";
+      // Try LLM mapping if enabled via UI toggle and API key is configured
+      const llmApiKey = Deno.env.get("USE_LLM_MAPPING");
+      const shouldUseLLM = useLLM && llmApiKey;
       
-      if (useLLM) {
+      console.log(shouldUseLLM ? "Using LLM-based extraction..." : "Using regex-based extraction...");
+      
+      if (shouldUseLLM) {
         try {
           console.log("Attempting LLM-based extraction...");
           const llmResult = await mapWithLLM({
@@ -235,7 +239,7 @@ Deno.serve(async (req) => {
       }
       
       // Fallback: Use regex/overlay extraction if LLM disabled or failed
-      if (!useLLM || Object.keys(extractedData).length <= 3) {
+      if (!shouldUseLLM || Object.keys(extractedData).length <= 3) {
         console.log("Using regex-based extraction...");
         confidenceScores = {};
 

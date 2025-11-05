@@ -67,10 +67,10 @@ Output format:
 }`;
 
 export async function mapWithLLM({ schema, ocrText, overlayLines }: MapWithLLMParams): Promise<MappingResult> {
-  const apiKey = Deno.env.get("OPENROUTER_API_KEY");
+  const apiKey = Deno.env.get("USE_LLM_MAPPING");
 
   if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY not configured");
+    throw new Error("USE_LLM_MAPPING (OpenRouter API Key) not configured");
   }
 
   const userPrompt = `Extract data from this German tax assessment document.
