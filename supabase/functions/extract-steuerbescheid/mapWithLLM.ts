@@ -88,10 +88,10 @@ Return extracted data as JSON only.`;
 
   console.log("Calling OpenRouter API...");
   console.log("User prompt length:", userPrompt.length);
-  
+
   const startTime = Date.now();
   let response;
-  
+
   try {
     response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -101,7 +101,7 @@ Return extracted data as JSON only.`;
         "HTTP-Referer": "https://lovable.dev",
       },
       body: JSON.stringify({
-        model: "anthropic/claude-sonnet-4-5",
+        model: "mistralai/ministral-3b",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
@@ -113,7 +113,7 @@ Return extracted data as JSON only.`;
     console.error("OpenRouter API fetch failed:", fetchError);
     throw new Error(`Failed to call OpenRouter API: ${fetchError.message}`);
   }
-  
+
   const fetchDuration = Date.now() - startTime;
   console.log(`OpenRouter API call took ${fetchDuration}ms`);
   console.log("OpenRouter API response status:", response.status);
@@ -126,14 +126,14 @@ Return extracted data as JSON only.`;
 
   const result = await response.json();
   console.log("OpenRouter API response received");
-  
+
   const content = result.choices?.[0]?.message?.content;
 
   if (!content) {
     console.error("No content in OpenRouter response:", JSON.stringify(result));
     throw new Error("No content in OpenRouter response");
   }
-  
+
   console.log("LLM response content length:", content.length);
 
   let parsed: MappingResult;
@@ -150,7 +150,7 @@ Return extracted data as JSON only.`;
     console.error("LLM response missing 'data' field:", parsed);
     throw new Error("LLM response missing 'data' field");
   }
-  
+
   console.log("Extracted data fields:", Object.keys(parsed.data));
 
   // Normalize number formats (remove unknown fields, keep only schema fields)
