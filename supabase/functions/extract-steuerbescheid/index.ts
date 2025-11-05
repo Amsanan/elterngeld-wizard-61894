@@ -216,19 +216,35 @@ Deno.serve(async (req) => {
       }
       
       console.log("Using LLM-based extraction...");
+      console.log("OCR text length for LLM:", allOcrText.length);
+      console.log("Overlay lines count:", allOverlayLines.length);
       
-      const llmResult = await mapWithLLM({
-        schema: null, // uses default schema
-        ocrText: allOcrText,
-        overlayLines: allOverlayLines
-      });
+      try {
+        const llmResult = await mapWithLLM({
+          schema: null, // uses default schema
+          ocrText: allOcrText,
+          overlayLines: allOverlayLines
+        });
+        
+        console.log("LLM mapping successful");
+        console.log("LLM result data keys:", Object.keys(llmResult.data || {}));
+        
+        extractedData = {
+          ...extractedData,
+          ...llmResult.data
+        };
+        
+        confidenceScores = llmResult.confidence || {};
+      } catch (llmError: any) {
+        console.error("LLM mapping failed:", llmError);
+        console.error("LLM error details:", {
+          message: llmError.message,
+          stack: llmError.stack,
+          cause: llmError.cause
+        });
+        throw new Error(`LLM mapping failed: ${llmError.message}`);
+      }
       
-      extractedData = {
-        ...extractedData,
-        ...llmResult.data
-      };
-      
-      confidenceScores = llmResult.confidence || {};
 
       // Add confidence scores to extracted data (applies to both LLM and regex paths)
       if (Object.keys(confidenceScores).length > 0) {

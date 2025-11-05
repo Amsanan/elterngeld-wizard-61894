@@ -68,6 +68,7 @@ Output format:
 
 export async function mapWithLLM({ schema, ocrText, overlayLines }: MapWithLLMParams): Promise<MappingResult> {
   const apiKey = Deno.env.get("USE_LLM_MAPPING");
+  console.log("LLM API key configured:", !!apiKey);
 
   if (!apiKey) {
     throw new Error("USE_LLM_MAPPING (OpenRouter API Key) not configured");
@@ -85,39 +86,61 @@ ${overlayLines && overlayLines.length > 0 ? `\nOVERLAY DATA (positional word/lin
 
 Return extracted data as JSON only.`;
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "https://lovable.dev",
-    },
-    body: JSON.stringify({
-      model: "mistralai/mistral-small-24b-instruct-2501:free",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-    }),
-  });
+  console.log("Calling OpenRouter API...");
+  console.log("User prompt length:", userPrompt.length);
+  
+  const startTime = Date.now();
+  let response;
+  
+  try {
+    response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://lovable.dev",
+      },
+      body: JSON.stringify({
+        model: "mistralai/mistral-small-24b-instruct-2501:free",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+      }),
+    });
+  } catch (fetchError: any) {
+    console.error("OpenRouter API fetch failed:", fetchError);
+    throw new Error(`Failed to call OpenRouter API: ${fetchError.message}`);
+  }
+  
+  const fetchDuration = Date.now() - startTime;
+  console.log(`OpenRouter API call took ${fetchDuration}ms`);
+  console.log("OpenRouter API response status:", response.status);
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error("OpenRouter API error response:", errorText);
     throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
   }
 
   const result = await response.json();
+  console.log("OpenRouter API response received");
+  
   const content = result.choices?.[0]?.message?.content;
 
   if (!content) {
+    console.error("No content in OpenRouter response:", JSON.stringify(result));
     throw new Error("No content in OpenRouter response");
   }
+  
+  console.log("LLM response content length:", content.length);
 
   let parsed: MappingResult;
   try {
     parsed = JSON.parse(content);
+    console.log("Successfully parsed LLM JSON response");
   } catch (e) {
     console.error("Failed to parse LLM response:", content);
     throw new Error("LLM returned invalid JSON");
@@ -125,8 +148,11 @@ Return extracted data as JSON only.`;
 
   // Validate and normalize the data
   if (!parsed.data) {
+    console.error("LLM response missing 'data' field:", parsed);
     throw new Error("LLM response missing 'data' field");
   }
+  
+  console.log("Extracted data fields:", Object.keys(parsed.data));
 
   // Normalize number formats (remove unknown fields, keep only schema fields)
   const validFields = new Set(TABLE_SCHEMA.columns.map((c) => c.name));
