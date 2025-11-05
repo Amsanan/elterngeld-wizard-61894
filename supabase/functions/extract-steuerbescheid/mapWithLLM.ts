@@ -67,11 +67,11 @@ Output format:
 }`;
 
 export async function mapWithLLM({ schema, ocrText, overlayLines }: MapWithLLMParams): Promise<MappingResult> {
-  const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-  console.log("Lovable AI key configured:", !!lovableApiKey);
+  const apiKey = Deno.env.get("USE_LLM_MAPPING");
+  console.log("OpenRouter API key configured:", !!apiKey);
 
-  if (!lovableApiKey) {
-    throw new Error("LOVABLE_API_KEY not configured");
+  if (!apiKey) {
+    throw new Error("USE_LLM_MAPPING (OpenRouter API Key) not configured");
   }
 
   const userPrompt = `Extract data from this German tax assessment document.
@@ -86,40 +86,42 @@ ${overlayLines && overlayLines.length > 0 ? `\nOVERLAY DATA (positional word/lin
 
 Return extracted data as JSON only.`;
 
-  console.log("Calling Lovable AI Gateway...");
+  console.log("Calling OpenRouter API...");
   console.log("User prompt length:", userPrompt.length);
   
   const startTime = Date.now();
   let response;
   
   try {
-    response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${lovableApiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        "HTTP-Referer": "https://lovable.dev",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "anthropic/claude-sonnet-4-5",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
+        temperature: 0.1,
       }),
     });
   } catch (fetchError: any) {
-    console.error("Lovable AI fetch failed:", fetchError);
-    throw new Error(`Failed to call Lovable AI: ${fetchError.message}`);
+    console.error("OpenRouter API fetch failed:", fetchError);
+    throw new Error(`Failed to call OpenRouter API: ${fetchError.message}`);
   }
   
   const fetchDuration = Date.now() - startTime;
-  console.log(`Lovable AI call took ${fetchDuration}ms`);
-  console.log("Lovable AI response status:", response.status);
+  console.log(`OpenRouter API call took ${fetchDuration}ms`);
+  console.log("OpenRouter API response status:", response.status);
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Lovable AI error response:", errorText);
-    throw new Error(`Lovable AI error: ${response.status} - ${errorText}`);
+    console.error("OpenRouter API error response:", errorText);
+    throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
   }
 
   const result = await response.json();

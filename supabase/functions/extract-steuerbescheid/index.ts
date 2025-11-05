@@ -207,9 +207,13 @@ Deno.serve(async (req) => {
 
       let confidenceScores: any = {};
 
-      // LLM mapping uses Lovable AI (always available)
+      // LLM mapping requires OpenRouter API key
+      const llmApiKey = Deno.env.get("USE_LLM_MAPPING");
       if (!useLLM) {
         throw new Error("LLM extraction is required but not enabled. Please enable LLM mode in the UI.");
+      }
+      if (!llmApiKey) {
+        throw new Error("USE_LLM_MAPPING API key not configured");
       }
       
       console.log("Using LLM-based extraction...");
