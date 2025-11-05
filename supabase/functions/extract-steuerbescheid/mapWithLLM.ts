@@ -135,14 +135,35 @@ Return extracted data as JSON only.`;
   }
 
   console.log("LLM response content length:", content.length);
+  console.log("Raw LLM response (first 500 chars):", content.substring(0, 500));
+
+  // Extract JSON from markdown code blocks if present
+  let jsonContent = content.trim();
+  
+  // Remove markdown code blocks like ```json ... ```
+  const jsonBlockMatch = jsonContent.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+  if (jsonBlockMatch) {
+    jsonContent = jsonBlockMatch[1].trim();
+    console.log("Extracted JSON from markdown block");
+  }
+  
+  // Try to find JSON object if there's extra text
+  const jsonObjectMatch = jsonContent.match(/\{[\s\S]*\}/);
+  if (jsonObjectMatch && !jsonContent.startsWith('{')) {
+    jsonContent = jsonObjectMatch[0];
+    console.log("Extracted JSON object from text");
+  }
 
   let parsed: MappingResult;
   try {
-    parsed = JSON.parse(content);
+    parsed = JSON.parse(jsonContent);
     console.log("Successfully parsed LLM JSON response");
+    console.log("Parsed data keys:", Object.keys(parsed.data || {}));
   } catch (e) {
-    console.error("Failed to parse LLM response:", content);
-    throw new Error("LLM returned invalid JSON");
+    console.error("Failed to parse LLM response");
+    console.error("Cleaned content:", jsonContent);
+    console.error("Parse error:", e);
+    throw new Error(`LLM returned invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
   }
 
   // Validate and normalize the data
