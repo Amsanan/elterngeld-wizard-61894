@@ -224,9 +224,7 @@ Deno.serve(async (req) => {
           
           extractedData = {
             ...extractedData,
-            ...llmResult.data,
-            llm_confidence: llmResult.confidence,
-            llm_provenance: llmResult.provenance
+            ...llmResult.data
           };
           
           confidenceScores = llmResult.confidence || {};
