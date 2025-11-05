@@ -207,11 +207,8 @@ Deno.serve(async (req) => {
 
       let confidenceScores: any = {};
 
-      // Try LLM mapping if enabled via UI toggle and API key is configured
-      const llmApiKey = Deno.env.get("USE_LLM_MAPPING");
-      const shouldUseLLM = useLLM && llmApiKey;
-      
-      if (!shouldUseLLM) {
+      // LLM mapping uses Lovable AI (always available)
+      if (!useLLM) {
         throw new Error("LLM extraction is required but not enabled. Please enable LLM mode in the UI.");
       }
       
