@@ -93,7 +93,7 @@ Return extracted data as JSON only.`;
       "HTTP-Referer": "https://lovable.dev",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.0-flash-exp:free",
+      model: "mistralai/mistral-small-24b-instruct-2501:free",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userPrompt },
