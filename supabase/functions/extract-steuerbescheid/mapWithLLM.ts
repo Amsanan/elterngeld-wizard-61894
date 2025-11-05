@@ -101,7 +101,7 @@ Return extracted data as JSON only.`;
         "HTTP-Referer": "https://lovable.dev",
       },
       body: JSON.stringify({
-        model: "mistralai/ministral-3b",
+        model: "mistralai/mistral-small-3.1-24b-instruct",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
