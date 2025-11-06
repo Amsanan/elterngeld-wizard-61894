@@ -1013,6 +1013,51 @@ export type Database = {
           },
         ]
       }
+      pdf_field_mappings: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          created_by: string | null
+          document_type: string
+          id: string
+          is_active: boolean | null
+          mapping_status: string | null
+          notes: string | null
+          pdf_field_name: string
+          source_field: string
+          source_table: string
+          updated_at: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          document_type: string
+          id?: string
+          is_active?: boolean | null
+          mapping_status?: string | null
+          notes?: string | null
+          pdf_field_name: string
+          source_field: string
+          source_table: string
+          updated_at?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          document_type?: string
+          id?: string
+          is_active?: boolean | null
+          mapping_status?: string | null
+          notes?: string | null
+          pdf_field_name?: string
+          source_field?: string
+          source_table?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null

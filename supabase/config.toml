@@ -47,3 +47,15 @@ verify_jwt = true
 
 [functions.cleanup-old-documents]
 verify_jwt = false
+
+[functions.get-database-schema]
+verify_jwt = true
+
+[functions.get-field-mappings]
+verify_jwt = true
+
+[functions.auto-map-fields]
+verify_jwt = true
+
+[functions.save-field-mappings]
+verify_jwt = true
