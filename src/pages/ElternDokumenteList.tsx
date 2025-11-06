@@ -68,6 +68,19 @@ const ElternDokumenteList = () => {
     return new Date(dateStr).toLocaleDateString("de-DE");
   };
 
+  const getDocumentTypeLabel = (type: string) => {
+    switch (type) {
+      case "personalausweis":
+        return "Personalausweis";
+      case "reisepass":
+        return "Reisepass";
+      case "aufenthaltstitel":
+        return "Aufenthaltstitel";
+      default:
+        return type;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -84,7 +97,7 @@ const ElternDokumenteList = () => {
             <div>
               <h1 className="text-2xl font-bold text-foreground">Eltern-Dokumente</h1>
               <p className="text-muted-foreground mt-1">
-                Alle hochgeladenen Personalausweise und Reisepässe
+                Alle hochgeladenen Personalausweise, Reisepässe und Aufenthaltstitel
               </p>
             </div>
             <Button onClick={() => navigate("/upload-eltern-dokument")}>
@@ -117,7 +130,7 @@ const ElternDokumenteList = () => {
                     <div className="space-y-2 flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-lg">
-                          {doc.document_type === "personalausweis" ? "Personalausweis" : "Reisepass"} - {doc.person_type === "mutter" ? "Mutter" : "Vater"}
+                          {getDocumentTypeLabel(doc.document_type)} - {doc.person_type === "mutter" ? "Mutter" : "Vater"}
                         </h3>
                       </div>
                       <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
