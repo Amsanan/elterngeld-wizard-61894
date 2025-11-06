@@ -116,86 +116,101 @@ export const WORKFLOW_STEPS = [
   }
 ];
 
-// Field mappings - will be populated after PDF analysis
-// These are initial estimates based on common Elterngeld form fields
+// Field mappings from Excel file: Mapping032025_1.xlsx
+// Maps database fields to actual PDF AcroForm field names
 export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
   geburtsurkunde: {
-    kind_vorname: "Kind_Vorname",
-    kind_nachname: "Kind_Nachname",
-    kind_geburtsdatum: "Kind_Geburtsdatum",
-    kind_geburtsort: "Kind_Geburtsort",
-    mutter_vorname: "Mutter_Vorname",
-    mutter_nachname: "Mutter_Nachname",
-    vater_vorname: "Vater_Vorname",
-    vater_nachname: "Vater_Nachname"
+    // Kind table fields (rows 15-18 in Excel)
+    kind_vorname: "txt.txt.vorname1A 4",
+    kind_nachname: "txt.txt.name1A 4",
+    kind_geburtsdatum: "txt.txt.geburtsdatum1a 3",
+    kind_anzahl_mehrlinge: "txt.txt.anzahl 4",
+    // Parent names from birth certificate
+    mutter_vorname: "txt.vorname2b 1",  // Using parent 2 fields (mother)
+    mutter_nachname: "txt.name2b 1",
+    vater_vorname: "txt.vorname2b",     // Using parent 1 fields (father)
+    vater_nachname: "txt.name2b"
   },
   eltern_dokument_vater: {
-    vorname: "Vater_Vorname",
-    nachname: "Vater_Nachname",
-    geburtsdatum: "Vater_Geburtsdatum",
-    geburtsort: "Vater_Geburtsort",
-    staatsangehoerigkeit: "Vater_Staatsangehoerigkeit",
-    ausweisnummer: "Vater_Ausweisnummer"
+    // Antrag_2B_Elternteil fields for parent 1 (rows 32-36)
+    vorname: "txt.vorname2b",
+    nachname: "txt.name2b",
+    geburtsdatum: "txt.geburt2b",
+    steuer_id: "txt.txt.steuer2b_1"
+    // Note: Gender, nationality, ID number not directly mapped
   },
   eltern_dokument_mutter: {
-    vorname: "Mutter_Vorname",
-    nachname: "Mutter_Nachname",
-    geburtsdatum: "Mutter_Geburtsdatum",
-    geburtsort: "Mutter_Geburtsort",
-    staatsangehoerigkeit: "Mutter_Staatsangehoerigkeit",
-    ausweisnummer: "Mutter_Ausweisnummer"
+    // Antrag_2B_Elternteil fields for parent 2 (rows 37-41)
+    vorname: "txt.vorname2b 1",
+    nachname: "txt.name2b 1",
+    geburtsdatum: "txt.geburt2b 1",
+    steuer_id: "txt.txt.steuer2b_2"
   },
   meldebescheinigung_vater: {
-    strasse: "Vater_Strasse",
-    hausnummer: "Vater_Hausnummer",
-    plz: "Vater_PLZ",
-    wohnort: "Vater_Wohnort"
+    // Antrag_2C_Wohnsitz fields for parent 1 (rows 48-51)
+    strasse: "txt.strasse2c",
+    hausnummer: "txt.nummer2c",
+    plz: "txt.plz2c",
+    wohnort: "txt.ort2c"
   },
   meldebescheinigung_mutter: {
-    strasse: "Mutter_Strasse",
-    hausnummer: "Mutter_Hausnummer",
-    plz: "Mutter_PLZ",
-    wohnort: "Mutter_Wohnort"
+    // Antrag_2C_Wohnsitz fields for parent 2 (rows 74-77)
+    strasse: "txt.strasse2c 1",
+    hausnummer: "txt.nummer2c 1",
+    plz: "txt.plz2c 1",
+    wohnort: "txt.ort2c 1"
   },
   einkommensteuerbescheid: {
-    steuerjahr: "Steuerjahr",
-    jahreseinkommen: "Jahreseinkommen",
-    zu_versteuerndes_einkommen: "Zu_versteuerndes_Einkommen"
+    // Note: Tax document fields not found in basic mapping
+    // May need section 7+ fields for income documentation
+    steuerjahr: "txt.steuerjahr", // Placeholder - needs verification
+    jahreseinkommen: "txt.jahreseinkommen",
+    zu_versteuerndes_einkommen: "txt.zu_versteuerndes_einkommen"
   },
   gehaltsnachweis_vater: {
-    bruttogehalt: "Vater_Bruttogehalt",
-    nettogehalt: "Vater_Nettogehalt",
-    arbeitgeber_name: "Vater_Arbeitgeber"
+    // Salary fields - section 7+ (not fully mapped in basic sections)
+    bruttogehalt: "txt.bruttogehalt_vater",
+    nettogehalt: "txt.nettogehalt_vater",
+    arbeitgeber_name: "txt.arbeitgeber_vater"
   },
   gehaltsnachweis_mutter: {
-    bruttogehalt: "Mutter_Bruttogehalt",
-    nettogehalt: "Mutter_Nettogehalt",
-    arbeitgeber_name: "Mutter_Arbeitgeber"
+    bruttogehalt: "txt.bruttogehalt_mutter",
+    nettogehalt: "txt.nettogehalt_mutter",
+    arbeitgeber_name: "txt.arbeitgeber_mutter"
   },
   arbeitgeberbescheinigung_vater: {
-    arbeitgeber_name: "Vater_Arbeitgeber_Name",
-    beschaeftigungsbeginn: "Vater_Beschaeftigungsbeginn",
-    wochenstunden: "Vater_Wochenstunden"
+    // Employer certificate fields - not in basic mapping
+    arbeitgeber_name: "txt.arbeitgeber_name_vater",
+    beschaeftigungsbeginn: "txt.beschaeftigung_von_vater",
+    wochenstunden: "txt.wochenstunden_vater"
   },
   arbeitgeberbescheinigung_mutter: {
-    arbeitgeber_name: "Mutter_Arbeitgeber_Name",
-    beschaeftigungsbeginn: "Mutter_Beschaeftigungsbeginn",
-    wochenstunden: "Mutter_Wochenstunden"
+    arbeitgeber_name: "txt.arbeitgeber_name_mutter",
+    beschaeftigungsbeginn: "txt.beschaeftigung_von_mutter",
+    wochenstunden: "txt.wochenstunden_mutter"
   },
   krankenversicherung: {
-    krankenkasse_name: "Krankenkasse",
-    versichertennummer: "Versichertennummer",
-    versicherungsart: "Versicherungsart"
+    // Antrag_5_Krankenversicherung fields for parent 1 (rows 225-231)
+    versichertennummer: "txt.versichertennummer5",
+    krankenkasse_name: "txt.namekk5",
+    krankenkasse_strasse: "txt.kkstrasse5",
+    krankenkasse_hausnummer: "txt.kknr5",
+    krankenkasse_plz: "txt.kkplz5",
+    krankenkasse_ort: "txt.kkort5"
   },
   bankverbindung: {
-    iban: "IBAN",
-    bic: "BIC",
-    kontoinhaber: "Kontoinhaber",
-    bank_name: "Bank"
+    // Antrag_16A_Bankverbindung fields (rows 697-698)
+    iban: "txt.Kontonummer_1",  // IBAN in German forms
+    bic: "txt.bankcode1",
+    // Note: Account holder name uses txt.konto_name_1 / txt.konto_nachname_1 
+    // when it's not own account (row 702-703)
   },
   ehe_sorgerecht: {
-    dokument_typ: "Familienstand",
-    heiratsdatum: "Heiratsdatum",
-    sorgerecht_art: "Sorgerecht"
+    // Marriage/custody fields from Antrag_2G_Familienstand (rows 139-147)
+    // Note: These are checkboxes, not text fields
+    verheiratet: "cb:verheiratet2g",
+    ledig: "cb.ledig2g",
+    geschieden: "cb.geschieden2g",
+    verwitwet: "cb.verwirtwet2g"
   }
 };
