@@ -71,7 +71,10 @@ const SteuerbescheideList = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-semibold">
-                      {item.person_type === "mutter" ? "Mutter" : "Vater"}
+                      {item.gemeinsame_veranlagung 
+                        ? "Ehepaar (Gemeinsame Veranlagung)" 
+                        : (item.person_type === "mutter" ? "Mutter" : "Vater")
+                      }
                       {item.nachname && ` - ${item.nachname}`}
                     </h3>
                     <p className="text-sm text-muted-foreground">

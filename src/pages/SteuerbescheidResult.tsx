@@ -166,7 +166,11 @@ const SteuerbescheidResult = () => {
 
         <Card className="p-6">
           <h1 className="text-2xl font-bold mb-6">
-            Extrahierte Daten - Einkommensteuerbescheid ({data.person_type === "mutter" ? "Mutter" : "Vater"})
+            Extrahierte Daten - Einkommensteuerbescheid 
+            {data.gemeinsame_veranlagung 
+              ? " (Ehepaar - Gemeinsame Veranlagung)" 
+              : ` (${data.person_type === "mutter" ? "Mutter" : "Vater"})`
+            }
           </h1>
 
           <div className="space-y-4">
