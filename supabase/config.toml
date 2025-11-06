@@ -44,3 +44,6 @@ verify_jwt = true
 
 [functions.extract-steuerbescheid]
 verify_jwt = true
+
+[functions.cleanup-old-documents]
+verify_jwt = false
