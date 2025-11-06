@@ -93,7 +93,7 @@ Return extracted data as JSON only.`;
           "HTTP-Referer": "https://lovable.dev",
         },
         body: JSON.stringify({
-          model: "mistralai/mistral-small-3.1-24b-instruct",
+          model: Deno.env.get("LLM_MODEL") || "mistralai/mistral-small-3.1-24b-instruct",
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: userPrompt },
