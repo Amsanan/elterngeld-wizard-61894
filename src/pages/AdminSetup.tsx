@@ -1,9 +1,11 @@
 import { useState, useRef, DragEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Upload, CheckCircle, AlertCircle, FileUp } from "lucide-react";
+import { Upload, CheckCircle, AlertCircle, FileUp, Search, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const AdminSetup = () => {
@@ -12,6 +14,9 @@ const AdminSetup = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [pdfFields, setPdfFields] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -136,6 +141,37 @@ const AdminSetup = () => {
       uploadPdfFromFile(files[0]);
     }
   };
+
+  const analyzePdfFields = async () => {
+    setAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-elterngeld-form');
+      
+      if (error) throw error;
+      
+      if (data && data.fields) {
+        setPdfFields(data.fields);
+        toast({
+          title: "Analysis Complete",
+          description: `Found ${data.fields.length} fields in the PDF form`,
+        });
+      }
+    } catch (error: any) {
+      console.error('PDF analysis error:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to analyze PDF fields",
+        variant: "destructive",
+      });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const filteredFields = pdfFields.filter(field => 
+    field.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    field.type?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -274,6 +310,94 @@ const AdminSetup = () => {
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>PDF Field Analysis</CardTitle>
+            <CardDescription>
+              Discover the real field names in the Elterngeld PDF form
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
+              <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium mb-1">What this does:</p>
+                <p>
+                  Analyzes the PDF form and extracts all field names. Use this to find the correct 
+                  field names for mapping database fields to PDF form fields.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={analyzePdfFields}
+              disabled={analyzing}
+              variant="outline"
+              className="w-full"
+              size="lg"
+            >
+              {analyzing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing PDF...
+                </>
+              ) : (
+                <>
+                  <Search className="mr-2 h-4 w-4" />
+                  Analyze PDF Fields
+                </>
+              )}
+            </Button>
+
+            {pdfFields.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search fields (e.g., kind, vorname, mutter)..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+
+                <div className="border rounded-lg">
+                  <div className="max-h-[500px] overflow-y-auto">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-background">
+                        <TableRow>
+                          <TableHead className="w-[60%]">Field Name</TableHead>
+                          <TableHead className="w-[20%]">Type</TableHead>
+                          <TableHead className="w-[20%]">Details</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredFields.map((field, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-mono text-xs break-all">
+                              {field.name}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {field.type}
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {field.maxLength && `Max: ${field.maxLength}`}
+                              {field.options && `${field.options.length} options`}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="p-2 border-t bg-muted/50 text-xs text-muted-foreground text-center">
+                    Showing {filteredFields.length} of {pdfFields.length} fields
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
