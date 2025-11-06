@@ -3,14 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileText, Upload, List, LogOut, Filter } from "lucide-react";
+import { FileText, Upload, List, LogOut, Filter, FileCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [isCreatingAntrag, setIsCreatingAntrag] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>("alle");
+  const [progress, setProgress] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -21,6 +23,17 @@ const Dashboard = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
+        
+        // Load Elterngeldantrag progress
+        const { data: progressData } = await supabase
+          .from('elterngeldantrag_progress')
+          .select()
+          .eq('user_id', session.user.id)
+          .single();
+        
+        if (progressData) {
+          setProgress(progressData);
+        }
       }
     };
 
@@ -97,6 +110,36 @@ const Dashboard = () => {
               </Select>
             </div>
           </div>
+
+          {/* Elterngeldantrag Card */}
+          <Card className="p-8 bg-gradient-to-br from-primary/10 to-accent/10 mb-8 hover:shadow-xl transition-shadow">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
+                <FileCheck className="h-10 w-10 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold mb-2">Elterngeldantrag ausfüllen</h3>
+                <p className="text-muted-foreground">
+                  Automatisch mit Ihren extrahierten Dokumenten
+                </p>
+              </div>
+              {progress && (
+                <div className="w-full max-w-md mt-2">
+                  <Progress value={(progress.current_step / 13) * 100} className="h-2" />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Schritt {progress.current_step} von 13 abgeschlossen
+                  </p>
+                </div>
+              )}
+              <Button 
+                onClick={() => navigate('/elterngeldantrag-ausfuellen')}
+                size="lg"
+                className="w-full max-w-md mt-2"
+              >
+                {progress ? 'Weiter ausfüllen' : 'Jetzt starten'}
+              </Button>
+            </div>
+          </Card>
           
           <div className="grid md:grid-cols-2 gap-6">
             {(filterCategory === "alle" || filterCategory === "identitaet") && (

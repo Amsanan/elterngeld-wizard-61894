@@ -1,1 +1,46 @@
 project_id = "hfjcquyafrpjjjjpmran"
+
+[functions.analyze-elterngeld-form]
+verify_jwt = true
+
+[functions.fill-elterngeld-form]
+verify_jwt = true
+
+[functions.extract-adoptions-pflege]
+verify_jwt = true
+
+[functions.extract-arbeitgeberbescheinigung]
+verify_jwt = true
+
+[functions.extract-bankverbindung]
+verify_jwt = true
+
+[functions.extract-ehe-sorgerecht]
+verify_jwt = true
+
+[functions.extract-eltern-dokument]
+verify_jwt = true
+
+[functions.extract-geburtsurkunde]
+verify_jwt = true
+
+[functions.extract-gehaltsnachweis]
+verify_jwt = true
+
+[functions.extract-krankenversicherung]
+verify_jwt = true
+
+[functions.extract-leistungsbescheid]
+verify_jwt = true
+
+[functions.extract-meldebescheinigung]
+verify_jwt = true
+
+[functions.extract-mutterschaftsgeld]
+verify_jwt = true
+
+[functions.extract-selbststaendigen-nachweis]
+verify_jwt = true
+
+[functions.extract-steuerbescheid]
+verify_jwt = true

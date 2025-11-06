@@ -577,6 +577,39 @@ export type Database = {
         }
         Relationships: []
       }
+      elterngeldantrag_progress: {
+        Row: {
+          completed_steps: number[] | null
+          created_at: string | null
+          current_step: number | null
+          field_mappings: Json | null
+          id: string
+          partial_pdf_path: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_steps?: number[] | null
+          created_at?: string | null
+          current_step?: number | null
+          field_mappings?: Json | null
+          id?: string
+          partial_pdf_path?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_steps?: number[] | null
+          created_at?: string | null
+          current_step?: number | null
+          field_mappings?: Json | null
+          id?: string
+          partial_pdf_path?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       geburtsurkunden: {
         Row: {
           ausstelldatum: string | null
