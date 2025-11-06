@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   FileText, User, Home, FileCheck, DollarSign, 
   Briefcase, Heart, CreditCard, Users, ChevronLeft, 
-  ChevronRight, Download, Loader2 
+  ChevronRight, Download, Loader2, ExternalLink, AlertCircle, Shield
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +38,9 @@ export default function ElterngeldantragAusfuellen() {
   const [isLoading, setIsLoading] = useState(false);
   const [previousPdfPath, setPreviousPdfPath] = useState<string | null>(null);
   const [hasData, setHasData] = useState(true);
+  const [iframeError, setIframeError] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [showBraveWarning, setShowBraveWarning] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -45,7 +48,24 @@ export default function ElterngeldantragAusfuellen() {
 
   useEffect(() => {
     loadStepData();
+    setIframeError(false);
+    setIframeLoaded(false);
+    setShowBraveWarning(false);
   }, [currentStep]);
+
+  useEffect(() => {
+    // Detect if iframe fails to load within 5 seconds
+    if (pdfUrl && !iframeLoaded && !iframeError) {
+      const timer = setTimeout(() => {
+        if (!iframeLoaded) {
+          setIframeError(true);
+          setShowBraveWarning(true);
+        }
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [pdfUrl, iframeLoaded, iframeError]);
 
   const loadStepData = async () => {
     setIsLoading(true);
@@ -157,6 +177,26 @@ export default function ElterngeldantragAusfuellen() {
     }
   };
 
+  const handleOpenInNewTab = () => {
+    if (pdfUrl) {
+      window.open(pdfUrl, '_blank');
+      toast({
+        title: "PDF geöffnet",
+        description: "Das PDF wurde in einem neuen Tab geöffnet",
+      });
+    }
+  };
+
+  const handleIframeLoad = () => {
+    setIframeLoaded(true);
+    setIframeError(false);
+  };
+
+  const handleIframeError = () => {
+    setIframeError(true);
+    setShowBraveWarning(true);
+  };
+
   const Icon = currentConfig.icon;
 
   return (
@@ -254,13 +294,74 @@ export default function ElterngeldantragAusfuellen() {
 
           {/* Right: PDF Preview */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">PDF Vorschau</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">PDF Vorschau</h3>
+              {pdfUrl && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOpenInNewTab}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  In neuem Tab öffnen
+                </Button>
+              )}
+            </div>
+
+            {showBraveWarning && (
+              <Alert className="mb-4 border-orange-500/50 bg-orange-500/10">
+                <Shield className="h-4 w-4 text-orange-500" />
+                <AlertDescription className="space-y-2">
+                  <p className="font-semibold text-foreground">Browser blockiert PDF-Vorschau</p>
+                  <p className="text-sm">
+                    Ihr Browser (möglicherweise Brave) blockiert die PDF-Vorschau aus Sicherheitsgründen.
+                  </p>
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium">Lösungen:</p>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                      <li>Klicken Sie auf "In neuem Tab öffnen" oben rechts</li>
+                      <li>Oder: Deaktivieren Sie die Shields für diese Seite (Klick auf das Löwen-Symbol in der Adressleiste)</li>
+                    </ul>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
             {pdfUrl ? (
-              <iframe
-                src={pdfUrl}
-                className="w-full h-[600px] border rounded-lg"
-                title="PDF Preview"
-              />
+              <div className="relative">
+                <iframe
+                  src={pdfUrl}
+                  className="w-full h-[600px] border rounded-lg"
+                  title="PDF Preview"
+                  onLoad={handleIframeLoad}
+                  onError={handleIframeError}
+                />
+                {!iframeLoaded && !iframeError && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg">
+                    <div className="text-center space-y-2">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                      <p className="text-sm text-muted-foreground">PDF wird geladen...</p>
+                    </div>
+                  </div>
+                )}
+                {iframeError && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
+                    <div className="text-center space-y-4 p-6">
+                      <AlertCircle className="h-12 w-12 text-orange-500 mx-auto" />
+                      <div className="space-y-2">
+                        <p className="font-semibold">PDF-Vorschau nicht verfügbar</p>
+                        <p className="text-sm text-muted-foreground">
+                          Bitte verwenden Sie den Button "In neuem Tab öffnen"
+                        </p>
+                      </div>
+                      <Button onClick={handleOpenInNewTab} variant="default">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        PDF in neuem Tab öffnen
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="h-[600px] border rounded-lg flex items-center justify-center bg-muted">
                 <p className="text-muted-foreground">Keine Vorschau verfügbar</p>
