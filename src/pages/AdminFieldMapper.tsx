@@ -147,11 +147,16 @@ export default function AdminFieldMapper() {
       
       const pdfPath = 'elterngeldantrag_bis_Maerz25.pdf';
       
+      // Get page metadata from the layout analysis results
+      const pageMetadata = Array.from(
+        new Set(fieldCoordinates.map((fc: any) => fc.page))
+      ).map((pageNum: number) => ({ page: pageNum }));
+
       const { data, error } = await supabase.functions.invoke('vision-map-fields', {
         body: { 
           field_coordinates: fieldCoordinates,
           pdf_path: pdfPath,
-          page_metadata: [] // We could pass page metadata if needed
+          page_metadata: pageMetadata
         }
       });
 

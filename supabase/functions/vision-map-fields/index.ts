@@ -65,15 +65,30 @@ serve(async (req) => {
       throw new Error(`Failed to download PDF: ${downloadError.message}`);
     }
 
-    // Convert PDF to base64
+    // Convert PDF to base64 safely (avoid stack overflow)
     const pdfBuffer = await pdfData.arrayBuffer();
-    const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
+    const uint8Array = new Uint8Array(pdfBuffer);
+    let binaryString = '';
+    const chunkSize = 8192; // Process in chunks to avoid stack overflow
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize);
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    const pdfBase64 = btoa(binaryString);
 
-    // Analyze each page with vision AI
+    // Analyze each page with vision AI (limit to first 3 pages to avoid timeout)
     const allAnalyses: VisualFieldAnalysis[] = [];
+    const maxPages = Math.min(3, fieldsByPage.size); // Process max 3 pages for now
+    let processedPages = 0;
 
     for (const [pageNum, fields] of fieldsByPage.entries()) {
+      if (processedPages >= maxPages) {
+        console.log(`Skipping remaining pages (processed ${maxPages} pages)`);
+        break;
+      }
+      
       console.log(`Analyzing page ${pageNum} with ${fields.length} fields`);
+      processedPages++;
 
       // Create a detailed prompt for the AI to analyze the PDF page
       const fieldPositions = fields.map(f => 
