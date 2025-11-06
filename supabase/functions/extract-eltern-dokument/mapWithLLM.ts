@@ -16,7 +16,7 @@ interface MapWithLLMParams {
 const TABLE_SCHEMA = {
   table_name: "eltern_dokumente",
   columns: [
-    { name: "document_type", type: "text", description: "Type: personalausweis or reisepass" },
+    { name: "document_type", type: "text", description: "Type: personalausweis, reisepass, or aufenthaltstitel" },
     { name: "person_type", type: "text", description: "Person type" },
     { name: "vorname", type: "text", description: "First name" },
     { name: "nachname", type: "text", description: "Last name" },
