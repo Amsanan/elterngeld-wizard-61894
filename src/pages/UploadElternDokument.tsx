@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const UploadElternDokument = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<"personalausweis" | "reisepass">("personalausweis");
+  const [documentType, setDocumentType] = useState<"personalausweis" | "reisepass" | "aufenthaltstitel">("personalausweis");
   const [personType, setPersonType] = useState<"mutter" | "vater">("mutter");
   const [isUploading, setIsUploading] = useState(false);
   const navigate = useNavigate();
@@ -113,7 +113,7 @@ const UploadElternDokument = () => {
           </Button>
           <h1 className="text-2xl font-bold text-foreground">Eltern-Dokument hochladen</h1>
           <p className="text-muted-foreground mt-2">
-            Personalausweis oder Reisepass der Eltern
+            Personalausweis, Reisepass oder Aufenthaltstitel der Eltern
           </p>
         </div>
       </header>
@@ -132,6 +132,10 @@ const UploadElternDokument = () => {
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="reisepass" id="reisepass" />
                     <Label htmlFor="reisepass" className="cursor-pointer">Reisepass</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="aufenthaltstitel" id="aufenthaltstitel" />
+                    <Label htmlFor="aufenthaltstitel" className="cursor-pointer">Aufenthaltstitel</Label>
                   </div>
                 </RadioGroup>
               </div>
