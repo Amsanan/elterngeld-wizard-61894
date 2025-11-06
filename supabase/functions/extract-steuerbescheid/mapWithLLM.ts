@@ -92,30 +92,72 @@ Return extracted data as JSON only.`;
   const startTime = Date.now();
   let response;
 
-  try {
-    response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://lovable.dev",
-      },
-      body: JSON.stringify({
-        model: "mistralai/mistral-small-3.1-24b-instruct",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.1,
-      }),
-    });
-  } catch (fetchError: any) {
-    console.error("OpenRouter API fetch failed:", fetchError);
-    throw new Error(`Failed to call OpenRouter API: ${fetchError.message}`);
+  // Retry logic with exponential backoff
+  const maxRetries = 3;
+  const baseDelay = 1000; // 1 second
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delay = baseDelay * Math.pow(2, attempt - 1);
+        console.log(`Retry attempt ${attempt}/${maxRetries} after ${delay}ms delay`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+
+      response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://lovable.dev",
+        },
+        body: JSON.stringify({
+          model: "mistralai/mistral-small-3.1-24b-instruct",
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.1,
+        }),
+      });
+
+      // Check if response is OK or if it's a non-retryable error
+      if (response.ok) {
+        break; // Success, exit retry loop
+      }
+
+      // Don't retry on 4xx errors (client errors) except 429 (rate limit)
+      if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+        console.error(`Non-retryable error: ${response.status}`);
+        break;
+      }
+
+      // For 5xx or 429, continue to retry
+      if (attempt === maxRetries) {
+        console.error(`Max retries reached. Last status: ${response.status}`);
+        break;
+      }
+
+      console.log(`Retryable error ${response.status}, will retry...`);
+      
+    } catch (fetchError: any) {
+      console.error(`OpenRouter API fetch failed (attempt ${attempt + 1}/${maxRetries + 1}):`, fetchError);
+      
+      if (attempt === maxRetries) {
+        throw new Error(`Failed to call OpenRouter API after ${maxRetries + 1} attempts: ${fetchError.message}`);
+      }
+      
+      console.log("Network error, will retry...");
+    }
   }
 
   const fetchDuration = Date.now() - startTime;
   console.log(`OpenRouter API call took ${fetchDuration}ms`);
+  
+  if (!response) {
+    throw new Error("OpenRouter API call failed: no response received");
+  }
+  
   console.log("OpenRouter API response status:", response.status);
 
   if (!response.ok) {
