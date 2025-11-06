@@ -92,7 +92,9 @@ Deno.serve(async (req) => {
           overlayLines: overlayLines,
         });
         
-        extractedData = { ...extractedData, ...llmResult.data };
+        // Merge LLM results but preserve dokumenttyp from request
+        const { dokumenttyp: _, dokument_typ: __, ...llmDataWithoutTypes } = llmResult.data;
+        extractedData = { ...extractedData, ...llmDataWithoutTypes };
         confidenceScores = llmResult.confidence || {};
       }
 

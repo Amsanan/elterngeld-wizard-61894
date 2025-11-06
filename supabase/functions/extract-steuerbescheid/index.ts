@@ -234,9 +234,11 @@ Deno.serve(async (req) => {
         console.log("LLM mapping successful");
         console.log("LLM result data keys:", Object.keys(llmResult.data || {}));
         
+        // Merge LLM results but preserve person_type from request
+        const { person_type: _, ...llmDataWithoutTypes } = llmResult.data;
         extractedData = {
           ...extractedData,
-          ...llmResult.data
+          ...llmDataWithoutTypes
         };
         
         confidenceScores = llmResult.confidence || {};
