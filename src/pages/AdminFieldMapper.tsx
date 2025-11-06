@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Download, Upload, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Download, Upload, Sparkles, FileText } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatabaseFieldsList } from "@/components/field-mapper/DatabaseFieldsList";
 import { PdfFieldsList } from "@/components/field-mapper/PdfFieldsList";
@@ -79,6 +79,51 @@ export default function AdminFieldMapper() {
     setAutoMapDialogOpen(true);
   };
 
+  const handleLoadPdfFields = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('get-pdf-fields', {
+        body: { pdf_template_path: 'elterngeldantrag_bis_Maerz25.pdf' }
+      });
+      if (error) throw error;
+      setPdfFields(data.fields || []);
+      toast.success(`Loaded ${data.fields.length} PDF fields`);
+    } catch (error: any) {
+      console.error('Error loading PDF fields:', error);
+      toast.error('Failed to load PDF fields');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateMapping = (source: { table: string; field: string }, pdfField: string) => {
+    // Check if mapping already exists
+    const exists = mappings.some(
+      m => m.source_table === source.table && 
+           m.source_field === source.field && 
+           m.pdf_field_name === pdfField
+    );
+    
+    if (exists) {
+      toast.error('This mapping already exists');
+      return;
+    }
+
+    const newMapping = {
+      document_type: documentType,
+      source_table: source.table,
+      source_field: source.field,
+      pdf_field_name: pdfField,
+      confidence_score: 0,
+      mapping_status: 'manual',
+      is_active: true,
+      notes: null
+    };
+    
+    setMappings([...mappings, newMapping]);
+    toast.success(`Mapped ${source.field} → ${pdfField}`);
+  };
+
   const handleSaveMappings = async () => {
     try {
       setLoading(true);
@@ -125,6 +170,10 @@ export default function AdminFieldMapper() {
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
+            <Button variant="outline" onClick={handleLoadPdfFields}>
+              <FileText className="h-4 w-4 mr-2" />
+              Load PDF Fields
+            </Button>
             <Button variant="outline" onClick={handleAutoMap}>
               <Sparkles className="h-4 w-4 mr-2" />
               Auto-Map
@@ -167,6 +216,7 @@ export default function AdminFieldMapper() {
           <PdfFieldsList 
             fields={pdfFields}
             mappings={mappings}
+            onCreateMapping={handleCreateMapping}
           />
         </div>
 
@@ -183,9 +233,9 @@ export default function AdminFieldMapper() {
         onOpenChange={setAutoMapDialogOpen}
         documentType={documentType}
         databaseSchema={databaseSchema}
-        onMappingsGenerated={(newMappings) => {
+        onMappingsGenerated={(newMappings, allPdfFields) => {
           setMappings(newMappings);
-          setPdfFields(newMappings.map((m: any) => m.pdf_field_name));
+          setPdfFields(allPdfFields || []);
         }}
       />
     </div>

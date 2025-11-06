@@ -37,11 +37,20 @@ export function DatabaseFieldsList({ schema, mappings }: DatabaseFieldsListProps
                   return (
                     <div
                       key={col.name}
-                      className={`text-xs py-1 px-2 rounded ${
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('source_field', JSON.stringify({
+                          table: table.table_name,
+                          field: col.name
+                        }));
+                        e.dataTransfer.effectAllowed = 'copy';
+                      }}
+                      className={`text-xs py-1 px-2 rounded cursor-move transition-colors ${
                         isMapped 
                           ? 'bg-green-500/10 text-green-700 dark:text-green-400' 
                           : 'text-muted-foreground hover:bg-accent'
                       }`}
+                      title="Drag to PDF field to create mapping"
                     >
                       {col.name}
                       <span className="text-muted-foreground ml-2">({col.type})</span>
