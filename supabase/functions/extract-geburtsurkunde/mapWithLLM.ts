@@ -1,3 +1,5 @@
+import { LLM_CONFIG, getRetryDelay } from "../_shared/llm-config.ts";
+
 interface MappingResult {
   data: Record<string, any>;
   provenance?: Record<string, any>;
@@ -74,19 +76,15 @@ Return extracted data as JSON only.`;
   const startTime = Date.now();
   let response;
 
-  // Retry logic with exponential backoff
-  const maxRetries = 3;
-  const baseDelay = 1000;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+  for (let attempt = 0; attempt <= LLM_CONFIG.maxRetries; attempt++) {
     try {
       if (attempt > 0) {
-        const delay = baseDelay * Math.pow(2, attempt - 1);
-        console.log(`Retry attempt ${attempt}/${maxRetries} after ${delay}ms delay`);
+        const delay = getRetryDelay(attempt);
+        console.log(`Retry attempt ${attempt}/${LLM_CONFIG.maxRetries} after ${delay}ms delay`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
-      response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      response = await fetch(LLM_CONFIG.apiEndpoint, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -94,12 +92,12 @@ Return extracted data as JSON only.`;
           "HTTP-Referer": "https://lovable.dev",
         },
         body: JSON.stringify({
-          model: Deno.env.get("LLM_MODEL") || "mistralai/mistral-small-3.1-24b-instruct",
+          model: LLM_CONFIG.model,
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: userPrompt },
           ],
-          temperature: 0.1,
+          temperature: LLM_CONFIG.temperature,
         }),
       });
 
@@ -112,17 +110,17 @@ Return extracted data as JSON only.`;
         break;
       }
 
-      if (attempt === maxRetries) {
+      if (attempt === LLM_CONFIG.maxRetries) {
         console.error(`Max retries reached. Last status: ${response.status}`);
         break;
       }
 
       console.log(`Retryable error ${response.status}, will retry...`);
     } catch (fetchError: any) {
-      console.error(`OpenRouter API fetch failed (attempt ${attempt + 1}/${maxRetries + 1}):`, fetchError);
+      console.error(`OpenRouter API fetch failed (attempt ${attempt + 1}/${LLM_CONFIG.maxRetries + 1}):`, fetchError);
 
-      if (attempt === maxRetries) {
-        throw new Error(`Failed to call OpenRouter API after ${maxRetries + 1} attempts: ${fetchError.message}`);
+      if (attempt === LLM_CONFIG.maxRetries) {
+        throw new Error(`Failed to call OpenRouter API after ${LLM_CONFIG.maxRetries + 1} attempts: ${fetchError.message}`);
       }
 
       console.log("Network error, will retry...");

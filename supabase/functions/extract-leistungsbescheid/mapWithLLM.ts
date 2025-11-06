@@ -1,3 +1,5 @@
+import { LLM_CONFIG, getRetryDelay } from "../_shared/llm-config.ts";
+
 interface MappingResult {
   data: Record<string, any>;
   provenance?: Record<string, any>;
@@ -42,25 +44,25 @@ export async function mapWithLLM({ schema, ocrText }: MapWithLLMParams): Promise
   if (!apiKey) throw new Error("USE_LLM_MAPPING not configured");
 
   let response;
-  for (let attempt = 0; attempt <= 3; attempt++) {
+  for (let attempt = 0; attempt <= LLM_CONFIG.maxRetries; attempt++) {
     try {
-      if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
-      response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      if (attempt > 0) await new Promise(r => setTimeout(r, getRetryDelay(attempt)));
+      response = await fetch(LLM_CONFIG.apiEndpoint, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "HTTP-Referer": "https://lovable.dev" },
         body: JSON.stringify({
-          model: "mistralai/mistral-small-3.1-24b-instruct",
+          model: LLM_CONFIG.model,
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: `SCHEMA:\n${JSON.stringify(schema || TABLE_SCHEMA, null, 2)}\n\nOCR:\n${ocrText}` },
           ],
-          temperature: 0.1,
+          temperature: LLM_CONFIG.temperature,
         }),
       });
       if (response.ok) break;
       if (response.status >= 400 && response.status < 500 && response.status !== 429) break;
     } catch (e: any) {
-      if (attempt === 3) throw new Error(`API failed: ${e.message}`);
+      if (attempt === LLM_CONFIG.maxRetries) throw new Error(`API failed: ${e.message}`);
     }
   }
 

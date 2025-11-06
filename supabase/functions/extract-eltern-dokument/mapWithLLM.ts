@@ -58,14 +58,14 @@ Output format:
 }`;
 
 export async function mapWithLLM({ schema, ocrText }: MapWithLLMParams): Promise<MappingResult> {
-  const apiKey = Deno.env.get('OPENROUTER_API_KEY');
-  if (!apiKey) throw new Error('OPENROUTER_API_KEY not configured');
+  const apiKey = Deno.env.get('USE_LLM_MAPPING');
+  if (!apiKey) throw new Error('USE_LLM_MAPPING not configured');
 
   const useSchema = schema || TABLE_SCHEMA;
   const userPrompt = `Schema:\n${JSON.stringify(useSchema, null, 2)}\n\nOCR Text:\n${ocrText}`;
 
   let lastError: Error | null = null;
-  for (let attempt = 1; attempt <= LLM_CONFIG.maxRetries; attempt++) {
+  for (let attempt = 1; attempt <= LLM_CONFIG.maxRetries + 1; attempt++) {
     try {
       const response = await fetch(LLM_CONFIG.apiEndpoint, {
         method: 'POST',
@@ -74,7 +74,7 @@ export async function mapWithLLM({ schema, ocrText }: MapWithLLMParams): Promise
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: Deno.env.get('LLM_MODEL') || LLM_CONFIG.model,
+          model: LLM_CONFIG.model,
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user', content: userPrompt }
@@ -117,7 +117,7 @@ export async function mapWithLLM({ schema, ocrText }: MapWithLLMParams): Promise
       lastError = error as Error;
       console.error(`LLM extraction attempt ${attempt} failed:`, error);
       
-      if (attempt < LLM_CONFIG.maxRetries) {
+      if (attempt <= LLM_CONFIG.maxRetries) {
         const delay = getRetryDelay(attempt);
         console.log(`Retrying in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
