@@ -19,6 +19,7 @@ export type Database = {
           antrag_id: string | null
           aufnahmedatum: string | null
           beschlussdatum: string | null
+          confidence_scores: Json | null
           created_at: string
           dokument_typ: string
           file_path: string | null
@@ -35,6 +36,7 @@ export type Database = {
           antrag_id?: string | null
           aufnahmedatum?: string | null
           beschlussdatum?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           dokument_typ: string
           file_path?: string | null
@@ -51,6 +53,7 @@ export type Database = {
           antrag_id?: string | null
           aufnahmedatum?: string | null
           beschlussdatum?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           dokument_typ?: string
           file_path?: string | null
@@ -139,6 +142,7 @@ export type Database = {
           beschaeftigungsbeginn: string | null
           beschaeftigungsende: string | null
           bruttogehalt: number | null
+          confidence_scores: Json | null
           created_at: string
           file_path: string | null
           id: string
@@ -155,6 +159,7 @@ export type Database = {
           beschaeftigungsbeginn?: string | null
           beschaeftigungsende?: string | null
           bruttogehalt?: number | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           id?: string
@@ -171,6 +176,7 @@ export type Database = {
           beschaeftigungsbeginn?: string | null
           beschaeftigungsende?: string | null
           bruttogehalt?: number | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           id?: string
@@ -194,6 +200,7 @@ export type Database = {
           antrag_id: string | null
           bank_name: string | null
           bic: string | null
+          confidence_scores: Json | null
           created_at: string
           file_path: string | null
           iban: string | null
@@ -206,6 +213,7 @@ export type Database = {
           antrag_id?: string | null
           bank_name?: string | null
           bic?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           iban?: string | null
@@ -218,6 +226,7 @@ export type Database = {
           antrag_id?: string | null
           bank_name?: string | null
           bic?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           iban?: string | null
@@ -270,6 +279,7 @@ export type Database = {
         Row: {
           antrag_id: string | null
           ausstelldatum: string | null
+          confidence_scores: Json | null
           created_at: string
           dokument_typ: string
           file_path: string | null
@@ -289,6 +299,7 @@ export type Database = {
         Insert: {
           antrag_id?: string | null
           ausstelldatum?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           dokument_typ: string
           file_path?: string | null
@@ -308,6 +319,7 @@ export type Database = {
         Update: {
           antrag_id?: string | null
           ausstelldatum?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           dokument_typ?: string
           file_path?: string | null
@@ -461,6 +473,7 @@ export type Database = {
           ausstelldatum: string | null
           ausstellende_behoerde: string | null
           ausweisnummer: string | null
+          confidence_scores: Json | null
           created_at: string
           document_type: string
           file_path: string | null
@@ -490,6 +503,7 @@ export type Database = {
           ausstelldatum?: string | null
           ausstellende_behoerde?: string | null
           ausweisnummer?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           document_type: string
           file_path?: string | null
@@ -519,6 +533,7 @@ export type Database = {
           ausstelldatum?: string | null
           ausstellende_behoerde?: string | null
           ausweisnummer?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           document_type?: string
           file_path?: string | null
@@ -545,6 +560,7 @@ export type Database = {
         Row: {
           ausstelldatum: string | null
           behoerde_name: string | null
+          confidence_scores: Json | null
           created_at: string
           file_path: string | null
           id: string
@@ -566,6 +582,7 @@ export type Database = {
         Insert: {
           ausstelldatum?: string | null
           behoerde_name?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           id?: string
@@ -587,6 +604,7 @@ export type Database = {
         Update: {
           ausstelldatum?: string | null
           behoerde_name?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           id?: string
@@ -613,6 +631,7 @@ export type Database = {
           antrag_id: string | null
           arbeitgeber_name: string | null
           bruttogehalt: number | null
+          confidence_scores: Json | null
           created_at: string
           file_path: string | null
           id: string
@@ -628,6 +647,7 @@ export type Database = {
           antrag_id?: string | null
           arbeitgeber_name?: string | null
           bruttogehalt?: number | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           id?: string
@@ -643,6 +663,7 @@ export type Database = {
           antrag_id?: string | null
           arbeitgeber_name?: string | null
           bruttogehalt?: number | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           id?: string
@@ -667,6 +688,7 @@ export type Database = {
         Row: {
           antrag_id: string | null
           beitragssatz: number | null
+          confidence_scores: Json | null
           created_at: string
           file_path: string | null
           id: string
@@ -681,6 +703,7 @@ export type Database = {
         Insert: {
           antrag_id?: string | null
           beitragssatz?: number | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           id?: string
@@ -695,6 +718,7 @@ export type Database = {
         Update: {
           antrag_id?: string | null
           beitragssatz?: number | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           id?: string
@@ -721,6 +745,7 @@ export type Database = {
           antrag_id: string | null
           bescheiddatum: string | null
           bewilligungsstelle: string | null
+          confidence_scores: Json | null
           created_at: string
           file_path: string | null
           id: string
@@ -736,6 +761,7 @@ export type Database = {
           antrag_id?: string | null
           bescheiddatum?: string | null
           bewilligungsstelle?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           id?: string
@@ -751,6 +777,7 @@ export type Database = {
           antrag_id?: string | null
           bescheiddatum?: string | null
           bewilligungsstelle?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           id?: string
@@ -777,6 +804,7 @@ export type Database = {
           antrag_id: string | null
           ausstelldatum: string | null
           behoerde: string | null
+          confidence_scores: Json | null
           created_at: string
           file_path: string | null
           geburtsdatum: string | null
@@ -796,6 +824,7 @@ export type Database = {
           antrag_id?: string | null
           ausstelldatum?: string | null
           behoerde?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           geburtsdatum?: string | null
@@ -815,6 +844,7 @@ export type Database = {
           antrag_id?: string | null
           ausstelldatum?: string | null
           behoerde?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           geburtsdatum?: string | null
@@ -844,6 +874,7 @@ export type Database = {
         Row: {
           antrag_id: string | null
           bescheiddatum: string | null
+          confidence_scores: Json | null
           created_at: string
           file_path: string | null
           gesamtbetrag: number | null
@@ -859,6 +890,7 @@ export type Database = {
         Insert: {
           antrag_id?: string | null
           bescheiddatum?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           gesamtbetrag?: number | null
@@ -874,6 +906,7 @@ export type Database = {
         Update: {
           antrag_id?: string | null
           bescheiddatum?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           gesamtbetrag?: number | null
@@ -947,6 +980,7 @@ export type Database = {
       selbststaendigen_nachweise: {
         Row: {
           antrag_id: string | null
+          confidence_scores: Json | null
           created_at: string
           file_path: string | null
           gewerbeanmeldung_datum: string | null
@@ -962,6 +996,7 @@ export type Database = {
         }
         Insert: {
           antrag_id?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           gewerbeanmeldung_datum?: string | null
@@ -977,6 +1012,7 @@ export type Database = {
         }
         Update: {
           antrag_id?: string | null
+          confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           gewerbeanmeldung_datum?: string | null
