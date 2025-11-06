@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Download, Upload, Sparkles, FileText, Eye } from "lucide-react";
+import { ArrowLeft, Save, Download, Upload, Sparkles, FileText, Eye, Scan } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatabaseFieldsList } from "@/components/field-mapper/DatabaseFieldsList";
 import { PdfFieldsList } from "@/components/field-mapper/PdfFieldsList";
@@ -29,6 +29,7 @@ export default function AdminFieldMapper() {
   const [mappings, setMappings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [autoMapDialogOpen, setAutoMapDialogOpen] = useState(false);
+  const [fieldCoordinates, setFieldCoordinates] = useState<any[]>([]);
 
   useEffect(() => {
     checkAuth();
@@ -117,18 +118,92 @@ export default function AdminFieldMapper() {
       // Extract unique field names from coordinates
       const uniqueFields = [...new Set(data.field_coordinates.map((fc: any) => fc.name))] as string[];
       setPdfFields(uniqueFields);
+      setFieldCoordinates(data.field_coordinates);
       
       toast.success(
         `Analyzed ${data.total_pages} pages with ${data.total_fields} field instances (${uniqueFields.length} unique fields)`,
         { duration: 5000 }
       );
       
-      // Store field coordinates for future vision analysis
       console.log('Field coordinates ready for vision analysis:', data.field_coordinates);
       
     } catch (error: any) {
       console.error('Error analyzing PDF layout:', error);
       toast.error('Failed to analyze PDF layout');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVisionMapFields = async () => {
+    if (!documentType || fieldCoordinates.length === 0) {
+      toast.error("Please run PDF layout analysis first");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      toast.info("Starting AI vision analysis of PDF fields...", { duration: 3000 });
+      
+      const pdfPath = 'elterngeldantrag_bis_Maerz25.pdf';
+      
+      const { data, error } = await supabase.functions.invoke('vision-map-fields', {
+        body: { 
+          field_coordinates: fieldCoordinates,
+          pdf_path: pdfPath,
+          page_metadata: [] // We could pass page metadata if needed
+        }
+      });
+
+      if (error) throw error;
+
+      console.log('Vision Analysis Results:', data);
+
+      // Create mappings from vision analysis
+      const visionMappings = data.analyses
+        .filter((analysis: any) => analysis.confidence >= 40)
+        .map((analysis: any) => {
+          // Try to match to database fields based on semantic meaning
+          let matchedTable = '';
+          let matchedField = '';
+          
+          // Simple matching logic - can be enhanced later
+          for (const table of databaseSchema) {
+            for (const column of table.columns) {
+              const semanticLower = analysis.semantic_meaning.toLowerCase();
+              const columnLower = column.name.toLowerCase();
+              
+              if (semanticLower.includes(columnLower) || columnLower.includes(semanticLower.split(' ')[0])) {
+                matchedTable = table.table_name;
+                matchedField = column.name;
+                break;
+              }
+            }
+            if (matchedField) break;
+          }
+
+          return {
+            document_type: documentType,
+            source_table: matchedTable || 'unknown',
+            source_field: matchedField || 'unknown',
+            pdf_field_name: analysis.field_name,
+            confidence_score: analysis.confidence,
+            mapping_status: 'vision',
+            is_active: true,
+            notes: `Visual Label: ${analysis.visual_label}\nSemantic: ${analysis.semantic_meaning}`
+          };
+        });
+
+      setMappings(visionMappings);
+      
+      toast.success(
+        `Vision analysis complete: ${data.total_analyzed} fields analyzed, ${visionMappings.length} high-confidence matches found`,
+        { duration: 6000 }
+      );
+      
+    } catch (error: any) {
+      console.error('Error in vision mapping:', error);
+      toast.error('Failed to perform vision analysis');
     } finally {
       setLoading(false);
     }
@@ -214,7 +289,15 @@ export default function AdminFieldMapper() {
             </Button>
             <Button variant="secondary" onClick={handleAnalyzePdfLayout}>
               <Eye className="h-4 w-4 mr-2" />
-              AI Vision Analysis
+              Extract Layout
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={handleVisionMapFields}
+              disabled={loading || fieldCoordinates.length === 0}
+            >
+              <Scan className="h-4 w-4 mr-2" />
+              Vision AI Mapping
             </Button>
             <Button variant="outline" onClick={handleAutoMap}>
               <Sparkles className="h-4 w-4 mr-2" />
