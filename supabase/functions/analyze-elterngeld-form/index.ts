@@ -19,24 +19,22 @@ serve(async (req) => {
 
     console.log('Loading Elterngeld PDF template...');
     
-    // Download the PDF template from public folder via URL
-    const appUrl = Deno.env.get('SUPABASE_URL') || '';
-    const pdfUrl = `${appUrl.replace('hfjcquyafrpjjjjpmran.supabase.co', 'hfjcquyafrpjjjjpmran.lovableproject.com')}/elterngeldantrag_bis_Maerz25.pdf`;
-    
-    console.log('Fetching PDF from:', pdfUrl);
-    const pdfResponse = await fetch(pdfUrl);
-    
-    if (!pdfResponse.ok) {
-      console.error('Error downloading PDF:', pdfResponse.status);
+    // Download the PDF template from storage
+    const { data: pdfFile, error: downloadError } = await supabase.storage
+      .from('form-templates')
+      .download('elterngeldantrag_bis_Maerz25.pdf');
+
+    if (downloadError || !pdfFile) {
+      console.error('Error downloading PDF:', downloadError);
       return new Response(
-        JSON.stringify({ error: 'Failed to load PDF template' }),
+        JSON.stringify({ error: 'Failed to load PDF template', details: downloadError?.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('PDF downloaded, parsing...');
     
-    const arrayBuffer = await pdfResponse.arrayBuffer();
+    const arrayBuffer = await pdfFile.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     
     console.log('PDF loaded, extracting form fields...');

@@ -53,20 +53,16 @@ serve(async (req) => {
       pdfDoc = await PDFDocument.load(arrayBuffer);
     } else {
       console.log('Loading template PDF...');
-      
-      // Download template from public folder via URL
-      const appUrl = Deno.env.get('SUPABASE_URL') || '';
-      const pdfUrl = `${appUrl.replace('hfjcquyafrpjjjjpmran.supabase.co', 'hfjcquyafrpjjjjpmran.lovableproject.com')}/elterngeldantrag_bis_Maerz25.pdf`;
-      
-      console.log('Fetching template from:', pdfUrl);
-      const pdfResponse = await fetch(pdfUrl);
-      
-      if (!pdfResponse.ok) {
-        console.error('Error loading template:', pdfResponse.status);
-        throw new Error('Failed to load PDF template');
+      const { data: templatePdf, error: templateError } = await supabase.storage
+        .from('form-templates')
+        .download('elterngeldantrag_bis_Maerz25.pdf');
+
+      if (templateError || !templatePdf) {
+        console.error('Error loading template:', templateError);
+        throw new Error(`Failed to load PDF template: ${templateError?.message || 'Unknown error'}`);
       }
 
-      const arrayBuffer = await pdfResponse.arrayBuffer();
+      const arrayBuffer = await templatePdf.arrayBuffer();
       pdfDoc = await PDFDocument.load(arrayBuffer);
     }
 
