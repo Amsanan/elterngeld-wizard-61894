@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Download, Upload, Sparkles, FileText } from "lucide-react";
+import { ArrowLeft, Save, Download, Upload, Sparkles, FileText, Eye } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatabaseFieldsList } from "@/components/field-mapper/DatabaseFieldsList";
 import { PdfFieldsList } from "@/components/field-mapper/PdfFieldsList";
@@ -96,6 +96,44 @@ export default function AdminFieldMapper() {
     }
   };
 
+  const handleAnalyzePdfLayout = async () => {
+    if (!documentType) {
+      toast.error("Please select a document type first");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      toast.info("Analyzing PDF layout and extracting field coordinates...");
+      
+      const { data, error } = await supabase.functions.invoke('analyze-pdf-layout', {
+        body: { pdf_template_path: 'elterngeldantrag_bis_Maerz25.pdf' }
+      });
+
+      if (error) throw error;
+
+      console.log('PDF Layout Analysis:', data);
+      
+      // Extract unique field names from coordinates
+      const uniqueFields = [...new Set(data.field_coordinates.map((fc: any) => fc.name))] as string[];
+      setPdfFields(uniqueFields);
+      
+      toast.success(
+        `Analyzed ${data.total_pages} pages with ${data.total_fields} field instances (${uniqueFields.length} unique fields)`,
+        { duration: 5000 }
+      );
+      
+      // Store field coordinates for future vision analysis
+      console.log('Field coordinates ready for vision analysis:', data.field_coordinates);
+      
+    } catch (error: any) {
+      console.error('Error analyzing PDF layout:', error);
+      toast.error('Failed to analyze PDF layout');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCreateMapping = (source: { table: string; field: string }, pdfField: string) => {
     // Check if mapping already exists
     const exists = mappings.some(
@@ -173,6 +211,10 @@ export default function AdminFieldMapper() {
             <Button variant="outline" onClick={handleLoadPdfFields}>
               <FileText className="h-4 w-4 mr-2" />
               Load PDF Fields
+            </Button>
+            <Button variant="secondary" onClick={handleAnalyzePdfLayout}>
+              <Eye className="h-4 w-4 mr-2" />
+              AI Vision Analysis
             </Button>
             <Button variant="outline" onClick={handleAutoMap}>
               <Sparkles className="h-4 w-4 mr-2" />
