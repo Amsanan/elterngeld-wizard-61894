@@ -72,10 +72,10 @@ const SteuerbescheideList = () => {
                   <div>
                     <h3 className="font-semibold">
                       {item.gemeinsame_veranlagung 
-                        ? "Ehepaar (Gemeinsame Veranlagung)" 
+                        ? `Ehepaar (${item.partner1_vorname || ''} ${item.partner1_nachname || ''} & ${item.partner2_vorname || ''} ${item.partner2_nachname || ''})`.trim()
                         : (item.person_type === "mutter" ? "Mutter" : "Vater")
                       }
-                      {item.nachname && ` - ${item.nachname}`}
+                      {!item.gemeinsame_veranlagung && item.nachname && ` - ${item.nachname}`}
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       {item.steuerjahr && `Steuerjahr: ${item.steuerjahr}`}

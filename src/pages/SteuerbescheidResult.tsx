@@ -175,26 +175,56 @@ const SteuerbescheidResult = () => {
 
           <div className="space-y-4">
             {data.gemeinsame_veranlagung && (
-              <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-md mb-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
                     Gemeinsame Veranlagung (Ehepaar)
                   </p>
                   {confidenceScores.gemeinsame_veranlagung && (
                     <ConfidenceBadge score={confidenceScores.gemeinsame_veranlagung} />
                   )}
                 </div>
+                {(data.partner1_vorname || data.partner1_nachname || data.partner2_vorname || data.partner2_nachname) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+                    <div>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 font-medium mb-1">Ehemann:</p>
+                      <p className="text-sm text-blue-900 dark:text-blue-100">
+                        {data.partner1_vorname} {data.partner1_nachname}
+                      </p>
+                      {data.partner1_steuer_id && (
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                          Steuer-ID: {data.partner1_steuer_id}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 font-medium mb-1">Ehefrau:</p>
+                      <p className="text-sm text-blue-900 dark:text-blue-100">
+                        {data.partner2_vorname} {data.partner2_nachname}
+                      </p>
+                      {data.partner2_steuer_id && (
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                          Steuer-ID: {data.partner2_steuer_id}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             
             {renderFieldWithConfidence("Finanzamt", data.finanzamt_name, "finanzamt_name")}
             {renderFieldWithConfidence("Finanzamt Adresse", data.finanzamt_adresse, "finanzamt_adresse")}
             {renderFieldWithConfidence("Bescheiddatum", data.bescheiddatum, "bescheiddatum", "", "date")}
-            {renderFieldWithConfidence("Vorname", data.vorname, "vorname")}
-            {renderFieldWithConfidence("Nachname", data.nachname, "nachname")}
+            {!data.gemeinsame_veranlagung && (
+              <>
+                {renderFieldWithConfidence("Vorname", data.vorname, "vorname")}
+                {renderFieldWithConfidence("Nachname", data.nachname, "nachname")}
+              </>
+            )}
             {renderFieldWithConfidence("Steuerjahr", data.steuerjahr, "steuerjahr")}
             {renderFieldWithConfidence("Steuernummer", data.steuernummer, "steuernummer")}
-            {renderFieldWithConfidence("Steuer-ID", data.steuer_id_nummer, "steuer_id_nummer")}
+            {!data.gemeinsame_veranlagung && renderFieldWithConfidence("Steuer-ID", data.steuer_id_nummer, "steuer_id_nummer")}
             {renderFieldWithConfidence("PLZ", data.plz, "plz")}
             {renderFieldWithConfidence("Wohnort", data.wohnort, "wohnort")}
 

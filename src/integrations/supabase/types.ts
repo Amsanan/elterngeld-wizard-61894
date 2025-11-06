@@ -366,6 +366,12 @@ export type Database = {
           jahreseinkommen: string | null
           krankenversicherung: string | null
           nachname: string | null
+          partner1_nachname: string | null
+          partner1_steuer_id: string | null
+          partner1_vorname: string | null
+          partner2_nachname: string | null
+          partner2_steuer_id: string | null
+          partner2_vorname: string | null
           person_type: string
           pflegeversicherung: string | null
           plz: string | null
@@ -404,6 +410,12 @@ export type Database = {
           jahreseinkommen?: string | null
           krankenversicherung?: string | null
           nachname?: string | null
+          partner1_nachname?: string | null
+          partner1_steuer_id?: string | null
+          partner1_vorname?: string | null
+          partner2_nachname?: string | null
+          partner2_steuer_id?: string | null
+          partner2_vorname?: string | null
           person_type: string
           pflegeversicherung?: string | null
           plz?: string | null
@@ -442,6 +454,12 @@ export type Database = {
           jahreseinkommen?: string | null
           krankenversicherung?: string | null
           nachname?: string | null
+          partner1_nachname?: string | null
+          partner1_steuer_id?: string | null
+          partner1_vorname?: string | null
+          partner2_nachname?: string | null
+          partner2_steuer_id?: string | null
+          partner2_vorname?: string | null
           person_type?: string
           pflegeversicherung?: string | null
           plz?: string | null

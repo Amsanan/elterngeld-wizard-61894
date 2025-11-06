@@ -21,8 +21,14 @@ const TABLE_SCHEMA = {
     { name: "finanzamt_name", type: "string", description: "Name of tax office" },
     { name: "finanzamt_adresse", type: "string", description: "Address of tax office" },
     { name: "bescheiddatum", type: "date", format: "YYYY-MM-DD", description: "Date of assessment" },
-    { name: "nachname", type: "string", description: "Last name" },
-    { name: "vorname", type: "string", description: "First name" },
+    { name: "nachname", type: "string", description: "Last name (use for single assessment)" },
+    { name: "vorname", type: "string", description: "First name (use for single assessment)" },
+    { name: "partner1_vorname", type: "string", description: "First partner's first name (Ehemann) for joint assessment" },
+    { name: "partner1_nachname", type: "string", description: "First partner's last name (Ehemann) for joint assessment" },
+    { name: "partner1_steuer_id", type: "string", description: "First partner's tax ID (Ehemann) for joint assessment" },
+    { name: "partner2_vorname", type: "string", description: "Second partner's first name (Ehefrau) for joint assessment" },
+    { name: "partner2_nachname", type: "string", description: "Second partner's last name (Ehefrau) for joint assessment" },
+    { name: "partner2_steuer_id", type: "string", description: "Second partner's tax ID (Ehefrau) for joint assessment" },
     { name: "plz", type: "string", description: "5-digit postal code" },
     { name: "wohnort", type: "string", description: "City/town name" },
     { name: "gesamtbetrag_der_einkuenfte", type: "string", description: "Total income as decimal string" },
@@ -60,6 +66,10 @@ CRITICAL RULES:
 7. Tax ID (steuer_id_nummer): 11 digits without spaces
 8. Tax number (steuernummer): keep original format with slashes
 9. gemeinsame_veranlagung: true if document mentions "Ehemann", "Ehefrau", or "Splittingtarif"
+10. For joint assessments: Extract both partners' names and IDs separately
+    - Look for "IdNr. Ehemann" or "IdNr. Ehefrau" (or similar labels)
+    - partner1 = Ehemann, partner2 = Ehefrau
+    - Extract all available information for both partners
 
 Output format:
 {
