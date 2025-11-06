@@ -43,6 +43,7 @@ import AdoptionsPflegeResult from "./pages/AdoptionsPflegeResult";
 import AdoptionsPflegeList from "./pages/AdoptionsPflegeList";
 import ElterngeldantragAusfuellen from "./pages/ElterngeldantragAusfuellen";
 import AdminSetup from "./pages/AdminSetup";
+import AutoCleanupSettings from "./pages/AutoCleanupSettings";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -93,6 +94,7 @@ function App() {
         <Route path="/adoptions-pflege-list" element={<AdoptionsPflegeList />} />
         <Route path="/elterngeldantrag-ausfuellen" element={<ElterngeldantragAusfuellen />} />
         <Route path="/admin-setup" element={<AdminSetup />} />
+        <Route path="/auto-cleanup-settings" element={<AutoCleanupSettings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

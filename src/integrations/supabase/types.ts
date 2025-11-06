@@ -275,6 +275,36 @@ export type Database = {
         }
         Relationships: []
       }
+      document_cleanup_settings: {
+        Row: {
+          cleanup_interval_hours: number
+          created_at: string
+          id: string
+          is_enabled: boolean
+          last_run_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cleanup_interval_hours?: number
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          last_run_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cleanup_interval_hours?: number
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          last_run_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ehe_sorgerecht_nachweise: {
         Row: {
           antrag_id: string | null

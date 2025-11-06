@@ -131,6 +131,24 @@ const AdminSetup = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Storage Management</CardTitle>
+            <CardDescription>
+              Configure automatic cleanup of old documents
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => navigate('/auto-cleanup-settings')}
+              variant="outline"
+              className="w-full"
+            >
+              Manage Auto-Cleanup Schedule
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
