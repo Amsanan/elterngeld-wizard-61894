@@ -13,7 +13,7 @@ import { ArrowLeft } from "lucide-react";
 const UploadSteuerbescheid = () => {
   const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
-  const [personType, setPersonType] = useState<"mutter" | "vater">("mutter");
+  const [personType, setPersonType] = useState<"mutter" | "vater" | "beide">("mutter");
   const [useLLM, setUseLLM] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -52,7 +52,8 @@ const UploadSteuerbescheid = () => {
       const { data, error } = await supabase.functions.invoke("extract-steuerbescheid", {
         body: {
           filePath: fileName,
-          personType: personType,
+          personType: personType === "beide" ? "mutter" : personType,
+          gemeinsameVeranlagung: personType === "beide",
           useLLM: useLLM,
         },
       });
@@ -93,6 +94,10 @@ const UploadSteuerbescheid = () => {
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="vater" id="vater" />
                   <Label htmlFor="vater">Vater</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="beide" id="beide" />
+                  <Label htmlFor="beide">Beide Partner (gemeinsame Veranlagung)</Label>
                 </div>
               </RadioGroup>
             </div>

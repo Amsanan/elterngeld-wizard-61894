@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { filePath, personType, useLLM = false } = await req.json();
+    const { filePath, personType, gemeinsameVeranlagung = false, useLLM = false } = await req.json();
     console.log('Processing request with useLLM:', useLLM);
 
     if (!filePath || !personType) {
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing Steuerbescheid for ${personType}, file: ${filePath}`);
+    console.log(`Processing Steuerbescheid for ${personType}, gemeinsameVeranlagung: ${gemeinsameVeranlagung}, file: ${filePath}`);
 
     // Download file from storage
     const { data: fileData, error: downloadError } = await supabase.storage
@@ -206,6 +206,7 @@ Deno.serve(async (req) => {
       let extractedData: any = {
         user_id: user.id,
         person_type: personType,
+        gemeinsame_veranlagung: gemeinsameVeranlagung,
         file_path: filePath,
       };
 
