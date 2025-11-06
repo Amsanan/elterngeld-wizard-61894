@@ -33,67 +33,64 @@ serve(async (req) => {
       'adoptions_pflege_dokumente'
     ];
 
-    // Query information_schema to get columns for each table
-    const { data: columnsData, error: columnsError } = await supabase.rpc('execute_query', {
-      query: `
-        SELECT 
-          table_name,
-          column_name,
-          data_type,
-          is_nullable
-        FROM information_schema.columns
-        WHERE table_schema = 'public'
-          AND table_name = ANY($1)
-        ORDER BY table_name, ordinal_position
-      `,
-      params: [relevantTables]
-    });
-
-    if (columnsError) {
-      // Fallback: get schema info manually for each table
-      const schema: any[] = [];
-      
-      for (const tableName of relevantTables) {
+    // Get schema info by querying each table
+    const schema: any[] = [];
+    
+    for (const tableName of relevantTables) {
+      try {
+        // Query the table with limit 1 to get column structure
         const { data, error } = await supabase
           .from(tableName)
           .select('*')
-          .limit(0);
+          .limit(1);
         
         if (!error && data !== null) {
-          // Extract column names from the query metadata
-          schema.push({
-            table_name: tableName,
-            columns: Object.keys(data[0] || {}).map(col => ({
-              name: col,
-              type: 'unknown',
+          // Get column names and infer basic types
+          const sampleRow = data[0] || {};
+          const columns = Object.keys(sampleRow).map(columnName => {
+            const value = sampleRow[columnName];
+            let type = 'text';
+            
+            // Infer type from value
+            if (value !== null && value !== undefined) {
+              if (typeof value === 'number') {
+                type = Number.isInteger(value) ? 'integer' : 'numeric';
+              } else if (typeof value === 'boolean') {
+                type = 'boolean';
+              } else if (value instanceof Date || /^\d{4}-\d{2}-\d{2}/.test(value)) {
+                type = 'date';
+              } else if (typeof value === 'object') {
+                type = 'jsonb';
+              }
+            }
+            
+            return {
+              name: columnName,
+              type,
               nullable: true
-            }))
+            };
           });
+          
+          // Filter out system columns we don't want to map
+          const filteredColumns = columns.filter(col => 
+            !['id', 'user_id', 'created_at', 'updated_at', 'file_path', 'confidence_scores', 'antrag_id'].includes(col.name)
+          );
+          
+          if (filteredColumns.length > 0) {
+            schema.push({
+              table_name: tableName,
+              columns: filteredColumns
+            });
+          }
         }
+      } catch (error) {
+        console.error(`Error fetching schema for ${tableName}:`, error);
       }
-
-      return new Response(JSON.stringify({ schema }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
-    // Group columns by table
-    const schemaByTable = relevantTables.map(tableName => {
-      const tableColumns = (columnsData || [])
-        .filter((col: any) => col.table_name === tableName)
-        .map((col: any) => ({
-          name: col.column_name,
-          type: col.data_type,
-          nullable: col.is_nullable === 'YES'
-        }));
+    console.log(`Found ${schema.length} tables with ${schema.reduce((sum, t) => sum + t.columns.length, 0)} total fields`);
 
-      return {
-        table_name: tableName,
-        columns: tableColumns
-      };
-    }).filter(table => table.columns.length > 0);
-
-    return new Response(JSON.stringify({ schema: schemaByTable }), {
+    return new Response(JSON.stringify({ schema }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
