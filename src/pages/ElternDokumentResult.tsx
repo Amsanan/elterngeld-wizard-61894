@@ -74,7 +74,20 @@ const ElternDokumentResult = () => {
     return new Date(dateStr).toLocaleDateString("de-DE");
   };
 
-  const documentTypeLabel = data.document_type === "personalausweis" ? "Personalausweis" : "Reisepass";
+  const getDocumentTypeLabel = (type: string) => {
+    switch (type) {
+      case "personalausweis":
+        return "Personalausweis";
+      case "reisepass":
+        return "Reisepass";
+      case "aufenthaltstitel":
+        return "Aufenthaltstitel";
+      default:
+        return type;
+    }
+  };
+
+  const documentTypeLabel = getDocumentTypeLabel(data.document_type);
   const personTypeLabel = data.person_type === "mutter" ? "Mutter" : "Vater";
 
   return (
@@ -177,7 +190,7 @@ const ElternDokumentResult = () => {
               />
 
               <EditableField
-                label={data.document_type === "personalausweis" ? "Ausweisnummer" : "Reisepassnummer"}
+                label={data.document_type === "personalausweis" ? "Ausweisnummer" : data.document_type === "aufenthaltstitel" ? "Aufenthaltstitel-Nummer" : "Reisepassnummer"}
                 value={data.ausweisnummer}
                 isEditing={isEditing}
                 documentId={id!}
