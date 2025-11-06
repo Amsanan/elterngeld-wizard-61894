@@ -36,8 +36,8 @@ const TABLE_SCHEMA = {
     { name: "zu_versteuerndes_einkommen", type: "string", description: "Taxable income as decimal string" },
     { name: "festgesetzte_steuer", type: "string", description: "Assessed tax as decimal string" },
     { name: "solidaritaetszuschlag", type: "string", description: "Solidarity surcharge as decimal string" },
-    { name: "steuerabzug_vom_lohn", type: "string", description: "Tax deduction from salary as decimal string" },
-    { name: "verbleibende_steuer", type: "string", description: "Remaining tax as decimal string" },
+    { name: "steuerabzug_vom_lohn", type: "string", description: "Tax already withheld from salary - look for 'ab Steuerabzug vom Lohn' or similar label (NOT 'verbleibende Steuer')" },
+    { name: "verbleibende_steuer", type: "string", description: "Remaining tax amount to pay or refund - look for 'verbleibende Steuer' label (NOT 'Steuerabzug vom Lohn')" },
     { name: "einkuenfte_selbstaendig", type: "string", description: "Self-employment income as decimal string" },
     { name: "bruttoarbeitslohn", type: "string", description: "Gross salary as decimal string" },
     {
@@ -70,6 +70,13 @@ CRITICAL RULES:
     - Look for "IdNr. Ehemann" or "IdNr. Ehefrau" (or similar labels)
     - partner1 = Ehemann, partner2 = Ehefrau
     - Extract all available information for both partners
+
+CRITICAL - DO NOT CONFUSE THESE FIELDS:
+- "steuerabzug_vom_lohn": Tax ALREADY withheld from salary (labeled as "ab Steuerabzug vom Lohn" or "Steuerabzug vom Lohn")
+  Example: "ab Steuerabzug vom Lohn: 10.077,00 €" → extract "10077.00" for steuerabzug_vom_lohn
+- "verbleibende_steuer": REMAINING tax to pay or refund (labeled as "verbleibende Steuer")
+  Example: "verbleibende Steuer: 16.911,00 €" → extract "16911.00" for verbleibende_steuer
+- These are DIFFERENT values - match them to their exact labels in the document!
 
 Output format:
 {
