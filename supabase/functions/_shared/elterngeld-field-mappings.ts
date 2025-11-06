@@ -116,18 +116,18 @@ export const WORKFLOW_STEPS = [
   }
 ];
 
-// Field mappings from Excel file: Mapping032025_1.xlsx
+// Field mappings from Excel file: Mapping032025_1.xlsx (spaces removed from field names)
 // Maps database fields to actual PDF AcroForm field names
 export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
   geburtsurkunde: {
-    // Kind table fields (rows 15-18 in Excel)
-    kind_vorname: "txt.txt.vorname1A 4",
-    kind_nachname: "txt.txt.name1A 4",
-    kind_geburtsdatum: "txt.txt.geburtsdatum1a 3",
-    kind_anzahl_mehrlinge: "txt.txt.anzahl 4",
+    // Kind table fields (rows 15-18 in Excel) - removed spaces from field names
+    kind_vorname: "txt.txt.vorname1A4",
+    kind_nachname: "txt.txt.name1A4",
+    kind_geburtsdatum: "txt.txt.geburtsdatum1a3",
+    kind_anzahl_mehrlinge: "txt.txt.anzahl4",
     // Parent names from birth certificate
-    mutter_vorname: "txt.vorname2b 1",  // Using parent 2 fields (mother)
-    mutter_nachname: "txt.name2b 1",
+    mutter_vorname: "txt.vorname2b1",  // Using parent 2 fields (mother)
+    mutter_nachname: "txt.name2b1",
     vater_vorname: "txt.vorname2b",     // Using parent 1 fields (father)
     vater_nachname: "txt.name2b"
   },
@@ -141,9 +141,9 @@ export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
   },
   eltern_dokument_mutter: {
     // Antrag_2B_Elternteil fields for parent 2 (rows 37-41)
-    vorname: "txt.vorname2b 1",
-    nachname: "txt.name2b 1",
-    geburtsdatum: "txt.geburt2b 1",
+    vorname: "txt.vorname2b1",
+    nachname: "txt.name2b1",
+    geburtsdatum: "txt.geburt2b1",
     steuer_id: "txt.txt.steuer2b_2"
   },
   meldebescheinigung_vater: {
@@ -155,10 +155,10 @@ export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
   },
   meldebescheinigung_mutter: {
     // Antrag_2C_Wohnsitz fields for parent 2 (rows 74-77)
-    strasse: "txt.strasse2c 1",
-    hausnummer: "txt.nummer2c 1",
-    plz: "txt.plz2c 1",
-    wohnort: "txt.ort2c 1"
+    strasse: "txt.strasse2c1",
+    hausnummer: "txt.nummer2c1",
+    plz: "txt.plz2c1",
+    wohnort: "txt.ort2c1"
   },
   einkommensteuerbescheid: {
     // Note: Tax document fields not found in basic mapping
@@ -200,7 +200,7 @@ export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
   },
   bankverbindung: {
     // Antrag_16A_Bankverbindung fields (rows 697-698)
-    iban: "txt.Kontonummer_1",  // IBAN in German forms
+    iban: "txt.Kontonummer_1",
     bic: "txt.bankcode1",
     // Note: Account holder name uses txt.konto_name_1 / txt.konto_nachname_1 
     // when it's not own account (row 702-703)
