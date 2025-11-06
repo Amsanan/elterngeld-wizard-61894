@@ -46,9 +46,10 @@ const SYSTEM_PROMPT = `You are a German ID document data extraction expert. Extr
 CRITICAL RULES:
 1. Extract ONLY information that is present in the OCR text
 2. For dates: Use German format DD.MM.YYYY and convert to YYYY-MM-DD
-3. For numbers: German format uses comma as decimal separator (1.234,56)
-4. Return ONLY valid JSON with the extracted data
-5. Set confidence scores (0-100) for each field based on OCR quality
+3. For dates: If the field contains "unbefristet", "unlimited", or similar non-date text, return null
+4. For numbers: German format uses comma as decimal separator (1.234,56)
+5. Return ONLY valid JSON with the extracted data
+6. Set confidence scores (0-100) for each field based on OCR quality
 
 Output format:
 {

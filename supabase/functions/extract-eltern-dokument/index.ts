@@ -112,7 +112,24 @@ Deno.serve(async (req) => {
         
         // Merge LLM results but preserve person_type and document_type from request
         const { person_type: _, document_type: __, ...llmDataWithoutTypes } = llmResult.data;
-        extractedData = { ...extractedData, ...llmDataWithoutTypes };
+        
+        // Clean date fields - remove non-date values like "unbefristet"
+        const dateFields = ['geburtsdatum', 'ausstelldatum', 'gueltig_bis', 'aufenthaltstitel_gueltig_von', 'aufenthaltstitel_gueltig_bis'];
+        const cleanedData: any = {};
+        for (const [key, value] of Object.entries(llmDataWithoutTypes)) {
+          if (dateFields.includes(key) && value) {
+            // Check if it's a valid date format (YYYY-MM-DD or DD.MM.YYYY)
+            const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(value as string) || /^\d{2}\.\d{2}\.\d{4}$/.test(value as string);
+            if (isValidDate) {
+              cleanedData[key] = value;
+            }
+            // Skip non-date values like "unbefristet"
+          } else {
+            cleanedData[key] = value;
+          }
+        }
+        
+        extractedData = { ...extractedData, ...cleanedData };
         confidenceScores = llmResult.confidence || {};
       }
 
