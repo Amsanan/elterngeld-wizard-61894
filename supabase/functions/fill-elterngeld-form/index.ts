@@ -69,6 +69,15 @@ serve(async (req) => {
     console.log('PDF loaded, filling fields...');
 
     const form = pdfDoc.getForm();
+    const formFields = form.getFields();
+    
+    // Log first 20 field names to understand the naming pattern
+    console.log('=== AVAILABLE PDF FIELDS (first 20) ===');
+    formFields.slice(0, 20).forEach((field: any) => {
+      console.log(`Field: "${field.getName()}" | Type: ${field.constructor.name}`);
+    });
+    console.log('=== END OF FIELD LIST ===');
+    
     const fieldMapping = FIELD_MAPPINGS[documentType] || {};
     
     let filledFieldsCount = 0;
