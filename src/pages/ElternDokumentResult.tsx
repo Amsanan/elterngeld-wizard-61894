@@ -257,6 +257,71 @@ const ElternDokumentResult = () => {
                 </div>
               </>
             )}
+
+            {/* Residence Permit section */}
+            {(data.aufenthaltstitel_art || data.aufenthaltstitel_nummer || data.aufenthaltstitel_gueltig_von || 
+              data.aufenthaltstitel_gueltig_bis || data.aufenthaltstitel_zweck) && (
+              <>
+                <div className="border-t pt-6 mt-6">
+                  <h3 className="text-lg font-semibold mb-4">Aufenthaltstitel</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <EditableField
+                      label="Art des Aufenthaltstitels"
+                      value={data.aufenthaltstitel_art}
+                      isEditing={isEditing}
+                      documentId={id!}
+                      tableName="eltern_dokumente"
+                      fieldName="aufenthaltstitel_art"
+                      onUpdate={(value) => setData({ ...data, aufenthaltstitel_art: value })}
+                    />
+
+                    <EditableField
+                      label="Aufenthaltstitel-Nummer"
+                      value={data.aufenthaltstitel_nummer}
+                      isEditing={isEditing}
+                      documentId={id!}
+                      tableName="eltern_dokumente"
+                      fieldName="aufenthaltstitel_nummer"
+                      onUpdate={(value) => setData({ ...data, aufenthaltstitel_nummer: value })}
+                    />
+
+                    <EditableField
+                      label="Gültig von"
+                      value={data.aufenthaltstitel_gueltig_von}
+                      isEditing={isEditing}
+                      documentId={id!}
+                      tableName="eltern_dokumente"
+                      fieldName="aufenthaltstitel_gueltig_von"
+                      type="date"
+                      onUpdate={(value) => setData({ ...data, aufenthaltstitel_gueltig_von: value })}
+                    />
+
+                    <EditableField
+                      label="Gültig bis"
+                      value={data.aufenthaltstitel_gueltig_bis}
+                      isEditing={isEditing}
+                      documentId={id!}
+                      tableName="eltern_dokumente"
+                      fieldName="aufenthaltstitel_gueltig_bis"
+                      type="date"
+                      onUpdate={(value) => setData({ ...data, aufenthaltstitel_gueltig_bis: value })}
+                    />
+
+                    <div className="md:col-span-2">
+                      <EditableField
+                        label="Zweck des Aufenthalts"
+                        value={data.aufenthaltstitel_zweck}
+                        isEditing={isEditing}
+                        documentId={id!}
+                        tableName="eltern_dokumente"
+                        fieldName="aufenthaltstitel_zweck"
+                        onUpdate={(value) => setData({ ...data, aufenthaltstitel_zweck: value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
 
           <DocumentActions

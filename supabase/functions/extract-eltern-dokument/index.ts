@@ -302,6 +302,51 @@ Deno.serve(async (req) => {
         // Authority
         const authorityMatch = ocrText.match(/AUTHORITY\s+([A-Z]+)/i);
         if (authorityMatch) extractedData.ausstellende_behoerde = authorityMatch[1].trim();
+
+        // Aufenthaltstitel (Residence Permit) extraction
+        // Look for type of residence permit
+        const aufenthaltsArtMatch = ocrText.match(
+          /(?:Aufenthaltserlaubnis|Niederlassungserlaubnis|Blaue Karte EU|EU Blue Card|Residence Permit|Settlement Permit)/i
+        );
+        if (aufenthaltsArtMatch) {
+          extractedData.aufenthaltstitel_art = aufenthaltsArtMatch[0].trim();
+        }
+
+        // Look for residence permit number (often follows patterns like AT-123456 or similar)
+        const aufenthaltsNummerMatch = ocrText.match(
+          /(?:Aufenthaltstitel[- ]?Nr\.|AT[- ]?Nr\.|Permit No\.?)[:\s]*([A-Z0-9\-]+)/i
+        );
+        if (aufenthaltsNummerMatch) {
+          extractedData.aufenthaltstitel_nummer = aufenthaltsNummerMatch[1].trim();
+        }
+
+        // Look for validity dates (Gültig ab / Valid from)
+        const aufenthaltsVonMatch = ocrText.match(
+          /(?:Gültig ab|Valid from|Ausgestellt am)[:\s]*(\d{2}[\/\.]\d{2}[\/\.]\d{4})/i
+        );
+        if (aufenthaltsVonMatch) {
+          const dateStr = aufenthaltsVonMatch[1].replace(/\./g, '/');
+          const [day, month, year] = dateStr.split('/');
+          extractedData.aufenthaltstitel_gueltig_von = `${year}-${month}-${day}`;
+        }
+
+        // Look for validity end date (Gültig bis / Valid until)
+        const aufenthaltsBisMatch = ocrText.match(
+          /(?:Gültig bis|Valid until|Expires on)[:\s]*(\d{2}[\/\.]\d{2}[\/\.]\d{4})/i
+        );
+        if (aufenthaltsBisMatch) {
+          const dateStr = aufenthaltsBisMatch[1].replace(/\./g, '/');
+          const [day, month, year] = dateStr.split('/');
+          extractedData.aufenthaltstitel_gueltig_bis = `${year}-${month}-${day}`;
+        }
+
+        // Look for purpose of residence
+        const aufenthaltsZweckMatch = ocrText.match(
+          /(?:Zweck|Purpose|Erlaubt|Permitted)[:\s]*\n?\s*(Erwerbstätigkeit|Studium|Ausbildung|Familiennachzug|Employment|Study|Training|Family Reunion|[A-Z][A-Za-zäöüÄÖÜß\s]+?)(?=\n|$)/i
+        );
+        if (aufenthaltsZweckMatch) {
+          extractedData.aufenthaltstitel_zweck = aufenthaltsZweckMatch[1].trim();
+        }
       }
 
       // Insert into database

@@ -453,6 +453,11 @@ export type Database = {
       }
       eltern_dokumente: {
         Row: {
+          aufenthaltstitel_art: string | null
+          aufenthaltstitel_gueltig_bis: string | null
+          aufenthaltstitel_gueltig_von: string | null
+          aufenthaltstitel_nummer: string | null
+          aufenthaltstitel_zweck: string | null
           ausstelldatum: string | null
           ausstellende_behoerde: string | null
           ausweisnummer: string | null
@@ -477,6 +482,11 @@ export type Database = {
           wohnungsnummer: string | null
         }
         Insert: {
+          aufenthaltstitel_art?: string | null
+          aufenthaltstitel_gueltig_bis?: string | null
+          aufenthaltstitel_gueltig_von?: string | null
+          aufenthaltstitel_nummer?: string | null
+          aufenthaltstitel_zweck?: string | null
           ausstelldatum?: string | null
           ausstellende_behoerde?: string | null
           ausweisnummer?: string | null
@@ -501,6 +511,11 @@ export type Database = {
           wohnungsnummer?: string | null
         }
         Update: {
+          aufenthaltstitel_art?: string | null
+          aufenthaltstitel_gueltig_bis?: string | null
+          aufenthaltstitel_gueltig_von?: string | null
+          aufenthaltstitel_nummer?: string | null
+          aufenthaltstitel_zweck?: string | null
           ausstelldatum?: string | null
           ausstellende_behoerde?: string | null
           ausweisnummer?: string | null
