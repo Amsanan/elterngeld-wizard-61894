@@ -472,6 +472,7 @@ export type Database = {
           aufenthaltstitel_zweck: string | null
           ausstelldatum: string | null
           ausstellende_behoerde: string | null
+          ausstellort: string | null
           ausweisnummer: string | null
           confidence_scores: Json | null
           created_at: string
@@ -502,6 +503,7 @@ export type Database = {
           aufenthaltstitel_zweck?: string | null
           ausstelldatum?: string | null
           ausstellende_behoerde?: string | null
+          ausstellort?: string | null
           ausweisnummer?: string | null
           confidence_scores?: Json | null
           created_at?: string
@@ -532,6 +534,7 @@ export type Database = {
           aufenthaltstitel_zweck?: string | null
           ausstelldatum?: string | null
           ausstellende_behoerde?: string | null
+          ausstellort?: string | null
           ausweisnummer?: string | null
           confidence_scores?: Json | null
           created_at?: string
