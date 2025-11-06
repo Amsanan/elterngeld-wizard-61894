@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/legacy/build/pdf.mjs";
+import { createCanvas } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,7 +58,7 @@ serve(async (req) => {
       fieldsByPage.get(field.page)!.push(field);
     }
 
-    // Download PDF from storage to get base64 for vision analysis
+    // Download PDF from storage
     const { data: pdfData, error: downloadError } = await supabase.storage
       .from('form-templates')
       .download(pdf_path);
@@ -65,16 +67,15 @@ serve(async (req) => {
       throw new Error(`Failed to download PDF: ${downloadError.message}`);
     }
 
-    // Convert PDF to base64 safely (avoid stack overflow)
+    // Load PDF document
     const pdfBuffer = await pdfData.arrayBuffer();
     const uint8Array = new Uint8Array(pdfBuffer);
-    let binaryString = '';
-    const chunkSize = 8192; // Process in chunks to avoid stack overflow
-    for (let i = 0; i < uint8Array.length; i += chunkSize) {
-      const chunk = uint8Array.slice(i, i + chunkSize);
-      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
-    }
-    const pdfBase64 = btoa(binaryString);
+    
+    // Load PDF with pdfjs-dist
+    const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+    const pdfDoc = await loadingTask.promise;
+    
+    console.log(`PDF loaded: ${pdfDoc.numPages} pages`);
 
     // Analyze each page with vision AI (limit to first 3 pages to avoid timeout)
     const allAnalyses: VisualFieldAnalysis[] = [];
@@ -87,8 +88,26 @@ serve(async (req) => {
         break;
       }
       
-      console.log(`Analyzing page ${pageNum} with ${fields.length} fields`);
+      console.log(`Analyzing page ${pageNum + 1} with ${fields.length} fields`);
       processedPages++;
+
+      // Render PDF page to canvas
+      const page = await pdfDoc.getPage(pageNum + 1); // pdfjs uses 1-based indexing
+      const viewport = page.getViewport({ scale: 2.0 }); // 2x scale for better quality
+      
+      const canvas = createCanvas(viewport.width, viewport.height);
+      const context = canvas.getContext('2d');
+      
+      await page.render({
+        canvasContext: context,
+        viewport: viewport
+      }).promise;
+      
+      // Convert canvas to PNG base64
+      const pngDataUrl = canvas.toDataURL('image/png');
+      const pngBase64 = pngDataUrl.split(',')[1]; // Remove data:image/png;base64, prefix
+      
+      console.log(`Rendered page ${pageNum + 1} to PNG (${Math.round(pngBase64.length / 1024)}KB)`);
 
       // Create a detailed prompt for the AI to analyze the PDF page
       const fieldPositions = fields.map(f => 
@@ -125,7 +144,7 @@ Return a JSON array with one object per field:
 Be precise and only include fields you can confidently identify. If a field has no visible label or you're unsure, set confidence below 40.`;
 
       try {
-        // Call Lovable AI with vision analysis
+        // Call Lovable AI with vision analysis (now with PNG image instead of PDF)
         const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -142,7 +161,7 @@ Be precise and only include fields you can confidently identify. If a field has 
                   {
                     type: 'image_url',
                     image_url: {
-                      url: `data:application/pdf;base64,${pdfBase64}`
+                      url: `data:image/png;base64,${pngBase64}` // ✅ Now sending PNG instead of PDF
                     }
                   }
                 ]
