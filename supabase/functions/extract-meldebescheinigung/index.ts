@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { mapWithLLM } from './mapWithLLM.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { filePath, personType } = await req.json();
+    const { filePath, personType, useLLM = true } = await req.json();
 
     if (!filePath || !personType) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing Meldebescheinigung for ${personType}, file: ${filePath}`);
+    console.log(`Processing Meldebescheinigung for ${personType}, file: ${filePath}, LLM: ${useLLM}`);
 
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("application-documents")
@@ -57,7 +58,7 @@ Deno.serve(async (req) => {
     formData.append("file", fileData, fileName);
     formData.append("filetype", fileExtension.toUpperCase());
     formData.append("language", "ger");
-    formData.append("isOverlayRequired", "false");
+    formData.append("isOverlayRequired", "true");
     formData.append("detectOrientation", "true");
     formData.append("scale", "true");
     formData.append("OCREngine", "2");
@@ -73,71 +74,31 @@ Deno.serve(async (req) => {
 
     if (ocrResult.ParsedResults?.length > 0 && !ocrResult.IsErroredOnProcessing) {
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
+      const overlayLines = ocrResult.ParsedResults[0].TextOverlay?.Lines || [];
       console.log("OCR Text:", ocrText);
 
-      const convertDate = (dateStr: string): string => {
-        const match = dateStr?.match(/(\d{2})\.(\d{2})\.(\d{4})/);
-        if (match) {
-          const [, day, month, year] = match;
-          return `${year}-${month}-${day}`;
-        }
-        return dateStr;
-      };
-
-      const extractedData: any = {
+      let extractedData: any = {
         user_id: user.id,
         person_type: personType,
         file_path: filePath,
       };
+      let confidenceScores: any = {};
 
-      // Extract first name
-      const vornameMatch = ocrText.match(/(?:Vorname|Vornamen)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (vornameMatch) extractedData.vorname = vornameMatch[1].trim();
-
-      // Extract last name
-      const nachnameMatch = ocrText.match(/(?:Nachname|Familienname)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (nachnameMatch) extractedData.nachname = nachnameMatch[1].trim();
-
-      // Extract birth date
-      const geburtsdatumMatch = ocrText.match(/(?:Geburtsdatum|geboren am)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (geburtsdatumMatch) extractedData.geburtsdatum = convertDate(geburtsdatumMatch[1]);
-
-      // Extract birth place
-      const geburtsortMatch = ocrText.match(/(?:Geburtsort)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (geburtsortMatch) extractedData.geburtsort = geburtsortMatch[1].trim();
-
-      // Extract nationality
-      const staatsMatch = ocrText.match(/(?:Staatsangehörigkeit|Nationalität)[:\s]*(DEUTSCH|GERMAN|[A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (staatsMatch) extractedData.staatsangehoerigkeit = staatsMatch[1].trim();
-
-      // Extract address
-      const strasseMatch = ocrText.match(/(?:Straße|Anschrift)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s.-]+?)\s+(\d+[A-Za-z]?)/i);
-      if (strasseMatch) {
-        extractedData.adresse_strasse = strasseMatch[1].trim();
-        extractedData.adresse_hausnummer = strasseMatch[2].trim();
+      if (useLLM) {
+        console.log('Using LLM extraction...');
+        const llmResult = await mapWithLLM({
+          schema: null,
+          ocrText: ocrText,
+          overlayLines: overlayLines,
+        });
+        
+        extractedData = { ...extractedData, ...llmResult.data };
+        confidenceScores = llmResult.confidence || {};
       }
 
-      const plzOrtMatch = ocrText.match(/(\d{5})\s+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/);
-      if (plzOrtMatch) {
-        extractedData.adresse_plz = plzOrtMatch[1];
-        extractedData.adresse_ort = plzOrtMatch[2].trim();
+      if (Object.keys(confidenceScores).length > 0) {
+        extractedData.confidence_scores = confidenceScores;
       }
-
-      // Extract registration date
-      const gemeldetMatch = ocrText.match(/(?:gemeldet seit|Anmeldedatum)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (gemeldetMatch) extractedData.gemeldet_seit = convertDate(gemeldetMatch[1]);
-
-      // Extract marital status
-      const familienstandMatch = ocrText.match(/(?:Familienstand)[:\s]*(ledig|verheiratet|geschieden|verwitwet)/i);
-      if (familienstandMatch) extractedData.familienstand = familienstandMatch[1].toLowerCase();
-
-      // Extract issuing authority
-      const behoerdeMatch = ocrText.match(/(?:Meldebehörde|Bürgeramt)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (behoerdeMatch) extractedData.ausstellende_behoerde = behoerdeMatch[1].trim();
-
-      // Extract issue date
-      const ausstellMatch = ocrText.match(/(?:Ausstellungsdatum|ausgestellt am)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (ausstellMatch) extractedData.ausstelldatum = convertDate(ausstellMatch[1]);
 
       const { data: insertedData, error: insertError } = await supabase
         .from("meldebescheinigungen")

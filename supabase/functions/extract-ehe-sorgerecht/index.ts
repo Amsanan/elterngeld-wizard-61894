@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { mapWithLLM } from './mapWithLLM.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { filePath, dokumenttyp } = await req.json();
+    const { filePath, dokumenttyp, useLLM = true } = await req.json();
 
     if (!filePath || !dokumenttyp) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing ${dokumenttyp}, file: ${filePath}`);
+    console.log(`Processing ${dokumenttyp}, file: ${filePath}, LLM: ${useLLM}`);
 
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("application-documents")
@@ -57,7 +58,7 @@ Deno.serve(async (req) => {
     formData.append("file", fileData, fileName);
     formData.append("filetype", fileExtension.toUpperCase());
     formData.append("language", "ger");
-    formData.append("isOverlayRequired", "false");
+    formData.append("isOverlayRequired", "true");
     formData.append("detectOrientation", "true");
     formData.append("scale", "true");
     formData.append("OCREngine", "2");
@@ -73,63 +74,30 @@ Deno.serve(async (req) => {
 
     if (ocrResult.ParsedResults?.length > 0 && !ocrResult.IsErroredOnProcessing) {
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
+      const overlayLines = ocrResult.ParsedResults[0].TextOverlay?.Lines || [];
       console.log("OCR Text:", ocrText);
 
-      const convertDate = (dateStr: string): string => {
-        const match = dateStr?.match(/(\d{2})\.(\d{2})\.(\d{4})/);
-        if (match) {
-          const [, day, month, year] = match;
-          return `${year}-${month}-${day}`;
-        }
-        return dateStr;
-      };
-
-      const extractedData: any = {
+      let extractedData: any = {
         user_id: user.id,
         file_path: filePath,
         dokumenttyp: dokumenttyp,
       };
+      let confidenceScores: any = {};
 
-      // Extract names - looking for two people
-      const names = ocrText.match(/([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)\s+und\s+([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+)/i);
-      if (names) {
-        const [vorname1, nachname1] = names[1].trim().split(/\s+(?=[A-ZÄÖÜ])/);
-        const [vorname2, nachname2] = names[2].trim().split(/\s+(?=[A-ZÄÖÜ])/);
+      if (useLLM) {
+        console.log('Using LLM extraction...');
+        const llmResult = await mapWithLLM({
+          schema: null,
+          ocrText: ocrText,
+          overlayLines: overlayLines,
+        });
         
-        if (vorname1 && nachname1) {
-          extractedData.partner1_vorname = vorname1;
-          extractedData.partner1_nachname = nachname1;
-        }
-        if (vorname2 && nachname2) {
-          extractedData.partner2_vorname = vorname2;
-          extractedData.partner2_nachname = nachname2;
-        }
+        extractedData = { ...extractedData, ...llmResult.data };
+        confidenceScores = llmResult.confidence || {};
       }
 
-      // Extract date based on document type
-      let datumMatch;
-      if (dokumenttyp === 'heiratsurkunde') {
-        datumMatch = ocrText.match(/(?:geheiratet am|Eheschließung am|Datum der Eheschließung)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      } else if (dokumenttyp === 'scheidungsurteil') {
-        datumMatch = ocrText.match(/(?:geschieden am|Datum der Scheidung|rechtskräftig seit)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      } else if (dokumenttyp === 'sorgerechtserklaerung') {
-        datumMatch = ocrText.match(/(?:Datum der Erklärung|erklärt am)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      } else if (dokumenttyp === 'vaterschaftsanerkennung') {
-        datumMatch = ocrText.match(/(?:Datum der Anerkennung|anerkannt am)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      }
-      if (datumMatch) extractedData.datum = convertDate(datumMatch[1]);
-
-      // Extract registry office
-      const standesamtMatch = ocrText.match(/(?:Standesamt|Amtsgericht)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (standesamtMatch) extractedData.standesamt = standesamtMatch[1].trim();
-
-      // Extract certificate number
-      const nummerMatch = ocrText.match(/(?:Urkunden-?Nr|Registernummer)[.:\s]*([A-Z0-9\/\-]+)/i);
-      if (nummerMatch) extractedData.urkundennummer = nummerMatch[1].trim();
-
-      // Check for joint custody
-      if (ocrText.match(/gemeinsames Sorgerecht|gemeinsame elterliche Sorge/i)) {
-        extractedData.gemeinsames_sorgerecht = true;
+      if (Object.keys(confidenceScores).length > 0) {
+        extractedData.confidence_scores = confidenceScores;
       }
 
       const { data: insertedData, error: insertError } = await supabase

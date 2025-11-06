@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { mapWithLLM } from './mapWithLLM.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { filePath, personType } = await req.json();
+    const { filePath, personType, useLLM = true } = await req.json();
 
     if (!filePath || !personType) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing Krankenversicherung for ${personType}, file: ${filePath}`);
+    console.log(`Processing Krankenversicherung for ${personType}, file: ${filePath}, LLM: ${useLLM}`);
 
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("application-documents")
@@ -57,7 +58,7 @@ Deno.serve(async (req) => {
     formData.append("file", fileData, fileName);
     formData.append("filetype", fileExtension.toUpperCase());
     formData.append("language", "ger");
-    formData.append("isOverlayRequired", "false");
+    formData.append("isOverlayRequired", "true");
     formData.append("detectOrientation", "true");
     formData.append("scale", "true");
     formData.append("OCREngine", "2");
@@ -73,63 +74,31 @@ Deno.serve(async (req) => {
 
     if (ocrResult.ParsedResults?.length > 0 && !ocrResult.IsErroredOnProcessing) {
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
+      const overlayLines = ocrResult.ParsedResults[0].TextOverlay?.Lines || [];
       console.log("OCR Text:", ocrText);
 
-      const convertDate = (dateStr: string): string => {
-        const match = dateStr?.match(/(\d{2})\.(\d{2})\.(\d{4})/);
-        if (match) {
-          const [, day, month, year] = match;
-          return `${year}-${month}-${day}`;
-        }
-        return dateStr;
-      };
-
-      const extractedData: any = {
+      let extractedData: any = {
         user_id: user.id,
         person_type: personType,
         file_path: filePath,
       };
+      let confidenceScores: any = {};
 
-      // Extract insurance name
-      const versicherungMatch = ocrText.match(/(?:Krankenkasse|Versicherung)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s&.,-]+?)(?=\n)/i);
-      if (versicherungMatch) extractedData.versicherung_name = versicherungMatch[1].trim();
-
-      // Extract insurance number
-      const versicherungsnummerMatch = ocrText.match(/(?:Versichertennummer|Vers.-Nr)[.:\s]*([A-Z0-9]+)/i);
-      if (versicherungsnummerMatch) extractedData.versicherungsnummer = versicherungsnummerMatch[1].trim();
-
-      // Extract insured person name
-      const versicherterMatch = ocrText.match(/(?:Name|Versicherte\/r)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (versicherterMatch) extractedData.versicherter_name = versicherterMatch[1].trim();
-
-      // Determine insurance type
-      if (ocrText.match(/gesetzlich versichert|GKV/i)) {
-        extractedData.versicherungsart = 'gesetzlich';
-      } else if (ocrText.match(/privat versichert|PKV/i)) {
-        extractedData.versicherungsart = 'privat';
-      } else if (ocrText.match(/familienversichert/i)) {
-        extractedData.versicherungsart = 'familienversichert';
+      if (useLLM) {
+        console.log('Using LLM extraction...');
+        const llmResult = await mapWithLLM({
+          schema: null,
+          ocrText: ocrText,
+          overlayLines: overlayLines,
+        });
+        
+        extractedData = { ...extractedData, ...llmResult.data };
+        confidenceScores = llmResult.confidence || {};
       }
 
-      // Extract insurance start date
-      const versichertSeitMatch = ocrText.match(/(?:versichert seit|Beginn der Versicherung)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (versichertSeitMatch) extractedData.versichert_seit = convertDate(versichertSeitMatch[1]);
-
-      // Extract contribution rate (Beitragssatz)
-      const beitragssatzMatch = ocrText.match(/(?:Beitragssatz)[:\s]*(\d{1,2}[.,]\d{1,2})\s*%/i);
-      if (beitragssatzMatch) {
-        extractedData.beitragssatz = parseFloat(beitragssatzMatch[1].replace(",", "."));
+      if (Object.keys(confidenceScores).length > 0) {
+        extractedData.confidence_scores = confidenceScores;
       }
-
-      // Extract additional contribution (Zusatzbeitrag)
-      const zusatzbeitragMatch = ocrText.match(/(?:Zusatzbeitrag)[:\s]*(\d{1,2}[.,]\d{1,2})\s*%/i);
-      if (zusatzbeitragMatch) {
-        extractedData.zusatzbeitrag = parseFloat(zusatzbeitragMatch[1].replace(",", "."));
-      }
-
-      // Extract certificate date
-      const bescheinigungMatch = ocrText.match(/(?:Bescheinigung vom|Datum)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (bescheinigungMatch) extractedData.bescheinigungsdatum = convertDate(bescheinigungMatch[1]);
 
       const { data: insertedData, error: insertError } = await supabase
         .from("krankenversicherung_nachweise")

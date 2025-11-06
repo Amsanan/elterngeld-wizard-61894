@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { mapWithLLM } from './mapWithLLM.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { filePath } = await req.json();
+    const { filePath, useLLM = true } = await req.json();
 
     if (!filePath) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing Mutterschaftsgeld, file: ${filePath}`);
+    console.log(`Processing Mutterschaftsgeld, file: ${filePath}, LLM: ${useLLM}`);
 
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("application-documents")
@@ -57,7 +58,7 @@ Deno.serve(async (req) => {
     formData.append("file", fileData, fileName);
     formData.append("filetype", fileExtension.toUpperCase());
     formData.append("language", "ger");
-    formData.append("isOverlayRequired", "false");
+    formData.append("isOverlayRequired", "true");
     formData.append("detectOrientation", "true");
     formData.append("scale", "true");
     formData.append("OCREngine", "2");
@@ -73,62 +74,30 @@ Deno.serve(async (req) => {
 
     if (ocrResult.ParsedResults?.length > 0 && !ocrResult.IsErroredOnProcessing) {
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
+      const overlayLines = ocrResult.ParsedResults[0].TextOverlay?.Lines || [];
       console.log("OCR Text:", ocrText);
 
-      const convertDate = (dateStr: string): string => {
-        const match = dateStr?.match(/(\d{2})\.(\d{2})\.(\d{4})/);
-        if (match) {
-          const [, day, month, year] = match;
-          return `${year}-${month}-${day}`;
-        }
-        return dateStr;
-      };
-
-      const parseAmount = (text: string): number | undefined => {
-        const cleaned = text?.replace(/\./g, "").replace(",", ".");
-        const parsed = parseFloat(cleaned);
-        return isNaN(parsed) ? undefined : parsed;
-      };
-
-      const extractedData: any = {
+      let extractedData: any = {
         user_id: user.id,
         file_path: filePath,
       };
+      let confidenceScores: any = {};
 
-      // Extract health insurance name
-      const krankenkasseMatch = ocrText.match(/(?:Krankenkasse|Versicherung)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s&.,-]+?)(?=\n)/i);
-      if (krankenkasseMatch) extractedData.krankenkasse_name = krankenkasseMatch[1].trim();
+      if (useLLM) {
+        console.log('Using LLM extraction...');
+        const llmResult = await mapWithLLM({
+          schema: null,
+          ocrText: ocrText,
+          overlayLines: overlayLines,
+        });
+        
+        extractedData = { ...extractedData, ...llmResult.data };
+        confidenceScores = llmResult.confidence || {};
+      }
 
-      // Extract insurance number
-      const versichertenMatch = ocrText.match(/(?:Versichertennummer|Vers.-Nr)[.:\s]*([A-Z0-9]+)/i);
-      if (versichertenMatch) extractedData.versicherten_nummer = versichertenMatch[1].trim();
-
-      // Extract mother's name
-      const mutterMatch = ocrText.match(/(?:Name|Versicherte)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (mutterMatch) extractedData.mutter_name = mutterMatch[1].trim();
-
-      // Extract benefit period
-      const vonMatch = ocrText.match(/(?:Leistungszeitraum vom|von)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (vonMatch) extractedData.bezugszeitraum_von = convertDate(vonMatch[1]);
-
-      const bisMatch = ocrText.match(/(?:Leistungszeitraum bis|bis)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (bisMatch) extractedData.bezugszeitraum_bis = convertDate(bisMatch[1]);
-
-      // Extract daily amount
-      const taeglichMatch = ocrText.match(/(?:täglich|pro Tag)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (taeglichMatch) extractedData.taglicher_betrag = parseAmount(taeglichMatch[1]);
-
-      // Extract total amount
-      const gesamtMatch = ocrText.match(/(?:Gesamtbetrag|Summe)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (gesamtMatch) extractedData.gesamtbetrag = parseAmount(gesamtMatch[1]);
-
-      // Extract employer supplement
-      const zuschussMatch = ocrText.match(/(?:Arbeitgeberzuschuss|Zuschuss Arbeitgeber)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (zuschussMatch) extractedData.arbeitgeberzuschuss = parseAmount(zuschussMatch[1]);
-
-      // Extract decision date
-      const bescheidMatch = ocrText.match(/(?:Bescheid vom|Datum)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (bescheidMatch) extractedData.bescheiddatum = convertDate(bescheidMatch[1]);
+      if (Object.keys(confidenceScores).length > 0) {
+        extractedData.confidence_scores = confidenceScores;
+      }
 
       const { data: insertedData, error: insertError } = await supabase
         .from("mutterschaftsgeld")

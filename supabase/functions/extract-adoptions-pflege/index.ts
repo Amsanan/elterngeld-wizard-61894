@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { mapWithLLM } from './mapWithLLM.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { filePath, dokumenttyp } = await req.json();
+    const { filePath, dokumenttyp, useLLM = true } = await req.json();
 
     if (!filePath || !dokumenttyp) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing ${dokumenttyp}, file: ${filePath}`);
+    console.log(`Processing ${dokumenttyp}, file: ${filePath}, LLM: ${useLLM}`);
 
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("application-documents")
@@ -57,7 +58,7 @@ Deno.serve(async (req) => {
     formData.append("file", fileData, fileName);
     formData.append("filetype", fileExtension.toUpperCase());
     formData.append("language", "ger");
-    formData.append("isOverlayRequired", "false");
+    formData.append("isOverlayRequired", "true");
     formData.append("detectOrientation", "true");
     formData.append("scale", "true");
     formData.append("OCREngine", "2");
@@ -73,59 +74,31 @@ Deno.serve(async (req) => {
 
     if (ocrResult.ParsedResults?.length > 0 && !ocrResult.IsErroredOnProcessing) {
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
+      const overlayLines = ocrResult.ParsedResults[0].TextOverlay?.Lines || [];
       console.log("OCR Text:", ocrText);
 
-      const convertDate = (dateStr: string): string => {
-        const match = dateStr?.match(/(\d{2})\.(\d{2})\.(\d{4})/);
-        if (match) {
-          const [, day, month, year] = match;
-          return `${year}-${month}-${day}`;
-        }
-        return dateStr;
-      };
-
-      const extractedData: any = {
+      let extractedData: any = {
         user_id: user.id,
         file_path: filePath,
         dokumenttyp: dokumenttyp,
       };
+      let confidenceScores: any = {};
 
-      // Extract child's first name
-      const vornameMatch = ocrText.match(/(?:Vorname des Kindes|Kind)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (vornameMatch) extractedData.kind_vorname = vornameMatch[1].trim();
-
-      // Extract child's last name
-      const nachnameMatch = ocrText.match(/(?:Nachname|Familienname)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (nachnameMatch) extractedData.kind_nachname = nachnameMatch[1].trim();
-
-      // Extract child's birth date
-      const geburtsdatumMatch = ocrText.match(/(?:Geburtsdatum|geboren am)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (geburtsdatumMatch) extractedData.kind_geburtsdatum = convertDate(geburtsdatumMatch[1]);
-
-      // Extract adoption/foster start date
-      let beginnMatch;
-      if (dokumenttyp === 'adoptionsbeschluss') {
-        beginnMatch = ocrText.match(/(?:Adoption.*?ab|Wirkung ab)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      } else {
-        beginnMatch = ocrText.match(/(?:Pflegeverhältnis ab|Beginn)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
+      if (useLLM) {
+        console.log('Using LLM extraction...');
+        const llmResult = await mapWithLLM({
+          schema: null,
+          ocrText: ocrText,
+          overlayLines: overlayLines,
+        });
+        
+        extractedData = { ...extractedData, ...llmResult.data };
+        confidenceScores = llmResult.confidence || {};
       }
-      if (beginnMatch) extractedData.adoption_pflegebeginn = convertDate(beginnMatch[1]);
 
-      // Extract authority name
-      const behoerdeMatch = ocrText.match(/(?:Jugendamt|Familiengericht|Amtsgericht)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (behoerdeMatch) extractedData.behoerde_name = behoerdeMatch[1].trim();
-
-      // Extract case number
-      const aktenzeichenMatch = ocrText.match(/(?:Aktenzeichen|Az\.|Geschäftszeichen)[:\s]*([A-Z0-9\/\-]+)/i);
-      if (aktenzeichenMatch) extractedData.aktenzeichen = aktenzeichenMatch[1].trim();
-
-      // Extract decision date
-      const beschlussMatch = ocrText.match(/(?:Beschluss vom|Datum des Beschlusses)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (beschlussMatch) extractedData.beschlussdatum = convertDate(beschlussMatch[1]);
-
-      // Extract legally binding date
-      const rechtskraeftigMatch = ocrText.match(/(?:rechtskräftig seit|rechtskräftig am)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (rechtskraeftigMatch) extractedData.rechtskraeftig_seit = convertDate(rechtskraeftigMatch[1]);
+      if (Object.keys(confidenceScores).length > 0) {
+        extractedData.confidence_scores = confidenceScores;
+      }
 
       const { data: insertedData, error: insertError } = await supabase
         .from("adoptions_pflege_dokumente")

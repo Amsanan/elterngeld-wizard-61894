@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { mapWithLLM } from './mapWithLLM.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { filePath } = await req.json();
+    const { filePath, useLLM = true } = await req.json();
 
     if (!filePath) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing Bankverbindung, file: ${filePath}`);
+    console.log(`Processing Bankverbindung, file: ${filePath}, LLM: ${useLLM}`);
 
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("application-documents")
@@ -57,7 +58,7 @@ Deno.serve(async (req) => {
     formData.append("file", fileData, fileName);
     formData.append("filetype", fileExtension.toUpperCase());
     formData.append("language", "ger");
-    formData.append("isOverlayRequired", "false");
+    formData.append("isOverlayRequired", "true");
     formData.append("detectOrientation", "true");
     formData.append("scale", "true");
     formData.append("OCREngine", "2");
@@ -73,52 +74,30 @@ Deno.serve(async (req) => {
 
     if (ocrResult.ParsedResults?.length > 0 && !ocrResult.IsErroredOnProcessing) {
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
+      const overlayLines = ocrResult.ParsedResults[0].TextOverlay?.Lines || [];
       console.log("OCR Text:", ocrText);
 
-      const convertDate = (dateStr: string): string => {
-        const match = dateStr?.match(/(\d{2})\.(\d{2})\.(\d{4})/);
-        if (match) {
-          const [, day, month, year] = match;
-          return `${year}-${month}-${day}`;
-        }
-        return dateStr;
-      };
-
-      const extractedData: any = {
+      let extractedData: any = {
         user_id: user.id,
         file_path: filePath,
       };
+      let confidenceScores: any = {};
 
-      // Extract account holder
-      const kontoinhaberMatch = ocrText.match(/(?:Kontoinhaber|Inhaber)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (kontoinhaberMatch) extractedData.kontoinhaber = kontoinhaberMatch[1].trim();
-
-      // Extract IBAN
-      const ibanMatch = ocrText.match(/IBAN[:\s]*([A-Z]{2}\d{2}[\s]?(?:\d{4}[\s]?){4}\d{2}|\w{22})/i);
-      if (ibanMatch) {
-        extractedData.iban = ibanMatch[1].replace(/\s/g, "").toUpperCase();
+      if (useLLM) {
+        console.log('Using LLM extraction...');
+        const llmResult = await mapWithLLM({
+          schema: null,
+          ocrText: ocrText,
+          overlayLines: overlayLines,
+        });
+        
+        extractedData = { ...extractedData, ...llmResult.data };
+        confidenceScores = llmResult.confidence || {};
       }
 
-      // Extract BIC
-      const bicMatch = ocrText.match(/BIC[:\s]*([A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?)/i);
-      if (bicMatch) {
-        extractedData.bic = bicMatch[1].toUpperCase();
+      if (Object.keys(confidenceScores).length > 0) {
+        extractedData.confidence_scores = confidenceScores;
       }
-
-      // Extract bank name
-      const bankMatch = ocrText.match(/(?:Bank|Kreditinstitut)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s&.,-]+?)(?=\n)/i);
-      if (bankMatch) extractedData.bank_name = bankMatch[1].trim();
-
-      // Determine account type
-      if (ocrText.match(/Girokonto/i)) {
-        extractedData.kontoart = 'girokonto';
-      } else if (ocrText.match(/Sparkonto|Tagesgeld/i)) {
-        extractedData.kontoart = 'sparkonto';
-      }
-
-      // Extract proof date
-      const datumMatch = ocrText.match(/(?:Datum|Stand)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (datumMatch) extractedData.nachweisdatum = convertDate(datumMatch[1]);
 
       const { data: insertedData, error: insertError } = await supabase
         .from("bankverbindungen")

@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { mapWithLLM } from './mapWithLLM.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { filePath, personType, dokumenttyp } = await req.json();
+    const { filePath, personType, dokumenttyp, useLLM = true } = await req.json();
 
     if (!filePath || !personType || !dokumenttyp) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing ${dokumenttyp} for ${personType}, file: ${filePath}`);
+    console.log(`Processing ${dokumenttyp} for ${personType}, file: ${filePath}, LLM: ${useLLM}`);
 
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("application-documents")
@@ -57,7 +58,7 @@ Deno.serve(async (req) => {
     formData.append("file", fileData, fileName);
     formData.append("filetype", fileExtension.toUpperCase());
     formData.append("language", "ger");
-    formData.append("isOverlayRequired", "false");
+    formData.append("isOverlayRequired", "true");
     formData.append("detectOrientation", "true");
     formData.append("scale", "true");
     formData.append("OCREngine", "2");
@@ -73,61 +74,32 @@ Deno.serve(async (req) => {
 
     if (ocrResult.ParsedResults?.length > 0 && !ocrResult.IsErroredOnProcessing) {
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
+      const overlayLines = ocrResult.ParsedResults[0].TextOverlay?.Lines || [];
       console.log("OCR Text:", ocrText);
 
-      const convertDate = (dateStr: string): string => {
-        const match = dateStr?.match(/(\d{2})\.(\d{2})\.(\d{4})/);
-        if (match) {
-          const [, day, month, year] = match;
-          return `${year}-${month}-${day}`;
-        }
-        return dateStr;
-      };
-
-      const parseAmount = (text: string): number | undefined => {
-        const cleaned = text?.replace(/\./g, "").replace(",", ".");
-        const parsed = parseFloat(cleaned);
-        return isNaN(parsed) ? undefined : parsed;
-      };
-
-      const extractedData: any = {
+      let extractedData: any = {
         user_id: user.id,
         person_type: personType,
         file_path: filePath,
         dokumenttyp: dokumenttyp,
       };
+      let confidenceScores: any = {};
 
-      // Extract business year
-      const jahrMatch = ocrText.match(/(?:Geschäftsjahr|Wirtschaftsjahr|Jahr)[:\s]*(\d{4})/i);
-      if (jahrMatch) extractedData.geschaeftsjahr = jahrMatch[1];
+      if (useLLM) {
+        console.log('Using LLM extraction...');
+        const llmResult = await mapWithLLM({
+          schema: null,
+          ocrText: ocrText,
+          overlayLines: overlayLines,
+        });
+        
+        extractedData = { ...extractedData, ...llmResult.data };
+        confidenceScores = llmResult.confidence || {};
+      }
 
-      // Extract company name
-      const firmaMatch = ocrText.match(/(?:Firma|Unternehmen|Betrieb)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s&.,-]+?)(?=\n)/i);
-      if (firmaMatch) extractedData.firma_name = firmaMatch[1].trim();
-
-      // Extract legal form
-      const rechtsformMatch = ocrText.match(/(?:Rechtsform)[:\s]*(Einzelunternehmen|GbR|UG|GmbH|AG|KG|OHG)/i);
-      if (rechtsformMatch) extractedData.rechtsform = rechtsformMatch[1].trim();
-
-      // Extract tax number
-      const steuernummerMatch = ocrText.match(/(?:Steuernummer|St[.-]Nr\.?)[:\s]+(\d{2,3}\/\d{3,4}\/\d{4,5}|\d{10,13})/i);
-      if (steuernummerMatch) extractedData.steuernummer = steuernummerMatch[1];
-
-      // Extract income (Betriebseinnahmen)
-      const einnahmenMatch = ocrText.match(/(?:Betriebseinnahmen|Einnahmen)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (einnahmenMatch) extractedData.betriebseinnahmen = parseAmount(einnahmenMatch[1]);
-
-      // Extract expenses (Betriebsausgaben)
-      const ausgabenMatch = ocrText.match(/(?:Betriebsausgaben|Ausgaben)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (ausgabenMatch) extractedData.betriebsausgaben = parseAmount(ausgabenMatch[1]);
-
-      // Extract profit (Gewinn)
-      const gewinnMatch = ocrText.match(/(?:Gewinn|Jahresüberschuss)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (gewinnMatch) extractedData.gewinn = parseAmount(gewinnMatch[1]);
-
-      // Extract creation date
-      const datumMatch = ocrText.match(/(?:Erstellt am|Datum)[:\s]*(\d{2}\.\d{2}\.\d{4})/i);
-      if (datumMatch) extractedData.erstellungsdatum = convertDate(datumMatch[1]);
+      if (Object.keys(confidenceScores).length > 0) {
+        extractedData.confidence_scores = confidenceScores;
+      }
 
       const { data: insertedData, error: insertError } = await supabase
         .from("selbststaendigen_nachweise")
