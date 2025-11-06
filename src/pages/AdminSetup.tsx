@@ -1,34 +1,36 @@
-import { useState } from "react";
+import { useState, useRef, DragEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Upload, CheckCircle, AlertCircle } from "lucide-react";
+import { Upload, CheckCircle, AlertCircle, FileUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const AdminSetup = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const uploadPdfTemplate = async () => {
+  const uploadPdfFromFile = async (file: File) => {
+    if (file.type !== 'application/pdf') {
+      toast({
+        title: "Invalid File",
+        description: "Please upload a PDF file",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setUploading(true);
     setUploadStatus('idle');
     
     try {
-      // Fetch the PDF from the public folder
-      const response = await fetch('/elterngeldantrag_bis_Maerz25.pdf');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch PDF from public folder');
-      }
-
-      const blob = await response.blob();
-      
       // Upload to Supabase storage
       const { error: uploadError } = await supabase.storage
         .from('form-templates')
-        .upload('elterngeldantrag_bis_Maerz25.pdf', blob, {
+        .upload('elterngeldantrag_bis_Maerz25.pdf', file, {
           contentType: 'application/pdf',
           upsert: true // Overwrite if exists
         });
@@ -52,6 +54,59 @@ const AdminSetup = () => {
       });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const uploadPdfTemplate = async () => {
+    setUploading(true);
+    setUploadStatus('idle');
+    
+    try {
+      // Fetch the PDF from the public folder
+      const response = await fetch('/elterngeldantrag_bis_Maerz25.pdf');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch PDF from public folder');
+      }
+
+      const blob = await response.blob();
+      await uploadPdfFromFile(new File([blob], 'elterngeldantrag_bis_Maerz25.pdf', { type: 'application/pdf' }));
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      setUploadStatus('error');
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload PDF template",
+        variant: "destructive",
+      });
+      setUploading(false);
+    }
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      uploadPdfFromFile(files[0]);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      uploadPdfFromFile(files[0]);
     }
   };
 
@@ -81,15 +136,63 @@ const AdminSetup = () => {
                   <p className="font-medium mb-1">What this does:</p>
                   <p>
                     This uploads the <code className="bg-background px-1.5 py-0.5 rounded">elterngeldantrag_bis_Maerz25.pdf</code> file 
-                    from your public folder to the <code className="bg-background px-1.5 py-0.5 rounded">form-templates</code> storage 
+                    to the <code className="bg-background px-1.5 py-0.5 rounded">form-templates</code> storage 
                     bucket, making it available for the form filling edge functions.
                   </p>
+                </div>
+              </div>
+
+              {/* Drag and Drop Zone */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`
+                  relative border-2 border-dashed rounded-lg p-12 text-center cursor-pointer
+                  transition-all duration-200
+                  ${isDragging 
+                    ? 'border-primary bg-primary/5 scale-[1.02]' 
+                    : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50'
+                  }
+                  ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  disabled={uploading}
+                />
+                <FileUp className={`mx-auto h-12 w-12 mb-4 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
+                <p className="text-lg font-medium mb-2">
+                  {isDragging ? 'Drop PDF here' : 'Drag & drop PDF file here'}
+                </p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  or click to browse
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Accepted format: PDF only
+                </p>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or
+                  </span>
                 </div>
               </div>
 
               <Button
                 onClick={uploadPdfTemplate}
                 disabled={uploading}
+                variant="outline"
                 className="w-full"
                 size="lg"
               >
@@ -106,7 +209,7 @@ const AdminSetup = () => {
                 ) : (
                   <>
                     <Upload className="mr-2 h-4 w-4" />
-                    Upload PDF Template
+                    Upload from Public Folder
                   </>
                 )}
               </Button>
