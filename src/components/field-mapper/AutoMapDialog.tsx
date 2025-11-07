@@ -11,7 +11,7 @@ interface AutoMapDialogProps {
   onOpenChange: (open: boolean) => void;
   documentType: string;
   databaseSchema: any[];
-  onMappingsGenerated: (mappings: any[], allPdfFields: string[]) => void;
+  onMappingsGenerated: (mappings: any[], allPdfFields: Array<{ name: string; page: number; x: number; y: number; type: string }>) => void;
 }
 
 export function AutoMapDialog({ 
@@ -83,7 +83,18 @@ export function AutoMapDialog({
       setProgress(100);
       setStatus(`Successfully mapped ${newMappings.length} fields!`);
 
-      onMappingsGenerated(newMappings, data.all_pdf_fields || []);
+      // Convert all_pdf_fields to new format if it's an array of strings
+      const pdfFieldsFormatted = Array.isArray(data.all_pdf_fields) 
+        ? data.all_pdf_fields.map((fieldName: string, index: number) => ({
+            name: fieldName,
+            page: 0,
+            x: 0,
+            y: index * 20, // Simple vertical ordering
+            type: 'PDFTextField'
+          }))
+        : data.all_pdf_fields || [];
+
+      onMappingsGenerated(newMappings, pdfFieldsFormatted);
       toast.success(`Auto-mapped ${newMappings.length} fields`);
 
       setTimeout(() => {

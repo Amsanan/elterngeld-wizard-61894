@@ -8,7 +8,7 @@ interface MappingRowProps {
   mapping: any;
   onUpdate: (updates: any) => void;
   onDelete: () => void;
-  pdfFields: string[];
+  pdfFields: Array<{ name: string; page: number; x: number; y: number; type: string }>;
 }
 
 export function MappingRow({ mapping, onUpdate, onDelete, pdfFields }: MappingRowProps) {

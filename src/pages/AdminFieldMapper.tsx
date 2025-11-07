@@ -25,7 +25,7 @@ export default function AdminFieldMapper() {
   const navigate = useNavigate();
   const [documentType, setDocumentType] = useState("geburtsurkunde");
   const [databaseSchema, setDatabaseSchema] = useState<any[]>([]);
-  const [pdfFields, setPdfFields] = useState<string[]>([]);
+  const [pdfFields, setPdfFields] = useState<Array<{ name: string; page: number; x: number; y: number; type: string }>>([]);
   const [mappings, setMappings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [autoMapDialogOpen, setAutoMapDialogOpen] = useState(false);
@@ -88,7 +88,7 @@ export default function AdminFieldMapper() {
       });
       if (error) throw error;
       setPdfFields(data.fields || []);
-      toast.success(`Loaded ${data.fields.length} PDF fields`);
+      toast.success(`Loaded ${data.fields.length} PDF fields (sorted by position)`);
     } catch (error: any) {
       console.error('Error loading PDF fields:', error);
       toast.error('Failed to load PDF fields');
@@ -115,13 +115,30 @@ export default function AdminFieldMapper() {
 
       console.log('PDF Layout Analysis:', data);
       
-      // Extract unique field names from coordinates
-      const uniqueFields = [...new Set(data.field_coordinates.map((fc: any) => fc.name))] as string[];
-      setPdfFields(uniqueFields);
+      // Convert field coordinates to the new format for setPdfFields
+      const uniqueFieldMap = new Map<string, any>();
+      data.field_coordinates.forEach((fc: any) => {
+        if (!uniqueFieldMap.has(fc.name)) {
+          uniqueFieldMap.set(fc.name, {
+            name: fc.name,
+            page: fc.page,
+            x: fc.x,
+            y: fc.y,
+            type: fc.type
+          });
+        }
+      });
+      const sortedFields = Array.from(uniqueFieldMap.values()).sort((a, b) => {
+        if (a.page !== b.page) return a.page - b.page;
+        if (Math.abs(a.y - b.y) > 10) return a.y - b.y;
+        return a.x - b.x;
+      });
+      
+      setPdfFields(sortedFields);
       setFieldCoordinates(data.field_coordinates);
       
       toast.success(
-        `Analyzed ${data.total_pages} pages with ${data.total_fields} field instances (${uniqueFields.length} unique fields)`,
+        `Analyzed ${data.total_pages} pages with ${data.total_fields} field instances (${sortedFields.length} unique fields)`,
         { duration: 5000 }
       );
       
@@ -265,8 +282,9 @@ export default function AdminFieldMapper() {
 
   const handleSaveMappings = async () => {
     // Validate mappings before saving
+    const pdfFieldNames = pdfFields.map(f => f.name);
     const invalidMappings = mappings.filter(m => 
-      pdfFields.length > 0 && !pdfFields.includes(m.pdf_field_name)
+      pdfFields.length > 0 && !pdfFieldNames.includes(m.pdf_field_name)
     );
     
     if (invalidMappings.length > 0) {

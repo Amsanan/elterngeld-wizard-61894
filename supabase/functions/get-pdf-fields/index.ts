@@ -38,20 +38,91 @@ serve(async (req) => {
       throw new Error(`Failed to download PDF: ${downloadError.message}`);
     }
 
-    // Load PDF
+    // Load PDF with pdf-lib to extract field coordinates
     const pdfBytes = await pdfData.arrayBuffer();
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     const fields = form.getFields();
+    const pages = pdfDoc.getPages();
 
-    // Extract all field names
-    const fieldNames = fields.map(field => field.getName()).sort();
+    console.log(`PDF has ${pages.length} pages and ${fields.length} fields`);
 
-    console.log(`Found ${fieldNames.length} PDF fields`);
+    // Extract field coordinates for positional sorting
+    const fieldData: Array<{
+      name: string;
+      type: string;
+      page: number;
+      x: number;
+      y: number;
+    }> = [];
+
+    for (const field of fields) {
+      try {
+        const fieldName = field.getName();
+        const widgets = (field as any).acroField.getWidgets();
+
+        // Take the first widget for each field
+        if (widgets.length > 0) {
+          const widget = widgets[0];
+          const rect = widget.getRectangle();
+          const pageRef = widget.P();
+          
+          // Find which page this field is on
+          let pageIndex = 0;
+          for (let i = 0; i < pages.length; i++) {
+            if (pages[i].ref === pageRef) {
+              pageIndex = i;
+              break;
+            }
+          }
+
+          const page = pages[pageIndex];
+          const pageHeight = page.getHeight();
+
+          // PDF coordinates are from bottom-left, convert to top-left
+          const x = rect.x;
+          const y = pageHeight - rect.y - rect.height;
+
+          fieldData.push({
+            name: fieldName,
+            type: field.constructor.name,
+            page: pageIndex,
+            x: Math.round(x),
+            y: Math.round(y)
+          });
+        }
+      } catch (error) {
+        console.error(`Error extracting coordinates for field:`, error);
+        // Add field without coordinates as fallback
+        fieldData.push({
+          name: field.getName(),
+          type: field.constructor.name,
+          page: 0,
+          x: 0,
+          y: 0
+        });
+      }
+    }
+
+    // Sort fields: page → Y coordinate (top to bottom) → X coordinate (left to right)
+    fieldData.sort((a, b) => {
+      // First by page
+      if (a.page !== b.page) return a.page - b.page;
+      
+      // Then by Y coordinate (top to bottom)
+      if (Math.abs(a.y - b.y) > 10) { // 10px tolerance for same row
+        return a.y - b.y;
+      }
+      
+      // Finally by X coordinate (left to right) for same row
+      return a.x - b.x;
+    });
+
+    console.log(`Found ${fieldData.length} PDF fields, sorted by position`);
 
     return new Response(JSON.stringify({ 
-      fields: fieldNames,
-      total_fields: fieldNames.length
+      fields: fieldData,
+      total_fields: fieldData.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -11,7 +11,7 @@ interface MappingEditorProps {
   onOpenChange: (open: boolean) => void;
   mapping: any;
   onSave: (updates: any) => void;
-  pdfFields: string[];
+  pdfFields: Array<{ name: string; page: number; x: number; y: number; type: string }>;
 }
 
 export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }: MappingEditorProps) {
@@ -20,7 +20,7 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredFields = pdfFields.filter(field =>
-    field.toLowerCase().includes(searchTerm.toLowerCase())
+    field.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSave = () => {
@@ -60,9 +60,14 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {filteredFields.slice(0, 50).map(field => (
-                  <SelectItem key={field} value={field} className="font-mono text-xs">
-                    {field}
+                {filteredFields.slice(0, 50).map((field, index) => (
+                  <SelectItem key={`${field.name}-${index}`} value={field.name} className="font-mono text-xs">
+                    <div className="flex items-center justify-between gap-2 w-full">
+                      <span className="truncate">{field.name}</span>
+                      <span className="text-[10px] px-1 bg-primary/10 rounded shrink-0">
+                        P{field.page + 1}
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
                 {filteredFields.length > 50 && (

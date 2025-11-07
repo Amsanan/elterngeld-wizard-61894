@@ -6,7 +6,7 @@ import { Link2 } from "lucide-react";
 interface MappingsListProps {
   mappings: any[];
   onUpdate: (mappings: any[]) => void;
-  pdfFields: string[];
+  pdfFields: Array<{ name: string; page: number; x: number; y: number; type: string }>;
 }
 
 export function MappingsList({ mappings, onUpdate, pdfFields }: MappingsListProps) {
