@@ -34,7 +34,8 @@ export default function ElterngeldantragAusfuellen() {
   const [currentStep, setCurrentStep] = useState(1);
   const [stepData, setStepData] = useState<any>(null);
   const [editedData, setEditedData] = useState<any>({});
-  const [pdfUrl, setPdfUrl] = useState<string>("");
+  const [pdfUrl, setPdfUrl] = useState<string>(""); // Original Supabase URL for downloads
+  const [blobUrl, setBlobUrl] = useState<string>(""); // Local blob URL for display
   const [isLoading, setIsLoading] = useState(false);
   const [previousPdfPath, setPreviousPdfPath] = useState<string | null>(null);
   const [hasData, setHasData] = useState(true);
@@ -57,6 +58,15 @@ export default function ElterngeldantragAusfuellen() {
     detectBrave();
   }, []);
 
+  // Cleanup blob URLs when component unmounts or changes
+  useEffect(() => {
+    return () => {
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [blobUrl]);
+
   useEffect(() => {
     loadStepData();
     setIframeError(false);
@@ -65,7 +75,7 @@ export default function ElterngeldantragAusfuellen() {
 
   useEffect(() => {
     // Detect if iframe fails to load within 5 seconds
-    if (pdfUrl && !iframeLoaded && !iframeError) {
+    if (blobUrl && !iframeLoaded && !iframeError) {
       const timer = setTimeout(() => {
         if (!iframeLoaded) {
           setIframeError(true);
@@ -75,7 +85,7 @@ export default function ElterngeldantragAusfuellen() {
 
       return () => clearTimeout(timer);
     }
-  }, [pdfUrl, iframeLoaded, iframeError]);
+  }, [blobUrl, iframeLoaded, iframeError]);
 
   const loadStepData = async () => {
     setIsLoading(true);
@@ -160,8 +170,38 @@ export default function ElterngeldantragAusfuellen() {
       }
 
       console.log('PDF generated successfully:', result.pdfUrl);
+      
+      // Revoke previous blob URL if exists
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+
+      // Store the original Supabase URL for downloads
       setPdfUrl(result.pdfUrl);
       setPreviousPdfPath(result.pdfPath);
+
+      // Fetch PDF as blob and create local blob URL for display
+      try {
+        console.log('Fetching PDF to create blob URL...');
+        const response = await fetch(result.pdfUrl);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch PDF: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        const newBlobUrl = URL.createObjectURL(blob);
+        console.log('Blob URL created successfully');
+        
+        setBlobUrl(newBlobUrl);
+        setIframeError(false);
+        setShowBraveWarning(false);
+      } catch (blobError) {
+        console.error('Error creating blob URL, falling back to direct URL:', blobError);
+        // Fallback to direct URL if blob creation fails
+        setBlobUrl(result.pdfUrl);
+        setShowBraveWarning(true);
+      }
 
       toast({
         title: "PDF aktualisiert",
@@ -361,10 +401,10 @@ export default function ElterngeldantragAusfuellen() {
               </Alert>
             )}
 
-            {pdfUrl ? (
+            {blobUrl ? (
               <div className="relative">
                 <iframe
-                  src={pdfUrl}
+                  src={blobUrl}
                   className="w-full h-[600px] border rounded-lg"
                   title="PDF Preview"
                   onLoad={handleIframeLoad}
