@@ -1,0 +1,1042 @@
+{
+  "mapping_version": "2025-11-07",
+  "description": "Mapping between current database schema and Elterngeld PDF form fields (acroform)",
+  "mappings": {
+    "profiles": {
+      "table_description": "User profile information",
+      "fields": {
+        "vorname": {
+          "type": "text",
+          "pdf_fields": ["txt.vorname2b", "txt.vorname2b 1"],
+          "description": "First name of parent"
+        },
+        "nachname": {
+          "type": "text",
+          "pdf_fields": ["txt.name2b", "txt.name2b 1"],
+          "description": "Last name of parent"
+        },
+        "geburtsdatum": {
+          "type": "date",
+          "pdf_fields": ["txt.geburt2b", "txt.geburt2b 1"],
+          "description": "Date of birth"
+        },
+        "steuer_id": {
+          "type": "text",
+          "pdf_fields": ["txt.txt.steuer2b_1", "txt.txt.steuer2b_2"],
+          "description": "Tax identification number"
+        },
+        "strasse": {
+          "type": "text",
+          "pdf_fields": ["txt.strasse2c", "txt.strasse2c 1"],
+          "description": "Street name"
+        },
+        "hausnummer": {
+          "type": "text",
+          "pdf_fields": ["txt.nummer2c", "txt.nummer2c 1"],
+          "description": "House number"
+        },
+        "plz": {
+          "type": "text",
+          "pdf_fields": ["txt.plz2c", "txt.plz2c 1"],
+          "description": "Postal code"
+        },
+        "wohnort": {
+          "type": "text",
+          "pdf_fields": ["txt.ort2c", "txt.ort2c 1"],
+          "description": "City"
+        },
+        "telefon": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Phone number"
+        },
+        "email": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Email address"
+        }
+      }
+    },
+    "geburtsurkunden": {
+      "table_description": "Birth certificates",
+      "fields": {
+        "kind_vorname": {
+          "type": "text",
+          "pdf_fields": ["txt.txt.vorname1A 4"],
+          "description": "Child's first name"
+        },
+        "kind_nachname": {
+          "type": "text",
+          "pdf_fields": ["txt.txt.name1A 4"],
+          "description": "Child's last name"
+        },
+        "kind_geburtsdatum": {
+          "type": "date",
+          "pdf_fields": ["txt.txt.geburtsdatum1a 3"],
+          "description": "Child's date of birth"
+        },
+        "kind_geburtsort": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Child's place of birth"
+        },
+        "mutter_vorname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Mother's first name"
+        },
+        "mutter_nachname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Mother's last name"
+        },
+        "mutter_geburtsname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Mother's maiden name"
+        },
+        "vater_vorname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Father's first name"
+        },
+        "vater_nachname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Father's last name"
+        },
+        "ausstelldatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Issue date of birth certificate"
+        },
+        "behoerde_name": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Issuing authority"
+        },
+        "urkundennummer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Certificate number"
+        },
+        "kind_geburtsnummer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Birth registration number"
+        },
+        "verwendungszweck": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Purpose of certificate"
+        }
+      }
+    },
+    "gehaltsnachweise": {
+      "table_description": "Salary statements / payslips",
+      "fields": {
+        "person_type": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Person type (antragsteller/partner)"
+        },
+        "arbeitgeber_name": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Employer name"
+        },
+        "abrechnungsmonat": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Payroll month"
+        },
+        "bruttogehalt": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Gross salary"
+        },
+        "nettogehalt": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Net salary"
+        },
+        "auszahlungsbetrag": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Total payout amount"
+        },
+        "steuer_id": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Tax ID"
+        },
+        "sozialversicherungsnummer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Social security number"
+        },
+        "lohnsteuer": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Income tax"
+        },
+        "kirchensteuer": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Church tax"
+        },
+        "solidaritaetszuschlag": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Solidarity surcharge"
+        },
+        "krankenversicherung": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Health insurance"
+        },
+        "pflegeversicherung": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Care insurance"
+        },
+        "rentenversicherung": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Pension insurance"
+        },
+        "arbeitslosenversicherung": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Unemployment insurance"
+        },
+        "vermoegenswirksame_leistungen": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Capital-forming benefits"
+        },
+        "sonstige_bezuege": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Other income"
+        },
+        "sonstige_abzuege": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Other deductions"
+        }
+      }
+    },
+    "arbeitgeberbescheinigungen": {
+      "table_description": "Employer certificates",
+      "fields": {
+        "person_type": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Person type (antragsteller/partner)"
+        },
+        "arbeitgeber_name": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Employer name"
+        },
+        "arbeitgeber_adresse": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Employer address"
+        },
+        "ausstelldatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Issue date"
+        },
+        "beschaeftigungsbeginn": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Employment start date"
+        },
+        "beschaeftigungsende": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Employment end date"
+        },
+        "wochenstunden": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Weekly working hours"
+        },
+        "bruttogehalt": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Gross salary"
+        }
+      }
+    },
+    "einkommensteuerbescheide": {
+      "table_description": "Income tax assessments",
+      "fields": {
+        "person_type": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Person type (antragsteller/partner)"
+        },
+        "steuerjahr": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Tax year"
+        },
+        "steuernummer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Tax number"
+        },
+        "steuer_id_nummer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Tax identification number"
+        },
+        "vorname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "First name"
+        },
+        "nachname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Last name"
+        },
+        "adresse": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Address"
+        },
+        "plz": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Postal code"
+        },
+        "wohnort": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "City"
+        },
+        "bescheiddatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Assessment date"
+        },
+        "finanzamt_name": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Tax office name"
+        },
+        "finanzamt_adresse": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Tax office address"
+        },
+        "gemeinsame_veranlagung": {
+          "type": "boolean",
+          "pdf_fields": [],
+          "description": "Joint assessment"
+        },
+        "partner1_vorname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Partner 1 first name"
+        },
+        "partner1_nachname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Partner 1 last name"
+        },
+        "partner1_steuer_id": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Partner 1 tax ID"
+        },
+        "partner2_vorname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Partner 2 first name"
+        },
+        "partner2_nachname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Partner 2 last name"
+        },
+        "partner2_steuer_id": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Partner 2 tax ID"
+        },
+        "jahreseinkommen": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Annual income"
+        },
+        "gesamtbetrag_der_einkuenfte": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Total amount of income"
+        },
+        "summe_der_einkuenfte": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Sum of income"
+        },
+        "zu_versteuerndes_einkommen": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Taxable income"
+        },
+        "festgesetzte_steuer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Assessed tax"
+        },
+        "verbleibende_steuer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Remaining tax"
+        },
+        "bruttoarbeitslohn": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Gross wages"
+        },
+        "einkuenfte_nichtselbstaendig": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Income from employment"
+        },
+        "einkuenfte_selbstaendig": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Self-employment income"
+        },
+        "werbungskosten": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Business expenses"
+        },
+        "sonderausgaben": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Special expenses"
+        },
+        "altersvorsorgeaufwendungen": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Pension contributions"
+        },
+        "krankenversicherung": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Health insurance"
+        },
+        "pflegeversicherung": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Care insurance"
+        },
+        "steuerabzug_vom_lohn": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Tax deduction from wages"
+        },
+        "solidaritaetszuschlag": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Solidarity surcharge"
+        },
+        "vorauszahlungen": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Advance payments"
+        }
+      }
+    },
+    "krankenversicherung_nachweise": {
+      "table_description": "Health insurance certificates",
+      "fields": {
+        "person_type": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Person type (antragsteller/partner)"
+        },
+        "krankenkasse_name": {
+          "type": "text",
+          "pdf_fields": ["txt.namekk5", "txt.namekk6"],
+          "description": "Health insurance company name"
+        },
+        "versichertennummer": {
+          "type": "text",
+          "pdf_fields": ["txt.versichertennummer5", "txt.versichertennummer6"],
+          "description": "Insurance number"
+        },
+        "versicherungsart": {
+          "type": "text",
+          "pdf_fields": ["cb.gesetzlich5", "cb.freiwillig5", "cb.familie5", "cb.privat5"],
+          "description": "Type of insurance (statutory, voluntary, family, private)"
+        },
+        "versicherungsbeginn": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Insurance start date"
+        },
+        "beitragssatz": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Contribution rate"
+        }
+      }
+    },
+    "selbststaendigen_nachweise": {
+      "table_description": "Self-employment certificates",
+      "fields": {
+        "person_type": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Person type (antragsteller/partner)"
+        },
+        "steuernummer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Tax number"
+        },
+        "gewerbeart": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Type of business"
+        },
+        "gewerbeanmeldung_datum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Business registration date"
+        },
+        "nachweiszeitraum_von": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Evidence period from"
+        },
+        "nachweiszeitraum_bis": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Evidence period to"
+        },
+        "jahreseinkommen": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Annual income"
+        }
+      }
+    },
+    "leistungsbescheide": {
+      "table_description": "Benefit decisions (unemployment, parental allowance, etc.)",
+      "fields": {
+        "person_type": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Person type (antragsteller/partner)"
+        },
+        "leistungsart": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Type of benefit"
+        },
+        "bewilligungsstelle": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Granting authority"
+        },
+        "bescheiddatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Decision date"
+        },
+        "leistungsbeginn": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Benefit start date"
+        },
+        "leistungsende": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Benefit end date"
+        },
+        "monatsbetrag": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Monthly amount"
+        }
+      }
+    },
+    "mutterschaftsgeld": {
+      "table_description": "Maternity benefit",
+      "fields": {
+        "krankenkasse_name": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Health insurance company name"
+        },
+        "versichertennummer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Insurance number"
+        },
+        "bescheiddatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Decision date"
+        },
+        "leistungsbeginn": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Benefit start date"
+        },
+        "leistungsende": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Benefit end date"
+        },
+        "tagessatz": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Daily rate"
+        },
+        "gesamtbetrag": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Total amount"
+        }
+      }
+    },
+    "meldebescheinigungen": {
+      "table_description": "Registration certificates",
+      "fields": {
+        "person_type": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Person type (antragsteller/partner)"
+        },
+        "vorname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "First name"
+        },
+        "nachname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Last name"
+        },
+        "geburtsdatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Date of birth"
+        },
+        "strasse": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Street"
+        },
+        "hausnummer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "House number"
+        },
+        "plz": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Postal code"
+        },
+        "wohnort": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "City"
+        },
+        "meldedatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Registration date"
+        },
+        "ausstelldatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Issue date"
+        },
+        "behoerde": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Issuing authority"
+        }
+      }
+    },
+    "bankverbindungen": {
+      "table_description": "Bank account details",
+      "fields": {
+        "kontoinhaber": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Account holder"
+        },
+        "iban": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "IBAN"
+        },
+        "bic": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "BIC/SWIFT code"
+        },
+        "bank_name": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Bank name"
+        }
+      }
+    },
+    "ehe_sorgerecht_nachweise": {
+      "table_description": "Marriage and custody certificates",
+      "fields": {
+        "dokument_typ": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Document type (heiratsurkunde/sorgerechtsbeschluss)"
+        },
+        "partner1_vorname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Partner 1 first name"
+        },
+        "partner1_nachname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Partner 1 last name"
+        },
+        "partner2_vorname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Partner 2 first name"
+        },
+        "partner2_nachname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Partner 2 last name"
+        },
+        "heiratsdatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Marriage date"
+        },
+        "standesamt": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Registry office"
+        },
+        "ausstelldatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Issue date"
+        },
+        "kind_vorname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Child's first name (for custody)"
+        },
+        "kind_nachname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Child's last name (for custody)"
+        },
+        "sorgerecht_art": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Type of custody"
+        }
+      }
+    },
+    "eltern_dokumente": {
+      "table_description": "Parent documents (ID, passport, residence permit)",
+      "fields": {
+        "person_type": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Person type (antragsteller/partner)"
+        },
+        "document_type": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Document type (personalausweis/reisepass/aufenthaltstitel)"
+        },
+        "vorname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "First name"
+        },
+        "nachname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Last name"
+        },
+        "geburtsname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Birth name"
+        },
+        "geburtsdatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Date of birth"
+        },
+        "geburtsort": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Place of birth"
+        },
+        "staatsangehoerigkeit": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Nationality"
+        },
+        "ausweisnummer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "ID number"
+        },
+        "ausstelldatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Issue date"
+        },
+        "gueltig_bis": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Valid until"
+        },
+        "ausstellende_behoerde": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Issuing authority"
+        },
+        "ausstellort": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Place of issue"
+        },
+        "strasse": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Street"
+        },
+        "hausnummer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "House number"
+        },
+        "wohnungsnummer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Apartment number"
+        },
+        "plz": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Postal code"
+        },
+        "wohnort": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "City"
+        },
+        "aufenthaltstitel_art": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Type of residence permit"
+        },
+        "aufenthaltstitel_nummer": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Residence permit number"
+        },
+        "aufenthaltstitel_zweck": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Purpose of residence permit"
+        },
+        "aufenthaltstitel_gueltig_von": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Residence permit valid from"
+        },
+        "aufenthaltstitel_gueltig_bis": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Residence permit valid until"
+        }
+      }
+    },
+    "adoptions_pflege_dokumente": {
+      "table_description": "Adoption and foster care documents",
+      "fields": {
+        "dokument_typ": {
+          "type": "text",
+          "pdf_fields": ["cb.adoptiv3b", "cb.adoptiv3b 1"],
+          "description": "Document type (adoptionsbeschluss/pflegebeschluss)"
+        },
+        "kind_vorname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Child's first name"
+        },
+        "kind_nachname": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Child's last name"
+        },
+        "kind_geburtsdatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Child's date of birth"
+        },
+        "beschlussdatum": {
+          "type": "date",
+          "pdf_fields": ["txt.datum3c"],
+          "description": "Decision date"
+        },
+        "aufnahmedatum": {
+          "type": "date",
+          "pdf_fields": [],
+          "description": "Admission date"
+        },
+        "jugendamt": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Youth welfare office"
+        },
+        "pflegestelle_name": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Foster care institution name"
+        }
+      }
+    },
+    "antraege": {
+      "table_description": "Main application table",
+      "fields": {
+        "id": {
+          "type": "uuid",
+          "pdf_fields": [],
+          "description": "Application ID (referenced by other tables)"
+        },
+        "user_id": {
+          "type": "uuid",
+          "pdf_fields": [],
+          "description": "User ID"
+        },
+        "created_at": {
+          "type": "timestamp",
+          "pdf_fields": [],
+          "description": "Creation timestamp"
+        },
+        "updated_at": {
+          "type": "timestamp",
+          "pdf_fields": [],
+          "description": "Last update timestamp"
+        }
+      }
+    },
+    "pdf_field_mappings": {
+      "table_description": "Field mapping configuration table",
+      "fields": {
+        "document_type": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Type of document (geburtsurkunde, gehaltsnachweis, etc.)"
+        },
+        "source_table": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Source database table"
+        },
+        "source_field": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Source field in database"
+        },
+        "pdf_field_name": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Target PDF form field name"
+        },
+        "confidence_score": {
+          "type": "numeric",
+          "pdf_fields": [],
+          "description": "Mapping confidence score (0-100)"
+        },
+        "mapping_status": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Status: auto/manual/verified"
+        },
+        "is_active": {
+          "type": "boolean",
+          "pdf_fields": [],
+          "description": "Whether mapping is active"
+        },
+        "notes": {
+          "type": "text",
+          "pdf_fields": [],
+          "description": "Additional notes"
+        }
+      }
+    }
+  },
+  "notes": {
+    "general": [
+      "This mapping connects the current database schema to the Elterngeld PDF form (elterngeldantrag_bis_Maerz25.pdf)",
+      "PDF field names starting with 'txt.' are text fields, 'cb.' are checkboxes",
+      "Person types are typically 'antragsteller' (applicant) or 'partner'",
+      "Many tables use antrag_id as foreign key to link to main application",
+      "All tables include user_id for RLS (Row Level Security)",
+      "confidence_scores field stores AI extraction confidence as JSONB"
+    ],
+    "document_types": [
+      "geburtsurkunde - Birth certificate",
+      "gehaltsnachweis - Salary statement",
+      "arbeitgeberbescheinigung - Employer certificate",
+      "steuerbescheid - Tax assessment",
+      "krankenversicherung - Health insurance certificate",
+      "selbststaendigen_nachweis - Self-employment certificate",
+      "leistungsbescheid - Benefit decision",
+      "mutterschaftsgeld - Maternity benefit",
+      "meldebescheinigung - Registration certificate",
+      "bankverbindung - Bank account details",
+      "ehe_sorgerecht - Marriage/custody certificate",
+      "eltern_dokument - Parent ID/passport/residence permit",
+      "adoptions_pflege - Adoption/foster care documents"
+    ],
+    "field_naming_conventions": [
+      "Date fields typically end with: _datum, _beginn, _ende, geburtsdatum",
+      "Person identifiers: vorname (first name), nachname (last name)",
+      "Address fields: strasse, hausnummer, plz, wohnort",
+      "Tax fields: steuer_id, steuernummer",
+      "Money amounts: betrag, gehalt, einkommen (all numeric)",
+      "Insurance: versicherung, versichertennummer, krankenkasse"
+    ],
+    "pdf_form_sections": [
+      "Section 1: Child information (Kind)",
+      "Section 2: Parents information (Elternteile A & B)",
+      "Section 2C: Residence information (Wohnsitz)",
+      "Section 2D: Work abroad (Arbeit im Ausland)",
+      "Section 2E: Applicants (Antragstellende)",
+      "Section 2F: Nationality (Staatsangehörigkeit)",
+      "Section 2G: Marital status (Familienstand)",
+      "Section 3: Child care and relationship",
+      "Section 4: Other children information",
+      "Section 5-6: Health insurance and income",
+      "Section 7: Employment and income assessment period"
+    ]
+  }
+}
