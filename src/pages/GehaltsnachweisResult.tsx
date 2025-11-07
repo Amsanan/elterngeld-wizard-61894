@@ -8,6 +8,19 @@ import { useToast } from "@/hooks/use-toast";
 import { DocumentActions } from "@/components/documents/DocumentActions";
 import { EditableField } from "@/components/documents/EditableField";
 
+const formatMonth = (monthStr: string) => {
+  if (!monthStr) return "";
+  const months = ["Januar", "Februar", "März", "April", "Mai", "Juni", 
+                  "Juli", "August", "September", "Oktober", "November", "Dezember"];
+  const [year, month] = monthStr.split("-");
+  return `${months[parseInt(month) - 1]} ${year}`;
+};
+
+const formatCurrency = (value: number | null | undefined) => {
+  if (value === null || value === undefined) return "-";
+  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value);
+};
+
 const GehaltsnachweisResult = () => {
   const [searchParams] = useSearchParams();
   const [data, setData] = useState<any>(null);
@@ -80,9 +93,14 @@ const GehaltsnachweisResult = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Zurück
           </Button>
-          <h1 className="text-2xl font-bold text-foreground">
-            Extrahierte Daten: Gehaltsnachweis
-          </h1>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-foreground">
+              Gehaltsnachweis für {data.person_type || "unbekannt"}
+            </h1>
+            <p className="text-muted-foreground">
+              {formatMonth(data.abrechnungsmonat)}
+            </p>
+          </div>
         </div>
       </header>
 
@@ -94,15 +112,6 @@ const GehaltsnachweisResult = () => {
                 Allgemeine Informationen
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <EditableField
-                  label="Elternteil"
-                  value={data.person_type}
-                  isEditing={isEditing}
-                  documentId={searchParams.get("id")!}
-                  tableName="gehaltsnachweise"
-                  fieldName="person_type"
-                  onUpdate={(value) => setData({ ...data, person_type: value })}
-                />
                 <EditableField
                   label="Abrechnungsmonat"
                   value={data.abrechnungsmonat}
@@ -121,12 +130,30 @@ const GehaltsnachweisResult = () => {
                   fieldName="arbeitgeber_name"
                   onUpdate={(value) => setData({ ...data, arbeitgeber_name: value })}
                 />
+                <EditableField
+                  label="Steuer-ID"
+                  value={data.steuer_id}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="gehaltsnachweise"
+                  fieldName="steuer_id"
+                  onUpdate={(value) => setData({ ...data, steuer_id: value })}
+                />
+                <EditableField
+                  label="Sozialversicherungsnummer"
+                  value={data.sozialversicherungsnummer}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="gehaltsnachweise"
+                  fieldName="sozialversicherungsnummer"
+                  onUpdate={(value) => setData({ ...data, sozialversicherungsnummer: value })}
+                />
               </div>
             </div>
 
             <div className="border-t pt-6">
               <h2 className="text-xl font-semibold mb-4 text-foreground">
-                Gehaltsdetails
+                Gehaltsübersicht
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <EditableField
@@ -149,26 +176,140 @@ const GehaltsnachweisResult = () => {
                   type="number"
                   onUpdate={(value) => setData({ ...data, nettogehalt: value })}
                 />
+              </div>
+            </div>
+
+            <div className="border-t pt-6">
+              <h2 className="text-xl font-semibold mb-4 text-foreground">
+                Steuerabzüge
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <EditableField
-                  label="Steuer-ID"
-                  value={data.steuer_id}
+                  label="Lohnsteuer"
+                  value={data.lohnsteuer?.toString()}
                   isEditing={isEditing}
                   documentId={searchParams.get("id")!}
                   tableName="gehaltsnachweise"
-                  fieldName="steuer_id"
-                  onUpdate={(value) => setData({ ...data, steuer_id: value })}
+                  fieldName="lohnsteuer"
+                  type="number"
+                  onUpdate={(value) => setData({ ...data, lohnsteuer: value })}
                 />
                 <EditableField
-                  label="Sozialversicherungsnummer"
-                  value={data.sozialversicherungsnummer}
+                  label="Solidaritätszuschlag"
+                  value={data.solidaritaetszuschlag?.toString()}
                   isEditing={isEditing}
                   documentId={searchParams.get("id")!}
                   tableName="gehaltsnachweise"
-                  fieldName="sozialversicherungsnummer"
-                  onUpdate={(value) => setData({ ...data, sozialversicherungsnummer: value })}
+                  fieldName="solidaritaetszuschlag"
+                  type="number"
+                  onUpdate={(value) => setData({ ...data, solidaritaetszuschlag: value })}
+                />
+                <EditableField
+                  label="Kirchensteuer"
+                  value={data.kirchensteuer?.toString()}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="gehaltsnachweise"
+                  fieldName="kirchensteuer"
+                  type="number"
+                  onUpdate={(value) => setData({ ...data, kirchensteuer: value })}
                 />
               </div>
             </div>
+
+            <div className="border-t pt-6">
+              <h2 className="text-xl font-semibold mb-4 text-foreground">
+                Sozialversicherungsabzüge
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <EditableField
+                  label="Krankenversicherung"
+                  value={data.krankenversicherung?.toString()}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="gehaltsnachweise"
+                  fieldName="krankenversicherung"
+                  type="number"
+                  onUpdate={(value) => setData({ ...data, krankenversicherung: value })}
+                />
+                <EditableField
+                  label="Pflegeversicherung"
+                  value={data.pflegeversicherung?.toString()}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="gehaltsnachweise"
+                  fieldName="pflegeversicherung"
+                  type="number"
+                  onUpdate={(value) => setData({ ...data, pflegeversicherung: value })}
+                />
+                <EditableField
+                  label="Rentenversicherung"
+                  value={data.rentenversicherung?.toString()}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="gehaltsnachweise"
+                  fieldName="rentenversicherung"
+                  type="number"
+                  onUpdate={(value) => setData({ ...data, rentenversicherung: value })}
+                />
+                <EditableField
+                  label="Arbeitslosenversicherung"
+                  value={data.arbeitslosenversicherung?.toString()}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="gehaltsnachweise"
+                  fieldName="arbeitslosenversicherung"
+                  type="number"
+                  onUpdate={(value) => setData({ ...data, arbeitslosenversicherung: value })}
+                />
+              </div>
+            </div>
+
+            {(data.vermoegenswirksame_leistungen || data.sonstige_bezuege || data.sonstige_abzuege) && (
+              <div className="border-t pt-6">
+                <h2 className="text-xl font-semibold mb-4 text-foreground">
+                  Sonstige Abzüge/Bezüge
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {data.vermoegenswirksame_leistungen && (
+                    <EditableField
+                      label="Vermögenswirksame Leistungen"
+                      value={data.vermoegenswirksame_leistungen?.toString()}
+                      isEditing={isEditing}
+                      documentId={searchParams.get("id")!}
+                      tableName="gehaltsnachweise"
+                      fieldName="vermoegenswirksame_leistungen"
+                      type="number"
+                      onUpdate={(value) => setData({ ...data, vermoegenswirksame_leistungen: value })}
+                    />
+                  )}
+                  {data.sonstige_bezuege && (
+                    <EditableField
+                      label="Sonstige Bezüge"
+                      value={data.sonstige_bezuege?.toString()}
+                      isEditing={isEditing}
+                      documentId={searchParams.get("id")!}
+                      tableName="gehaltsnachweise"
+                      fieldName="sonstige_bezuege"
+                      type="number"
+                      onUpdate={(value) => setData({ ...data, sonstige_bezuege: value })}
+                    />
+                  )}
+                  {data.sonstige_abzuege && (
+                    <EditableField
+                      label="Sonstige Abzüge"
+                      value={data.sonstige_abzuege?.toString()}
+                      isEditing={isEditing}
+                      documentId={searchParams.get("id")!}
+                      tableName="gehaltsnachweise"
+                      fieldName="sonstige_abzuege"
+                      type="number"
+                      onUpdate={(value) => setData({ ...data, sonstige_abzuege: value })}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </Card>
 
