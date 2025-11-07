@@ -13,21 +13,34 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization');
+    console.log('Auth header present:', !!authHeader);
+    
     if (!authHeader) {
       throw new Error('Missing authorization header');
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // Create client with user's JWT to verify authentication
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
 
-    // Get user ID
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    console.log('User authenticated:', !!user, 'Auth error:', authError);
+    
+    if (authError || !user) {
+      throw new Error('Not authenticated: ' + (authError?.message || 'No user found'));
+    }
+
+    // Use service role key for database operations to bypass RLS
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { mappings } = await req.json();
+    console.log('Received mappings count:', mappings?.length);
 
     // Batch upsert mappings
     const mappingsWithUser = mappings.map((m: any) => ({
@@ -36,7 +49,8 @@ serve(async (req) => {
       updated_at: new Date().toISOString()
     }));
 
-    const { data, error } = await supabase
+    // Use admin client for database operations
+    const { data, error } = await supabaseAdmin
       .from('pdf_field_mappings')
       .upsert(mappingsWithUser, {
         onConflict: 'document_type,source_field,pdf_field_name',
@@ -44,7 +58,12 @@ serve(async (req) => {
       })
       .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error:', error);
+      throw error;
+    }
+
+    console.log('Successfully saved mappings:', data?.length);
 
     return new Response(JSON.stringify({ success: true, data }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

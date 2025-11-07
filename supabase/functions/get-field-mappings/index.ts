@@ -13,26 +13,48 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization');
+    console.log('Auth header present:', !!authHeader);
+    
     if (!authHeader) {
       throw new Error('Missing authorization header');
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // Create client with user's JWT to verify authentication
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
 
-    const { document_type } = await req.json();
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    console.log('User authenticated:', !!user, 'Auth error:', authError);
+    
+    if (authError || !user) {
+      throw new Error('Not authenticated: ' + (authError?.message || 'No user found'));
+    }
 
-    const { data: mappings, error } = await supabase
+    // Use service role key for database operations
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { document_type } = await req.json();
+    console.log('Fetching mappings for document_type:', document_type);
+
+    const { data: mappings, error } = await supabaseAdmin
       .from('pdf_field_mappings')
       .select('*')
       .eq('document_type', document_type)
       .eq('is_active', true)
       .order('source_field');
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error:', error);
+      throw error;
+    }
+
+    console.log('Found mappings:', mappings?.length);
 
     return new Response(JSON.stringify({ mappings }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
