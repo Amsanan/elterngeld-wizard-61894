@@ -48,7 +48,7 @@ serve(async (req) => {
     const { data: mappings, error } = await supabaseAdmin
       .from('pdf_field_mappings')
       .select('*')
-      .eq('document_type', document_type)
+      .eq('source_table', document_type)
       .eq('is_active', true)
       .order('source_field');
 
