@@ -59,7 +59,7 @@ export function PdfFieldsList({ fields, mappings, onCreateMapping }: PdfFieldsLi
         )}
       </div>
       <Input
-        placeholder="Search fields or filter by page (e.g., 'P2' or 'Page 2')..."
+        placeholder="Search fields or filter by page (e.g., P2 or Page 2)..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-4"
