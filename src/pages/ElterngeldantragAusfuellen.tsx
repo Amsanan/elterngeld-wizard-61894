@@ -116,6 +116,13 @@ export default function ElterngeldantragAusfuellen() {
 
   const fillPDF = async (data: any) => {
     try {
+      console.log('Calling fill-elterngeld-form with:', {
+        step: currentStep,
+        documentType: currentConfig.documentType,
+        dataKeys: Object.keys(data),
+        previousPdfPath
+      });
+
       const { data: result, error } = await supabase.functions.invoke('fill-elterngeld-form', {
         body: {
           step: currentStep,
@@ -125,8 +132,23 @@ export default function ElterngeldantragAusfuellen() {
         }
       });
 
-      if (error) throw error;
+      console.log('Edge function response:', { result, error });
 
+      if (error) {
+        console.error("Edge function error:", error);
+        throw error;
+      }
+
+      if (!result) {
+        throw new Error("No result returned from edge function");
+      }
+
+      if (!result.pdfUrl) {
+        console.error("No pdfUrl in result:", result);
+        throw new Error("No PDF URL returned");
+      }
+
+      console.log('PDF generated successfully:', result.pdfUrl);
       setPdfUrl(result.pdfUrl);
       setPreviousPdfPath(result.pdfPath);
 
@@ -137,9 +159,10 @@ export default function ElterngeldantragAusfuellen() {
 
     } catch (error) {
       console.error("Error filling PDF:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast({
-        title: "Fehler",
-        description: "PDF konnte nicht befüllt werden",
+        title: "Fehler beim Befüllen",
+        description: errorMessage,
         variant: "destructive"
       });
     }

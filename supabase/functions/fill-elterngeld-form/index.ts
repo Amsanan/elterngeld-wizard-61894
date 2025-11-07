@@ -9,64 +9,82 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('=== FILL-ELTERNGELD-FORM CALLED ===');
+  console.log('Method:', req.method);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('Step 1: Checking authorization...');
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('ERROR: No authorization header');
       throw new Error('No authorization header');
     }
 
+    console.log('Step 2: Initializing Supabase client...');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    console.log('Supabase URL:', supabaseUrl);
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    console.log('Step 3: Verifying user...');
     const { data: { user }, error: userError } = await supabase.auth.getUser(
       authHeader.replace('Bearer ', '')
     );
 
     if (userError || !user) {
+      console.error('ERROR: User verification failed:', userError);
       throw new Error('Unauthorized');
     }
+    console.log('User verified:', user.id);
 
+    console.log('Step 4: Parsing request body...');
     const { step, documentType, extractedData, previousPdfPath } = await req.json();
-
-    console.log(`Processing step ${step} for document type: ${documentType}`);
+    console.log(`Request params - Step: ${step}, DocumentType: ${documentType}, HasPreviousPdf: ${!!previousPdfPath}`);
+    console.log('ExtractedData keys:', Object.keys(extractedData));
 
     let pdfDoc: any;
 
     // Load previous PDF or template
     if (previousPdfPath) {
-      console.log('Loading previous PDF from:', previousPdfPath);
+      console.log('Step 5: Loading previous PDF from:', previousPdfPath);
       const { data: prevPdf, error: loadError } = await supabase.storage
         .from('elterngeldantrag-drafts')
         .download(previousPdfPath);
 
       if (loadError || !prevPdf) {
-        console.error('Error loading previous PDF:', loadError);
-        throw new Error('Failed to load previous PDF');
+        console.error('ERROR: Failed to load previous PDF:', loadError);
+        throw new Error(`Failed to load previous PDF: ${loadError?.message || 'Unknown error'}`);
       }
 
+      console.log('Previous PDF downloaded, size:', prevPdf.size);
       const arrayBuffer = await prevPdf.arrayBuffer();
+      console.log('ArrayBuffer created, loading PDF document...');
       pdfDoc = await PDFDocument.load(arrayBuffer);
+      console.log('Previous PDF loaded successfully');
     } else {
-      console.log('Loading template PDF...');
+      console.log('Step 5: Loading template PDF from form-templates bucket...');
       const { data: templatePdf, error: templateError } = await supabase.storage
         .from('form-templates')
         .download('elterngeldantrag_bis_Maerz25.pdf');
 
       if (templateError || !templatePdf) {
-        console.error('Error loading template:', templateError);
+        console.error('ERROR: Failed to load template:', templateError);
+        console.error('Template error details:', JSON.stringify(templateError, null, 2));
         throw new Error(`Failed to load PDF template: ${templateError?.message || 'Unknown error'}`);
       }
 
+      console.log('Template PDF downloaded, size:', templatePdf.size);
       const arrayBuffer = await templatePdf.arrayBuffer();
+      console.log('ArrayBuffer created, loading PDF document...');
       pdfDoc = await PDFDocument.load(arrayBuffer);
+      console.log('Template PDF loaded successfully, pages:', pdfDoc.getPageCount());
     }
 
-    console.log('PDF loaded, filling fields...');
+    console.log('Step 6: Getting form and fields...');
 
     const form = pdfDoc.getForm();
     const formFields = form.getFields();
@@ -136,11 +154,15 @@ serve(async (req) => {
       console.log('Failed fields:', JSON.stringify(failedFields, null, 2));
     }
 
-    console.log(`Filled ${filledFieldsCount} fields`);
+    console.log(`Step 7: Filled ${filledFieldsCount} fields`);
 
     // Save PDF to storage
+    console.log('Step 8: Saving PDF...');
     const pdfBytes = await pdfDoc.save();
+    console.log('PDF saved to bytes, size:', pdfBytes.length);
+    
     const fileName = `${user.id}/step-${step}.pdf`;
+    console.log('Uploading to:', fileName);
     
     const { error: uploadError } = await supabase.storage
       .from('elterngeldantrag-drafts')
@@ -150,16 +172,22 @@ serve(async (req) => {
       });
 
     if (uploadError) {
-      console.error('Error uploading PDF:', uploadError);
-      throw new Error('Failed to upload PDF');
+      console.error('ERROR: Failed to upload PDF:', uploadError);
+      throw new Error(`Failed to upload PDF: ${uploadError.message}`);
     }
 
+    console.log('PDF uploaded successfully');
+
     // Get public URL
+    console.log('Step 9: Getting public URL...');
     const { data: urlData } = supabase.storage
       .from('elterngeldantrag-drafts')
       .getPublicUrl(fileName);
+    
+    console.log('Public URL generated:', urlData.publicUrl);
 
     // Update progress in database
+    console.log('Step 10: Updating progress in database...');
     const { error: progressError } = await supabase
       .from('elterngeldantrag_progress')
       .upsert({
@@ -174,11 +202,22 @@ serve(async (req) => {
       });
 
     if (progressError) {
-      console.error('Error updating progress:', progressError);
+      console.error('Warning: Error updating progress:', progressError);
+    } else {
+      console.log('Progress updated successfully');
     }
 
     const allFields = form.getFields();
     const completionPercentage = Math.round((filledFieldsCount / allFields.length) * 100);
+
+    console.log('=== SUCCESS ===');
+    console.log('Response:', {
+      pdfPath: fileName,
+      pdfUrl: urlData.publicUrl,
+      filledFieldsCount,
+      totalFields: allFields.length,
+      completionPercentage
+    });
 
     return new Response(
       JSON.stringify({
