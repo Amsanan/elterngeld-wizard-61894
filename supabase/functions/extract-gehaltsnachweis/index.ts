@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { mapWithLLM } from "./mapWithLLM.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -75,63 +76,27 @@ Deno.serve(async (req) => {
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
       console.log("OCR Text:", ocrText);
 
-      const parseAmount = (text: string): number | undefined => {
-        const cleaned = text?.replace(/\./g, "").replace(",", ".");
-        const parsed = parseFloat(cleaned);
-        return isNaN(parsed) ? undefined : parsed;
-      };
+      // Use LLM to extract structured data from the OCR text
+      console.log("Using LLM extraction for Gehaltsnachweis...");
+      const llmResult = await mapWithLLM({
+        schema: null, // Will use TABLE_SCHEMA from mapWithLLM.ts
+        ocrText: ocrText,
+      });
 
+      console.log("LLM extraction result:", JSON.stringify(llmResult, null, 2));
+
+      // Build the final extracted data
       const extractedData: any = {
         user_id: user.id,
         person_type: personType,
         file_path: filePath,
+        ...llmResult.data,
       };
 
-      // Extract month (YYYY-MM)
-      const monatMatch = ocrText.match(/(\d{2})\.(\d{4})|(\d{4})-(\d{2})/);
-      if (monatMatch) {
-        extractedData.abrechnungsmonat = monatMatch[3] ? `${monatMatch[3]}-${monatMatch[4]}` : `${monatMatch[2]}-${monatMatch[1]}`;
+      // Store confidence scores if available
+      if (llmResult.confidence && Object.keys(llmResult.confidence).length > 0) {
+        extractedData.confidence_scores = llmResult.confidence;
       }
-
-      // Extract employer name
-      const arbeitgeberMatch = ocrText.match(/(?:Arbeitgeber|Firma)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s&.,-]+?)(?=\n)/i);
-      if (arbeitgeberMatch) extractedData.arbeitgeber_name = arbeitgeberMatch[1].trim();
-
-      // Extract gross salary (correct column name: bruttogehalt)
-      const bruttoMatch = ocrText.match(/(?:Brutto|Bruttogehalt|Gesetzliches Brutto)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (bruttoMatch) extractedData.bruttogehalt = parseAmount(bruttoMatch[1]);
-
-      // Extract net salary (correct column name: nettogehalt)
-      const nettoMatch = ocrText.match(/(?:Netto|Nettogehalt|Auszahlung|Überweisungsbetrag)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (nettoMatch) extractedData.nettogehalt = parseAmount(nettoMatch[1]);
-
-      // Extract wage tax
-      const lohnsteuerMatch = ocrText.match(/(?:Lohnsteuer|LSt)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (lohnsteuerMatch) extractedData.lohnsteuer = parseAmount(lohnsteuerMatch[1]);
-
-      // Extract solidarity surcharge
-      const soliMatch = ocrText.match(/(?:Solidaritätszuschlag|SolZ)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (soliMatch) extractedData.solidaritaetszuschlag = parseAmount(soliMatch[1]);
-
-      // Extract church tax
-      const kirchensteuerMatch = ocrText.match(/(?:Kirchensteuer|KiSt)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (kirchensteuerMatch) extractedData.kirchensteuer = parseAmount(kirchensteuerMatch[1]);
-
-      // Extract unemployment insurance
-      const arbeitslosenMatch = ocrText.match(/(?:Arbeitslosenversicherung|AV)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (arbeitslosenMatch) extractedData.arbeitslosenversicherung = parseAmount(arbeitslosenMatch[1]);
-
-      // Extract pension insurance
-      const rentenMatch = ocrText.match(/(?:Rentenversicherung|RV)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (rentenMatch) extractedData.rentenversicherung = parseAmount(rentenMatch[1]);
-
-      // Extract health insurance
-      const krankenMatch = ocrText.match(/(?:Krankenversicherung|KV)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (krankenMatch) extractedData.krankenversicherung = parseAmount(krankenMatch[1]);
-
-      // Extract care insurance
-      const pflegeMatch = ocrText.match(/(?:Pflegeversicherung|PV)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (pflegeMatch) extractedData.pflegeversicherung = parseAmount(pflegeMatch[1]);
 
       const { data: insertedData, error: insertError } = await supabase
         .from("gehaltsnachweise")

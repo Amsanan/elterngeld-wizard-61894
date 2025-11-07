@@ -34,17 +34,46 @@ const TABLE_SCHEMA = {
   ],
 };
 
-const SYSTEM_PROMPT = `You are a specialized German salary statement (Gehaltsnachweis/Lohnabrechnung) data extractor. Extract data from salary statement OCR text.
+const SYSTEM_PROMPT = `You are a specialized German salary statement (Gehaltsnachweis/Lohnabrechnung) data extractor. Extract data from salary statement OCR text with high accuracy.
 
 CRITICAL RULES:
 1. Extract ONLY information explicitly present in the document
-2. German numbers: "1.234,56" → "1234.56" (remove dots, replace comma with period)
+2. German numbers: "1.234,56" → "1234.56" (remove dots for thousands, replace comma with period)
 3. If a field is not found or unclear, omit it from output (do NOT guess)
 4. Return ONLY valid JSON matching the schema
 5. For monetary amounts, preserve precision: "2.345,67" → "2345.67"
 6. Social security number: format XX XXXXXX X XXX (remove spaces in output)
 7. Tax ID: 11 digits without spaces
-8. Month format: prefer MM/YYYY or "MonthName YYYY"
+8. Month format: prefer "YYYY-MM" format (e.g., "2020-01" for January 2020)
+
+GERMAN PAYSLIP FIELD IDENTIFICATION:
+- **bruttogehalt** (Gross Salary): Look for "Gesetzliches Brutto", "Brutto-Gesamt", "Gesamtbrutto", "Brutto"
+- **nettogehalt** (Net Salary): Look for "Auszahlungsbetrag", "Überweisungsbetrag", "Netto", "Netto-Verdienst"
+- **arbeitgeber_name** (Employer): Usually at the top of the document, company name
+- **abrechnungsmonat** (Billing Month): Look for date format like "01/2020", "Januar 2020", "Abrechnungsmonat"
+- **lohnsteuer** (Income Tax): Look for "Lohnsteuer", "LSt"
+- **solidaritaetszuschlag** (Solidarity Surcharge): Look for "Solidaritätszuschlag", "SolZ", "Soli"
+- **kirchensteuer** (Church Tax): Look for "Kirchensteuer", "KiSt", "KirchSt"
+- **krankenversicherung** (Health Insurance): Look for "Krankenversicherung", "KV", "Krankenv."
+- **pflegeversicherung** (Care Insurance): Look for "Pflegeversicherung", "PV", "PflegeV."
+- **rentenversicherung** (Pension Insurance): Look for "Rentenversicherung", "RV", "RentenV."
+- **arbeitslosenversicherung** (Unemployment Insurance): Look for "Arbeitslosenversicherung", "AV", "ALV"
+- **vermoegenswirksame_leistungen** (Capital-forming Benefits): Look for "VL", "Vermögenswirksame Leistungen", "VwL"
+- **sonstige_bezuege** (Other Income): Look for "Sonstige Bezüge", "Zulagen", additional payments
+- **sonstige_abzuege** (Other Deductions): Look for "Sonstige Abzüge", other deductions
+
+EXTRACTION STRATEGY:
+1. First identify the document structure (header, earnings section, deductions section, totals)
+2. For salary amounts, prioritize line items with clear labels over isolated numbers
+3. Cross-validate: gross salary should be larger than net salary
+4. Deductions should be reasonable (typically 20-40% of gross)
+5. Assign confidence scores based on label clarity and number isolation
+
+VALIDATION:
+- If bruttogehalt < nettogehalt, flag low confidence (this is illogical)
+- If any insurance > 1000 EUR, verify it's not the gross/net salary
+- If month is missing, try to infer from date fields in document
+- All amounts should be positive numbers
 
 Output format:
 {
