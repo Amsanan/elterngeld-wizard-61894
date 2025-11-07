@@ -12,18 +12,9 @@ import { MappingsList } from "@/components/field-mapper/MappingsList";
 import { MappingStats } from "@/components/field-mapper/MappingStats";
 import { AutoMapDialog } from "@/components/field-mapper/AutoMapDialog";
 
-const DOCUMENT_TYPES = [
-  { value: "geburtsurkunde", label: "Geburtsurkunde" },
-  { value: "eltern_dokument_vater", label: "Ausweis Vater" },
-  { value: "eltern_dokument_mutter", label: "Ausweis Mutter" },
-  { value: "meldebescheinigung_mutter", label: "Meldebescheinigung Mutter" },
-  { value: "meldebescheinigung_vater", label: "Meldebescheinigung Vater" },
-  { value: "bankverbindung", label: "Bankverbindung" },
-];
-
 export default function AdminFieldMapper() {
   const navigate = useNavigate();
-  const [documentType, setDocumentType] = useState("geburtsurkunde");
+  const [documentType, setDocumentType] = useState("");
   const [databaseSchema, setDatabaseSchema] = useState<any[]>([]);
   const [pdfFields, setPdfFields] = useState<Array<{ name: string; page: number; x: number; y: number; type: string }>>([]);
   const [mappings, setMappings] = useState<any[]>([]);
@@ -53,7 +44,13 @@ export default function AdminFieldMapper() {
     try {
       const { data, error } = await supabase.functions.invoke('get-database-schema');
       if (error) throw error;
-      setDatabaseSchema(data.schema || []);
+      const schema = data.schema || [];
+      setDatabaseSchema(schema);
+      
+      // Set first table as default if not already set
+      if (schema.length > 0 && !documentType) {
+        setDocumentType(schema[0].table_name);
+      }
     } catch (error: any) {
       console.error('Error loading schema:', error);
       toast.error('Failed to load database schema');
@@ -421,10 +418,10 @@ export default function AdminFieldMapper() {
                 <SelectTrigger className="w-64">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  {DOCUMENT_TYPES.map(type => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                <SelectContent className="bg-background z-50">
+                  {databaseSchema.map(table => (
+                    <SelectItem key={table.table_name} value={table.table_name}>
+                      {table.table_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
