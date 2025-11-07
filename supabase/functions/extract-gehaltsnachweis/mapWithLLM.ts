@@ -39,12 +39,13 @@ const SYSTEM_PROMPT = `You are a specialized German salary statement (Gehaltsnac
 CRITICAL RULES:
 1. Extract ONLY information explicitly present in the document
 2. German numbers: "1.234,56" → "1234.56" (remove dots for thousands, replace comma with period)
-3. If a field is not found or unclear, omit it from output (do NOT guess)
-4. Return ONLY valid JSON matching the schema
-5. For monetary amounts, preserve precision: "2.345,67" → "2345.67"
-6. Social security number: format XX XXXXXX X XXX (remove spaces in output)
-7. Tax ID: 11 digits without spaces
-8. Month format: prefer "YYYY-MM" format (e.g., "2020-01" for January 2020)
+3. Numbers without separators: If you see "30600" in a salary context, interpret as "306.00" (divide by 100)
+4. If a field is not found or unclear, omit it from output (do NOT guess)
+5. Return ONLY valid JSON matching the schema
+6. For monetary amounts, preserve precision: "2.345,67" → "2345.67"
+7. Social security number: format XX XXXXXX X XXX (remove spaces in output)
+8. Tax ID: 11 digits without spaces
+9. Month format: prefer "YYYY-MM" format (e.g., "2020-01" for January 2020)
 
 ZERO VS NULL DISTINCTION (CRITICAL):
 - Use "0" (string) when the document EXPLICITLY shows zero with: "--", "0,00", "0.00", "0", "n.zutr.", "nicht zutreffend"
@@ -53,11 +54,26 @@ ZERO VS NULL DISTINCTION (CRITICAL):
 - Example: If Kirchensteuer is not mentioned anywhere, do not include kirchensteuer in output
 - This distinction is CRITICAL for accurate financial calculations
 
+NET SALARY VS PAYOUT AMOUNT (CRITICAL):
+- **Netto-Verdienst / Netto-Bezüge / Nettolohn**: This is the TRUE net salary = Bruttogehalt - all deductions
+  → Extract this as "nettogehalt"
+- **Auszahlungsbetrag / Überweisungsbetrag**: This is the payout amount = Net salary + reimbursements/allowances
+  → DO NOT use this for "nettogehalt"
+- If both are present, ALWAYS prefer "Netto-Verdienst" over "Auszahlungsbetrag" for nettogehalt
+- Validation: nettogehalt should be approximately: bruttogehalt - (lohnsteuer + solidaritätszuschlag + kirchensteuer + krankenversicherung + pflegeversicherung + rentenversicherung + arbeitslosenversicherung + sonstige_abzuege)
+
+ADDITIONAL PAYMENTS AND REIMBURSEMENTS:
+- "Erstattung Spesen/Auslagen", "Spesen", "Auslagenerstattung" → sonstige_bezuege
+- "Verpflegungszuschuss", "Verpflegungspauschale", "Essenszuschuss" → sonstige_bezuege
+- "Fahrtkostenzuschuss", "Fahrgeld" → sonstige_bezuege
+- These are NOT part of regular salary, they are additional payments/reimbursements
+- Sum all of these into sonstige_bezuege field
+
 GERMAN PAYSLIP FIELD IDENTIFICATION:
-- **bruttogehalt** (Gross Salary): Look for "Gesetzliches Brutto", "Brutto-Gesamt", "Gesamtbrutto", "Brutto"
-- **nettogehalt** (Net Salary): Look for "Auszahlungsbetrag", "Überweisungsbetrag", "Netto", "Netto-Verdienst"
+- **bruttogehalt** (Gross Salary): Look for "Gesetzliches Brutto", "Brutto-Gesamt", "Gesamtbrutto", "Gesamt-Brutto", "Brutto"
+- **nettogehalt** (Net Salary): Look for "Netto-Verdienst", "Netto-Bezüge", "Nettolohn", "Netto" (NOT "Auszahlungsbetrag")
 - **arbeitgeber_name** (Employer): Usually at the top of the document, company name
-- **abrechnungsmonat** (Billing Month): Look for date format like "01/2020", "Januar 2020", "Abrechnungsmonat"
+- **abrechnungsmonat** (Billing Month): Look for date format like "01/2020", "Januar 2020", "03/2019", "Abrechnungsmonat"
 - **lohnsteuer** (Income Tax): Look for "Lohnsteuer", "LSt"
 - **solidaritaetszuschlag** (Solidarity Surcharge): Look for "Solidaritätszuschlag", "SolZ", "Soli"
 - **kirchensteuer** (Church Tax): Look for "Kirchensteuer", "KiSt", "KirchSt"
@@ -66,7 +82,7 @@ GERMAN PAYSLIP FIELD IDENTIFICATION:
 - **rentenversicherung** (Pension Insurance): Look for "Rentenversicherung", "RV", "RentenV."
 - **arbeitslosenversicherung** (Unemployment Insurance): Look for "Arbeitslosenversicherung", "AV", "ALV"
 - **vermoegenswirksame_leistungen** (Capital-forming Benefits): Look for "VL", "Vermögenswirksame Leistungen", "VwL"
-- **sonstige_bezuege** (Other Income): Look for "Sonstige Bezüge", "Zulagen", additional payments
+- **sonstige_bezuege** (Other Income): Look for "Sonstige Bezüge", "Zulagen", "Erstattung", "Spesen", "Verpflegungszuschuss", additional payments
 - **sonstige_abzuege** (Other Deductions): Look for "Sonstige Abzüge", other deductions
 
 EXTRACTION STRATEGY:
@@ -78,9 +94,11 @@ EXTRACTION STRATEGY:
 
 VALIDATION:
 - If bruttogehalt < nettogehalt, flag low confidence (this is illogical)
+- If nettogehalt is suspiciously close to bruttogehalt (>90%), you might have extracted the Auszahlungsbetrag instead
 - If any insurance > 1000 EUR, verify it's not the gross/net salary
 - If month is missing, try to infer from date fields in document
 - All amounts should be positive numbers
+- Validate: bruttogehalt - (sum of all deductions) should approximately equal nettogehalt (within 5 EUR tolerance)
 
 Output format:
 {
@@ -223,6 +241,44 @@ Return extracted data as JSON only.`;
             break;
           }
         }
+      }
+    }
+  }
+
+  // Validation: Check if bruttogehalt - deductions ≈ nettogehalt
+  const bruttogehalt = parseFloat(normalizedData.bruttogehalt || "0");
+  const nettogehalt = parseFloat(normalizedData.nettogehalt || "0");
+  
+  if (bruttogehalt > 0 && nettogehalt > 0) {
+    const deductions = 
+      parseFloat(normalizedData.lohnsteuer || "0") +
+      parseFloat(normalizedData.solidaritaetszuschlag || "0") +
+      parseFloat(normalizedData.kirchensteuer || "0") +
+      parseFloat(normalizedData.krankenversicherung || "0") +
+      parseFloat(normalizedData.pflegeversicherung || "0") +
+      parseFloat(normalizedData.rentenversicherung || "0") +
+      parseFloat(normalizedData.arbeitslosenversicherung || "0") +
+      parseFloat(normalizedData.vermoegenswirksame_leistungen || "0") +
+      parseFloat(normalizedData.sonstige_abzuege || "0");
+    
+    const calculatedNet = bruttogehalt - deductions;
+    const difference = Math.abs(calculatedNet - nettogehalt);
+    
+    console.log(`Validation: Bruttogehalt (${bruttogehalt}) - Deductions (${deductions}) = ${calculatedNet}, Extracted Nettogehalt: ${nettogehalt}, Difference: ${difference}`);
+    
+    // If difference > 5 EUR, flag low confidence for nettogehalt
+    if (difference > 5) {
+      console.warn(`⚠️ Validation failed: Calculated net (${calculatedNet}) differs from extracted net (${nettogehalt}) by ${difference} EUR`);
+      if (parsed.confidence) {
+        parsed.confidence.nettogehalt = Math.min(parsed.confidence.nettogehalt || 50, 60);
+      }
+    }
+    
+    // If nettogehalt > 90% of bruttogehalt, it might be the Auszahlungsbetrag instead
+    if (nettogehalt > bruttogehalt * 0.9) {
+      console.warn(`⚠️ Warning: Nettogehalt (${nettogehalt}) is >90% of Bruttogehalt (${bruttogehalt}). Might have extracted Auszahlungsbetrag instead of Netto-Verdienst`);
+      if (parsed.confidence) {
+        parsed.confidence.nettogehalt = Math.min(parsed.confidence.nettogehalt || 50, 50);
       }
     }
   }
