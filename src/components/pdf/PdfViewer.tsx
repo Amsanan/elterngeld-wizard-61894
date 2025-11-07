@@ -35,14 +35,27 @@ export const PdfViewer = ({
     onLoadError(error);
   }
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (downloadUrl) {
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = 'elterngeldantrag.pdf';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      try {
+        // Fetch the PDF as a blob to handle cross-origin downloads
+        const response = await fetch(downloadUrl);
+        const blob = await response.blob();
+        
+        // Create a blob URL and trigger download
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = 'elterngeldantrag.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the blob URL
+        URL.revokeObjectURL(blobUrl);
+      } catch (error) {
+        console.error('Download failed:', error);
+      }
     }
   };
 
