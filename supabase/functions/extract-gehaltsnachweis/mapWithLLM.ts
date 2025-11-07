@@ -21,13 +21,13 @@ const TABLE_SCHEMA = {
     { name: "nettogehalt", type: "decimal", description: "Net salary as decimal string" },
     { name: "sozialversicherungsnummer", type: "string", description: "Social security number" },
     { name: "steuer_id", type: "string", description: "Tax ID (11 digits)" },
-    { name: "lohnsteuer", type: "decimal", description: "Income tax deduction. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
-    { name: "solidaritaetszuschlag", type: "decimal", description: "Solidarity surcharge. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
-    { name: "kirchensteuer", type: "decimal", description: "Church tax. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
-    { name: "krankenversicherung", type: "decimal", description: "Health insurance contribution. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
-    { name: "pflegeversicherung", type: "decimal", description: "Care insurance contribution. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
-    { name: "rentenversicherung", type: "decimal", description: "Pension insurance contribution. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
-    { name: "arbeitslosenversicherung", type: "decimal", description: "Unemployment insurance contribution. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "lohnsteuer", type: "decimal", description: "Income tax deduction ONLY (Lohnsteuer, LSt). Do NOT include Solidaritätszuschlag here. Extract individual line item, not summary box. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "solidaritaetszuschlag", type: "decimal", description: "Solidarity surcharge ONLY (SolZ, Soli). Extract as separate line item, not part of Lohnsteuer. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "kirchensteuer", type: "decimal", description: "Church tax ONLY (Kirchensteuer, KiSt). Extract individual line item, not summary box. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "krankenversicherung", type: "decimal", description: "Health insurance contribution ONLY (Krankenversicherung, KV). Extract individual line item, not from 'SV-rechtliche Abzüge' summary. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "pflegeversicherung", type: "decimal", description: "Care insurance contribution ONLY (Pflegeversicherung, PV). Extract individual line item, not from summary box. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "rentenversicherung", type: "decimal", description: "Pension insurance contribution ONLY (Rentenversicherung, RV). Extract individual line item, not from summary box. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "arbeitslosenversicherung", type: "decimal", description: "Unemployment insurance contribution ONLY (Arbeitslosenversicherung, AV, ALV). Extract individual line item, not from summary box. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
     { name: "vermoegenswirksame_leistungen", type: "decimal", description: "Capital-forming benefits. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
     { name: "sonstige_bezuege", type: "decimal", description: "Other income/allowances. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
     { name: "sonstige_abzuege", type: "decimal", description: "Other deductions. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
@@ -69,18 +69,40 @@ ADDITIONAL PAYMENTS AND REIMBURSEMENTS:
 - These are NOT part of regular salary, they are additional payments/reimbursements
 - Sum all of these into sonstige_bezuege field
 
+SUMMARY BOXES VS INDIVIDUAL LINE ITEMS (CRITICAL):
+German payslips often show BOTH detailed line items AND summary totals. You MUST extract ONLY individual line items, NOT the summary boxes:
+
+**IGNORE these summary boxes (DO NOT extract):**
+- "Steuerrechtliche Abzüge" or "Steuerrechtl. Abzüge" (this is a TOTAL, not a line item)
+- "SV-rechtliche Abzüge" or "Sozialversicherung gesamt" (this is a TOTAL, not a line item)
+- Any line labeled "Gesamt", "Summe", "Total" for deductions
+
+**EXTRACT these individual line items:**
+- "Lohnsteuer 690,58" → lohnsteuer = "690.58"
+- "Solidaritätszuschlag 37,98" → solidaritaetszuschlag = "37.98"
+- "Kirchensteuer 0,00" → kirchensteuer = "0"
+- "Krankenversicherung 306,00" → krankenversicherung = "306.00"
+- "Rentenversicherung 372,00" → rentenversicherung = "372.00"
+- "Arbeitslosenversicherung 48,00" → arbeitslosenversicherung = "48.00"
+- "Pflegeversicherung 73,00" → pflegeversicherung = "73.00"
+
+**Validation Rules:**
+- Lohnsteuer + Solidaritätszuschlag + Kirchensteuer should equal "Steuerrechtliche Abzüge" total (if shown)
+- Sum of all social insurance items should equal "SV-rechtliche Abzüge" total (if shown)
+- If your extracted components don't sum to the shown totals, you may have extracted incorrectly
+
 GERMAN PAYSLIP FIELD IDENTIFICATION:
 - **bruttogehalt** (Gross Salary): Look for "Gesetzliches Brutto", "Brutto-Gesamt", "Gesamtbrutto", "Gesamt-Brutto", "Brutto"
 - **nettogehalt** (Net Salary): Look for "Netto-Verdienst", "Netto-Bezüge", "Nettolohn", "Netto" (NOT "Auszahlungsbetrag")
 - **arbeitgeber_name** (Employer): Usually at the top of the document, company name
 - **abrechnungsmonat** (Billing Month): Look for date format like "01/2020", "Januar 2020", "03/2019", "Abrechnungsmonat"
-- **lohnsteuer** (Income Tax): Look for "Lohnsteuer", "LSt"
-- **solidaritaetszuschlag** (Solidarity Surcharge): Look for "Solidaritätszuschlag", "SolZ", "Soli"
-- **kirchensteuer** (Church Tax): Look for "Kirchensteuer", "KiSt", "KirchSt"
-- **krankenversicherung** (Health Insurance): Look for "Krankenversicherung", "KV", "Krankenv."
-- **pflegeversicherung** (Care Insurance): Look for "Pflegeversicherung", "PV", "PflegeV."
-- **rentenversicherung** (Pension Insurance): Look for "Rentenversicherung", "RV", "RentenV."
-- **arbeitslosenversicherung** (Unemployment Insurance): Look for "Arbeitslosenversicherung", "AV", "ALV"
+- **lohnsteuer** (Income Tax): Look for "Lohnsteuer", "LSt" (individual line item, NOT "Steuerrechtliche Abzüge" summary)
+- **solidaritaetszuschlag** (Solidarity Surcharge): Look for "Solidaritätszuschlag", "SolZ", "Soli" (separate from Lohnsteuer)
+- **kirchensteuer** (Church Tax): Look for "Kirchensteuer", "KiSt", "KirchSt" (individual line item)
+- **krankenversicherung** (Health Insurance): Look for "Krankenversicherung", "KV", "Krankenv." (individual line item, NOT "SV-rechtliche Abzüge")
+- **pflegeversicherung** (Care Insurance): Look for "Pflegeversicherung", "PV", "PflegeV." (individual line item)
+- **rentenversicherung** (Pension Insurance): Look for "Rentenversicherung", "RV", "RentenV." (individual line item)
+- **arbeitslosenversicherung** (Unemployment Insurance): Look for "Arbeitslosenversicherung", "AV", "ALV" (individual line item)
 - **vermoegenswirksame_leistungen** (Capital-forming Benefits): Look for "VL", "Vermögenswirksame Leistungen", "VwL"
 - **sonstige_bezuege** (Other Income): Look for "Sonstige Bezüge", "Zulagen", "Erstattung", "Spesen", "Verpflegungszuschuss", additional payments
 - **sonstige_abzuege** (Other Deductions): Look for "Sonstige Abzüge", other deductions
@@ -245,32 +267,65 @@ Return extracted data as JSON only.`;
     }
   }
 
-  // Validation: Check if bruttogehalt - deductions ≈ nettogehalt
+  // Enhanced Validation: Check component totals and cross-validate
   const bruttogehalt = parseFloat(normalizedData.bruttogehalt || "0");
   const nettogehalt = parseFloat(normalizedData.nettogehalt || "0");
   
   if (bruttogehalt > 0 && nettogehalt > 0) {
-    const deductions = 
+    // Calculate tax total (Steuerrechtliche Abzüge)
+    const taxTotal = 
       parseFloat(normalizedData.lohnsteuer || "0") +
       parseFloat(normalizedData.solidaritaetszuschlag || "0") +
-      parseFloat(normalizedData.kirchensteuer || "0") +
+      parseFloat(normalizedData.kirchensteuer || "0");
+    
+    // Calculate social insurance total (SV-rechtliche Abzüge)
+    const socialTotal = 
       parseFloat(normalizedData.krankenversicherung || "0") +
       parseFloat(normalizedData.pflegeversicherung || "0") +
       parseFloat(normalizedData.rentenversicherung || "0") +
-      parseFloat(normalizedData.arbeitslosenversicherung || "0") +
+      parseFloat(normalizedData.arbeitslosenversicherung || "0");
+    
+    // Calculate other deductions
+    const otherDeductions = 
       parseFloat(normalizedData.vermoegenswirksame_leistungen || "0") +
       parseFloat(normalizedData.sonstige_abzuege || "0");
     
-    const calculatedNet = bruttogehalt - deductions;
+    const totalDeductions = taxTotal + socialTotal + otherDeductions;
+    const calculatedNet = bruttogehalt - totalDeductions;
     const difference = Math.abs(calculatedNet - nettogehalt);
     
-    console.log(`Validation: Bruttogehalt (${bruttogehalt}) - Deductions (${deductions}) = ${calculatedNet}, Extracted Nettogehalt: ${nettogehalt}, Difference: ${difference}`);
+    console.log(`Enhanced Validation:`);
+    console.log(`  Bruttogehalt: ${bruttogehalt}`);
+    console.log(`  Tax Total (Steuerrechtliche): ${taxTotal} (Lohnsteuer: ${normalizedData.lohnsteuer || 0}, Soli: ${normalizedData.solidaritaetszuschlag || 0}, Kirche: ${normalizedData.kirchensteuer || 0})`);
+    console.log(`  Social Total (SV-rechtliche): ${socialTotal} (KV: ${normalizedData.krankenversicherung || 0}, PV: ${normalizedData.pflegeversicherung || 0}, RV: ${normalizedData.rentenversicherung || 0}, AV: ${normalizedData.arbeitslosenversicherung || 0})`);
+    console.log(`  Other Deductions: ${otherDeductions}`);
+    console.log(`  Total Deductions: ${totalDeductions}`);
+    console.log(`  Calculated Net: ${calculatedNet}`);
+    console.log(`  Extracted Nettogehalt: ${nettogehalt}`);
+    console.log(`  Difference: ${difference} EUR`);
     
     // If difference > 5 EUR, flag low confidence for nettogehalt
     if (difference > 5) {
       console.warn(`⚠️ Validation failed: Calculated net (${calculatedNet}) differs from extracted net (${nettogehalt}) by ${difference} EUR`);
+      console.warn(`   This suggests deduction components may be incorrectly extracted (possibly from summary boxes instead of individual line items)`);
       if (parsed.confidence) {
         parsed.confidence.nettogehalt = Math.min(parsed.confidence.nettogehalt || 50, 60);
+      }
+    }
+    
+    // Check if tax components are reasonable
+    if (taxTotal > bruttogehalt * 0.5) {
+      console.warn(`⚠️ Warning: Tax total (${taxTotal}) seems too high (>${bruttogehalt * 0.5}). May have extracted summary box instead of individual items.`);
+      if (parsed.confidence) {
+        parsed.confidence.lohnsteuer = Math.min(parsed.confidence.lohnsteuer || 50, 50);
+      }
+    }
+    
+    // Check if social insurance components are reasonable
+    if (socialTotal > bruttogehalt * 0.3) {
+      console.warn(`⚠️ Warning: Social insurance total (${socialTotal}) seems too high (>${bruttogehalt * 0.3}). May have extracted summary box instead of individual items.`);
+      if (parsed.confidence) {
+        parsed.confidence.krankenversicherung = Math.min(parsed.confidence.krankenversicherung || 50, 50);
       }
     }
     
