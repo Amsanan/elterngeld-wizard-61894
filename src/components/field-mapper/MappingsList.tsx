@@ -13,6 +13,7 @@ interface MappingsListProps {
 
 export function MappingsList({ mappings, onUpdate, pdfFields }: MappingsListProps) {
   const [personTypeFilter, setPersonTypeFilter] = useState<string>("all");
+  const [documentTypeFilter, setDocumentTypeFilter] = useState<string>("all");
 
   const handleUpdateMapping = (index: number, updates: any) => {
     const newMappings = [...mappings];
@@ -26,17 +27,33 @@ export function MappingsList({ mappings, onUpdate, pdfFields }: MappingsListProp
   };
 
   const filteredMappings = mappings.filter(mapping => {
-    if (personTypeFilter === "all") return true;
-    
-    if (!mapping.filter_condition) return false;
-    
-    const filterCondition = mapping.filter_condition;
-    if (typeof filterCondition === 'object' && filterCondition !== null) {
-      const personType = filterCondition['person_type'];
-      return personType === personTypeFilter;
+    // Filter by person type
+    if (personTypeFilter !== "all") {
+      if (!mapping.filter_condition) return false;
+      
+      const filterCondition = mapping.filter_condition;
+      if (typeof filterCondition === 'object' && filterCondition !== null) {
+        const personType = filterCondition['person_type'];
+        if (personType !== personTypeFilter) return false;
+      } else {
+        return false;
+      }
     }
     
-    return false;
+    // Filter by document type
+    if (documentTypeFilter !== "all") {
+      if (!mapping.filter_condition) return false;
+      
+      const filterCondition = mapping.filter_condition;
+      if (typeof filterCondition === 'object' && filterCondition !== null) {
+        const documentType = filterCondition['document_type'];
+        if (documentType !== documentTypeFilter) return false;
+      } else {
+        return false;
+      }
+    }
+    
+    return true;
   });
 
   return (
@@ -51,9 +68,19 @@ export function MappingsList({ mappings, onUpdate, pdfFields }: MappingsListProp
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Mappings</SelectItem>
+              <SelectItem value="all">All Person Types</SelectItem>
               <SelectItem value="mutter">👩 Mother Only</SelectItem>
               <SelectItem value="vater">👨 Father Only</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={documentTypeFilter} onValueChange={setDocumentTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Document Types</SelectItem>
+              <SelectItem value="Personalausweis">🪪 Personalausweis</SelectItem>
+              <SelectItem value="Reisepass">📘 Reisepass</SelectItem>
             </SelectContent>
           </Select>
           <span className="text-sm text-muted-foreground">
@@ -66,7 +93,7 @@ export function MappingsList({ mappings, onUpdate, pdfFields }: MappingsListProp
           <p className="text-sm text-muted-foreground text-center py-8">
             {mappings.length === 0 
               ? "No mappings yet. Click \"Auto-Map\" to generate suggestions."
-              : `No mappings found with filter: ${personTypeFilter === 'mutter' ? '👩 Mother' : '👨 Father'}`
+              : "No mappings found with current filters"
             }
           </p>
         ) : (
