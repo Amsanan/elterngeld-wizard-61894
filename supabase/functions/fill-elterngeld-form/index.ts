@@ -228,7 +228,8 @@ serve(async (req) => {
         const fieldType = field.constructor.name;
         console.log(`  Field type: ${fieldType}`);
 
-        if (fieldType === 'PDFTextField') {
+        // Handle both full class names and shorthand types
+        if (fieldType === 'PDFTextField' || fieldType === 't') {
           const textField = field as any;
           
           // Format dates if the source field appears to be a date field
@@ -243,7 +244,7 @@ serve(async (req) => {
           filledFieldsCount++;
           console.log(`  ✓ SUCCESS: Filled text field with "${stringValue}"`);
           
-        } else if (fieldType === 'PDFCheckBox') {
+        } else if (fieldType === 'PDFCheckBox' || fieldType === 'c' || fieldType === 'ch') {
           const checkbox = field as any;
           if (value === true || value === 'true' || value === 'ja' || value === 'yes') {
             checkbox.check();
@@ -254,7 +255,7 @@ serve(async (req) => {
             console.log(`  ⊘ Checkbox value not truthy, leaving unchecked`);
           }
           
-        } else if (fieldType === 'PDFDropdown') {
+        } else if (fieldType === 'PDFDropdown' || fieldType === 'd') {
           const dropdown = field as any;
           dropdown.select(String(value));
           filledFieldsList.push(pdf_field_name);
