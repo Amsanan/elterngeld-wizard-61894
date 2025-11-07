@@ -22,9 +22,18 @@ export function PdfFieldsList({ fields, mappings, onCreateMapping }: PdfFieldsLi
   const [searchTerm, setSearchTerm] = useState("");
   const [dragOver, setDragOver] = useState<string | null>(null);
 
-  const filteredFields = fields.filter(field =>
-    field.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Detect page filter queries (P1, Page 2, p2, etc.)
+  const pageMatch = searchTerm.match(/^(?:page?\s*)?(\d+)$/i);
+  
+  const filteredFields = fields.filter(field => {
+    if (pageMatch) {
+      // Filter by page number (pages are 0-indexed, but users think 1-indexed)
+      const pageNumber = parseInt(pageMatch[1]) - 1;
+      return field.page === pageNumber;
+    }
+    // Default: filter by field name
+    return field.name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const isMapped = (fieldName: string) => {
     return mappings.some(m => m.pdf_field_name === fieldName);
@@ -50,7 +59,7 @@ export function PdfFieldsList({ fields, mappings, onCreateMapping }: PdfFieldsLi
         )}
       </div>
       <Input
-        placeholder="Search PDF fields..."
+        placeholder="Search fields or filter by page (e.g., 'P2' or 'Page 2')..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-4"

@@ -16,22 +16,27 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Define tables relevant for Elterngeld mapping
-    const relevantTables = [
-      'geburtsurkunden',
-      'eltern_dokumente',
-      'meldebescheinigungen',
-      'bankverbindungen',
-      'arbeitgeberbescheinigungen',
-      'gehaltsnachweise',
-      'einkommensteuerbescheide',
-      'selbststaendigen_nachweise',
-      'krankenversicherung_nachweise',
-      'mutterschaftsgeld',
-      'leistungsbescheide',
-      'ehe_sorgerecht_nachweise',
-      'adoptions_pflege_dokumente'
+    // Get all user-defined tables by testing known tables
+    console.log('Discovering database tables...');
+    const potentialTables = [
+      'geburtsurkunden', 'eltern_dokumente', 'meldebescheinigungen', 'bankverbindungen',
+      'arbeitgeberbescheinigungen', 'gehaltsnachweise', 'einkommensteuerbescheide',
+      'selbststaendigen_nachweise', 'krankenversicherung_nachweise', 'mutterschaftsgeld',
+      'leistungsbescheide', 'ehe_sorgerecht_nachweise', 'adoptions_pflege_dokumente',
+      'antraege', 'antrag_geburtsurkunden', 'pdf_field_mappings', 'elterngeldantrag_progress'
     ];
+    
+    const relevantTables: string[] = [];
+    
+    // Test which tables exist by trying to query them
+    for (const tableName of potentialTables) {
+      const { error } = await supabase.from(tableName).select('id').limit(0);
+      if (!error) {
+        relevantTables.push(tableName);
+      }
+    }
+
+    relevantTables.sort();
 
     // Get schema info by querying each table
     const schema: any[] = [];
