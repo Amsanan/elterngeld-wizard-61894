@@ -21,16 +21,16 @@ const TABLE_SCHEMA = {
     { name: "nettogehalt", type: "decimal", description: "Net salary as decimal string" },
     { name: "sozialversicherungsnummer", type: "string", description: "Social security number" },
     { name: "steuer_id", type: "string", description: "Tax ID (11 digits)" },
-    { name: "lohnsteuer", type: "decimal", description: "Income tax deduction" },
-    { name: "solidaritaetszuschlag", type: "decimal", description: "Solidarity surcharge" },
-    { name: "kirchensteuer", type: "decimal", description: "Church tax" },
-    { name: "krankenversicherung", type: "decimal", description: "Health insurance contribution" },
-    { name: "pflegeversicherung", type: "decimal", description: "Care insurance contribution" },
-    { name: "rentenversicherung", type: "decimal", description: "Pension insurance contribution" },
-    { name: "arbeitslosenversicherung", type: "decimal", description: "Unemployment insurance contribution" },
-    { name: "vermoegenswirksame_leistungen", type: "decimal", description: "Capital-forming benefits" },
-    { name: "sonstige_bezuege", type: "decimal", description: "Other income/allowances" },
-    { name: "sonstige_abzuege", type: "decimal", description: "Other deductions" },
+    { name: "lohnsteuer", type: "decimal", description: "Income tax deduction. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "solidaritaetszuschlag", type: "decimal", description: "Solidarity surcharge. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "kirchensteuer", type: "decimal", description: "Church tax. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "krankenversicherung", type: "decimal", description: "Health insurance contribution. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "pflegeversicherung", type: "decimal", description: "Care insurance contribution. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "rentenversicherung", type: "decimal", description: "Pension insurance contribution. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "arbeitslosenversicherung", type: "decimal", description: "Unemployment insurance contribution. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "vermoegenswirksame_leistungen", type: "decimal", description: "Capital-forming benefits. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "sonstige_bezuege", type: "decimal", description: "Other income/allowances. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "sonstige_abzuege", type: "decimal", description: "Other deductions. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
   ],
 };
 
@@ -45,6 +45,13 @@ CRITICAL RULES:
 6. Social security number: format XX XXXXXX X XXX (remove spaces in output)
 7. Tax ID: 11 digits without spaces
 8. Month format: prefer "YYYY-MM" format (e.g., "2020-01" for January 2020)
+
+ZERO VS NULL DISTINCTION (CRITICAL):
+- Use "0" (string) when the document EXPLICITLY shows zero with: "--", "0,00", "0.00", "0", "n.zutr.", "nicht zutreffend"
+- Omit the field (do not include in output) ONLY when it is COMPLETELY ABSENT from the document
+- Example: If you see "Kirchensteuer --" or "Kirchensteuer 0,00", return "kirchensteuer": "0"
+- Example: If Kirchensteuer is not mentioned anywhere, do not include kirchensteuer in output
+- This distinction is CRITICAL for accurate financial calculations
 
 GERMAN PAYSLIP FIELD IDENTIFICATION:
 - **bruttogehalt** (Gross Salary): Look for "Gesetzliches Brutto", "Brutto-Gesamt", "Gesamtbrutto", "Brutto"
@@ -175,11 +182,49 @@ Return extracted data as JSON only.`;
 
   const validFields = new Set(TABLE_SCHEMA.columns.map((c) => c.name));
   const normalizedData: Record<string, any> = {};
+  const zeroIndicators = /--|\b0,00\b|\b0\.00\b|\b0\b|n\.zutr\.|nicht zutreffend/i;
 
   for (const [key, value] of Object.entries(parsed.data)) {
     if (!validFields.has(key)) continue;
     if (value === null || value === undefined) continue;
     normalizedData[key] = value;
+  }
+
+  // Post-processing: Detect explicit zeros in OCR text for missing fields
+  const fieldKeywords: Record<string, string[]> = {
+    kirchensteuer: ["kirche", "kist", "kirchst"],
+    solidaritaetszuschlag: ["soli", "solz", "solidarität"],
+    lohnsteuer: ["lohnst", "lst"],
+    krankenversicherung: ["kranken", "kv"],
+    pflegeversicherung: ["pflege", "pv"],
+    rentenversicherung: ["rente", "rv"],
+    arbeitslosenversicherung: ["arbeitsl", "av", "alv"],
+  };
+
+  for (const [fieldName, keywords] of Object.entries(fieldKeywords)) {
+    if (normalizedData[fieldName]) continue; // Field already extracted
+    
+    // Check if field is mentioned in OCR text
+    const hasFieldInText = keywords.some(kw => 
+      ocrText.toLowerCase().includes(kw.toLowerCase())
+    );
+    
+    if (hasFieldInText) {
+      // Find the keyword position and check for zero indicators nearby
+      for (const keyword of keywords) {
+        const regex = new RegExp(keyword, "gi");
+        const match = ocrText.match(regex);
+        if (match) {
+          const fieldIndex = ocrText.toLowerCase().indexOf(keyword.toLowerCase());
+          const contextRange = ocrText.slice(fieldIndex, fieldIndex + 100);
+          if (zeroIndicators.test(contextRange)) {
+            normalizedData[fieldName] = "0";
+            console.log(`Post-processing: Set ${fieldName} to "0" based on zero indicator in context`);
+            break;
+          }
+        }
+      }
+    }
   }
 
   return {
