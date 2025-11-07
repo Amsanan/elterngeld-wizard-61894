@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Info } from "lucide-react";
 
 interface MappingEditorProps {
   open: boolean;
@@ -26,6 +27,27 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
   
   const [filterField, setFilterField] = useState(String(existingFilter[0] || ''));
   const [filterValue, setFilterValue] = useState(String(existingFilter[1] || ''));
+
+  // Auto-generate notes when filter changes
+  useEffect(() => {
+    if (filterField && filterValue) {
+      const filterNote = generateFilterNote(filterField, filterValue);
+      if (!notes.includes(filterNote)) {
+        setNotes(prev => prev ? `${prev}\n\n${filterNote}` : filterNote);
+      }
+    }
+  }, [filterField, filterValue]);
+
+  const generateFilterNote = (field: string, value: string) => {
+    if (field === 'person_type') {
+      const personLabel = value === 'mutter' ? 'Mother' : 'Father';
+      return `⚠️ This mapping is for ${personLabel}'s data (person_type='${value}'). PDF field uses technical name, not semantic.`;
+    }
+    if (field === 'document_type') {
+      return `⚠️ This mapping is for ${value} documents. PDF field uses technical name.`;
+    }
+    return `Filter: ${field}='${value}'`;
+  };
 
   const filteredFields = pdfFields.filter(field =>
     field.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -92,28 +114,59 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
             </Select>
           </div>
           <div className="border-t pt-4">
-            <Label className="text-sm font-semibold">Filter Condition (Optional)</Label>
-            <p className="text-xs text-muted-foreground mb-2">
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-semibold">Filter Condition (Optional)</Label>
+              <Info className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
               For tables with person_type (mutter/vater), specify filter to fetch correct record
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Field Name</Label>
-                <Input
-                  value={filterField}
-                  onChange={(e) => setFilterField(e.target.value)}
-                  placeholder="e.g., person_type"
-                  className="text-sm"
-                />
+                <Label className="text-xs">Filter Field</Label>
+                <Select value={filterField} onValueChange={setFilterField}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Select field..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="person_type">person_type</SelectItem>
+                    <SelectItem value="document_type">document_type</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label className="text-xs">Field Value</Label>
-                <Input
-                  value={filterValue}
-                  onChange={(e) => setFilterValue(e.target.value)}
-                  placeholder="e.g., mutter"
-                  className="text-sm"
-                />
+                <Label className="text-xs">Filter Value</Label>
+                {filterField === 'person_type' ? (
+                  <Select value={filterValue} onValueChange={setFilterValue}>
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="Select value..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mutter">👩 Mutter</SelectItem>
+                      <SelectItem value="vater">👨 Vater</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : filterField === 'document_type' ? (
+                  <Select value={filterValue} onValueChange={setFilterValue}>
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="Select value..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personalausweis">Personalausweis</SelectItem>
+                      <SelectItem value="reisepass">Reisepass</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    value={filterValue}
+                    onChange={(e) => setFilterValue(e.target.value)}
+                    placeholder="Enter value..."
+                    className="text-sm"
+                    disabled={!filterField}
+                  />
+                )}
               </div>
             </div>
           </div>

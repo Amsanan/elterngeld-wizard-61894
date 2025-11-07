@@ -146,7 +146,7 @@ export type Database = {
           created_at: string
           file_path: string | null
           id: string
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           updated_at: string
           user_id: string
           wochenstunden: number | null
@@ -163,7 +163,7 @@ export type Database = {
           created_at?: string
           file_path?: string | null
           id?: string
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           updated_at?: string
           user_id: string
           wochenstunden?: number | null
@@ -180,7 +180,7 @@ export type Database = {
           created_at?: string
           file_path?: string | null
           id?: string
-          person_type?: string
+          person_type?: Database["public"]["Enums"]["person_type_enum"]
           updated_at?: string
           user_id?: string
           wochenstunden?: number | null
@@ -402,7 +402,7 @@ export type Database = {
           partner2_nachname: string | null
           partner2_steuer_id: string | null
           partner2_vorname: string | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           pflegeversicherung: string | null
           plz: string | null
           solidaritaetszuschlag: string | null
@@ -446,7 +446,7 @@ export type Database = {
           partner2_nachname?: string | null
           partner2_steuer_id?: string | null
           partner2_vorname?: string | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           pflegeversicherung?: string | null
           plz?: string | null
           solidaritaetszuschlag?: string | null
@@ -490,7 +490,7 @@ export type Database = {
           partner2_nachname?: string | null
           partner2_steuer_id?: string | null
           partner2_vorname?: string | null
-          person_type?: string
+          person_type?: Database["public"]["Enums"]["person_type_enum"]
           pflegeversicherung?: string | null
           plz?: string | null
           solidaritaetszuschlag?: string | null
@@ -533,7 +533,7 @@ export type Database = {
           hausnummer: string | null
           id: string
           nachname: string | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           plz: string | null
           staatsangehoerigkeit: string | null
           strasse: string | null
@@ -564,7 +564,7 @@ export type Database = {
           hausnummer?: string | null
           id?: string
           nachname?: string | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           plz?: string | null
           staatsangehoerigkeit?: string | null
           strasse?: string | null
@@ -595,7 +595,7 @@ export type Database = {
           hausnummer?: string | null
           id?: string
           nachname?: string | null
-          person_type?: string
+          person_type?: Database["public"]["Enums"]["person_type_enum"]
           plz?: string | null
           staatsangehoerigkeit?: string | null
           strasse?: string | null
@@ -725,7 +725,7 @@ export type Database = {
           krankenversicherung: number | null
           lohnsteuer: number | null
           nettogehalt: number | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           pflegeversicherung: number | null
           rentenversicherung: number | null
           solidaritaetszuschlag: number | null
@@ -752,7 +752,7 @@ export type Database = {
           krankenversicherung?: number | null
           lohnsteuer?: number | null
           nettogehalt?: number | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           pflegeversicherung?: number | null
           rentenversicherung?: number | null
           solidaritaetszuschlag?: number | null
@@ -779,7 +779,7 @@ export type Database = {
           krankenversicherung?: number | null
           lohnsteuer?: number | null
           nettogehalt?: number | null
-          person_type?: string
+          person_type?: Database["public"]["Enums"]["person_type_enum"]
           pflegeversicherung?: number | null
           rentenversicherung?: number | null
           solidaritaetszuschlag?: number | null
@@ -810,7 +810,7 @@ export type Database = {
           file_path: string | null
           id: string
           krankenkasse_name: string | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           updated_at: string
           user_id: string
           versichertennummer: string | null
@@ -825,7 +825,7 @@ export type Database = {
           file_path?: string | null
           id?: string
           krankenkasse_name?: string | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           updated_at?: string
           user_id: string
           versichertennummer?: string | null
@@ -840,7 +840,7 @@ export type Database = {
           file_path?: string | null
           id?: string
           krankenkasse_name?: string | null
-          person_type?: string
+          person_type?: Database["public"]["Enums"]["person_type_enum"]
           updated_at?: string
           user_id?: string
           versichertennummer?: string | null
@@ -870,7 +870,7 @@ export type Database = {
           leistungsbeginn: string | null
           leistungsende: string | null
           monatsbetrag: number | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           updated_at: string
           user_id: string
         }
@@ -886,7 +886,7 @@ export type Database = {
           leistungsbeginn?: string | null
           leistungsende?: string | null
           monatsbetrag?: number | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           updated_at?: string
           user_id: string
         }
@@ -902,7 +902,7 @@ export type Database = {
           leistungsbeginn?: string | null
           leistungsende?: string | null
           monatsbetrag?: number | null
-          person_type?: string
+          person_type?: Database["public"]["Enums"]["person_type_enum"]
           updated_at?: string
           user_id?: string
         }
@@ -929,7 +929,7 @@ export type Database = {
           id: string
           meldedatum: string | null
           nachname: string | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           plz: string | null
           strasse: string | null
           updated_at: string
@@ -949,7 +949,7 @@ export type Database = {
           id?: string
           meldedatum?: string | null
           nachname?: string | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           plz?: string | null
           strasse?: string | null
           updated_at?: string
@@ -969,7 +969,7 @@ export type Database = {
           id?: string
           meldedatum?: string | null
           nachname?: string | null
-          person_type?: string
+          person_type?: Database["public"]["Enums"]["person_type_enum"]
           plz?: string | null
           strasse?: string | null
           updated_at?: string
@@ -1154,7 +1154,7 @@ export type Database = {
           jahreseinkommen: number | null
           nachweiszeitraum_bis: string | null
           nachweiszeitraum_von: string | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           steuernummer: string | null
           updated_at: string
           user_id: string
@@ -1170,7 +1170,7 @@ export type Database = {
           jahreseinkommen?: number | null
           nachweiszeitraum_bis?: string | null
           nachweiszeitraum_von?: string | null
-          person_type: string
+          person_type: Database["public"]["Enums"]["person_type_enum"]
           steuernummer?: string | null
           updated_at?: string
           user_id: string
@@ -1186,7 +1186,7 @@ export type Database = {
           jahreseinkommen?: number | null
           nachweiszeitraum_bis?: string | null
           nachweiszeitraum_von?: string | null
-          person_type?: string
+          person_type?: Database["public"]["Enums"]["person_type_enum"]
           steuernummer?: string | null
           updated_at?: string
           user_id?: string
@@ -1218,6 +1218,7 @@ export type Database = {
     }
     Enums: {
       geschlecht_type: "weiblich" | "maennlich" | "divers" | "ohne_angabe"
+      person_type_enum: "mutter" | "vater"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1346,6 +1347,7 @@ export const Constants = {
   public: {
     Enums: {
       geschlecht_type: ["weiblich", "maennlich", "divers", "ohne_angabe"],
+      person_type_enum: ["mutter", "vater"],
     },
   },
 } as const

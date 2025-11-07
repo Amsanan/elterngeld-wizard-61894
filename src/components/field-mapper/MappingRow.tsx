@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Edit } from "lucide-react";
+import { Trash2, Edit, Filter } from "lucide-react";
 import { useState } from "react";
 import { MappingEditor } from "./MappingEditor";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MappingRowProps {
   mapping: any;
@@ -30,6 +31,47 @@ export function MappingRow({ mapping, onUpdate, onDelete, pdfFields }: MappingRo
     return <Badge variant="secondary">Auto</Badge>;
   };
 
+  const getFilterBadge = () => {
+    if (!mapping.filter_condition) return null;
+    
+    const entries = Object.entries(mapping.filter_condition);
+    if (entries.length === 0) return null;
+    
+    const [filterField, filterValue] = entries[0];
+    const filterFieldStr = String(filterField);
+    const filterValueStr = String(filterValue);
+    
+    if (filterFieldStr === 'person_type') {
+      const icon = filterValueStr === 'mutter' ? '👩' : '👨';
+      const label = filterValueStr === 'mutter' ? 'Mother' : 'Father';
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="outline" className="gap-1 cursor-help">
+                <Filter className="h-3 w-3" />
+                {icon} {label}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="font-medium">Filter: person_type='{filterValueStr}'</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Fetches data from row where person_type='{filterValueStr}'
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    
+    return (
+      <Badge variant="outline" className="gap-1">
+        <Filter className="h-3 w-3" />
+        {filterFieldStr}={filterValueStr}
+      </Badge>
+    );
+  };
+
   return (
     <>
       <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors">
@@ -39,17 +81,13 @@ export function MappingRow({ mapping, onUpdate, onDelete, pdfFields }: MappingRo
             <span className="text-sm font-medium">
               {mapping.source_table}.{mapping.source_field}
             </span>
-            {mapping.filter_condition && (
-              <span className="text-xs text-muted-foreground mt-1">
-                Filter: {Object.entries(mapping.filter_condition).map(([k, v]) => `${k}='${v}'`).join(', ')}
-              </span>
-            )}
           </div>
           <div className="flex flex-col">
             <span className="text-xs text-muted-foreground">PDF Field</span>
             <span className="text-sm font-mono">{mapping.pdf_field_name}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {getFilterBadge()}
             {getStatusBadge()}
             {mapping.confidence_score !== undefined && (
               <Badge className={getConfidenceColor(mapping.confidence_score)}>
