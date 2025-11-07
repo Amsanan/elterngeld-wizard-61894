@@ -1203,7 +1203,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_table_columns: {
+        Args: { table_names: string[] }
+        Returns: {
+          column_name: string
+          data_type: string
+          is_nullable: string
+          table_name: string
+        }[]
+      }
     }
     Enums: {
       geschlecht_type: "weiblich" | "maennlich" | "divers" | "ohne_angabe"

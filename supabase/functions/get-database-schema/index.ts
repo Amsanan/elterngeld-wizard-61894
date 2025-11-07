@@ -36,60 +36,36 @@ serve(async (req) => {
 
     relevantTables.sort();
 
-    // Get schema info by querying each table
-    const schema: any[] = [];
-    
-    for (const tableName of relevantTables) {
-      try {
-        // Query the table with limit 1 to get column structure
-        const { data, error } = await supabase
-          .from(tableName)
-          .select('*')
-          .limit(1);
-        
-        if (!error && data !== null) {
-          // Get column names and infer basic types
-          const sampleRow = data[0] || {};
-          const columns = Object.keys(sampleRow).map(columnName => {
-            const value = sampleRow[columnName];
-            let type = 'text';
-            
-            // Infer type from value
-            if (value !== null && value !== undefined) {
-              if (typeof value === 'number') {
-                type = Number.isInteger(value) ? 'integer' : 'numeric';
-              } else if (typeof value === 'boolean') {
-                type = 'boolean';
-              } else if (value instanceof Date || /^\d{4}-\d{2}-\d{2}/.test(value)) {
-                type = 'date';
-              } else if (typeof value === 'object') {
-                type = 'jsonb';
-              }
-            }
-            
-            return {
-              name: columnName,
-              type,
-              nullable: true
-            };
-          });
-          
-          // Filter out system columns we don't want to map
-          const filteredColumns = columns.filter(col => 
-            !['id', 'user_id', 'created_at', 'updated_at', 'file_path', 'confidence_scores', 'antrag_id'].includes(col.name)
-          );
-          
-          if (filteredColumns.length > 0) {
-            schema.push({
-              table_name: tableName,
-              columns: filteredColumns
-            });
-          }
-        }
-      } catch (error) {
-        console.error(`Error fetching schema for ${tableName}:`, error);
-      }
+    // Query information_schema for all columns in relevant tables
+    console.log('Querying information_schema for column details...');
+    const { data: columnsData, error: schemaError } = await supabase
+      .rpc('get_table_columns', { 
+        table_names: relevantTables 
+      });
+
+    if (schemaError) {
+      console.error('Error fetching schema:', schemaError);
+      throw schemaError;
     }
+
+    console.log(`Retrieved ${columnsData?.length || 0} columns from information_schema`);
+
+    // Group columns by table
+    const schema = relevantTables.map(tableName => {
+      const tableColumns = (columnsData || [])
+        .filter((col: any) => col.table_name === tableName)
+        .filter((col: any) => !['id', 'user_id', 'created_at', 'updated_at', 'file_path', 'confidence_scores', 'antrag_id'].includes(col.column_name))
+        .map((col: any) => ({
+          name: col.column_name,
+          type: col.data_type,
+          nullable: col.is_nullable === 'YES'
+        }));
+      
+      return {
+        table_name: tableName,
+        columns: tableColumns
+      };
+    }).filter(table => table.columns.length > 0);
 
     console.log(`Found ${schema.length} tables with ${schema.reduce((sum, t) => sum + t.columns.length, 0)} total fields`);
 
