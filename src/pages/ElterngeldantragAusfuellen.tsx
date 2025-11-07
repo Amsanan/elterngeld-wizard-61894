@@ -31,8 +31,6 @@ const WORKFLOW_STEPS = [
 ];
 
 export default function ElterngeldantragAusfuellen() {
-  console.log('🔵 Component ElterngeldantragAusfuellen MOUNTED/RENDERED');
-  
   const [currentStep, setCurrentStep] = useState(1);
   const [stepData, setStepData] = useState<any>(null);
   const [editedData, setEditedData] = useState<any>({});
@@ -47,65 +45,44 @@ export default function ElterngeldantragAusfuellen() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  console.log('📊 STATE CHECK - blobUrl:', blobUrl);
-  console.log('📊 STATE CHECK - pdfUrl:', pdfUrl);
-  console.log('📊 STATE CHECK - currentStep:', currentStep);
-
   const currentConfig = WORKFLOW_STEPS[currentStep - 1];
 
   // Detect Brave browser on mount
   useEffect(() => {
-    console.log('🟢 useEffect [mount] - Detect Brave running');
     const detectBrave = async () => {
       if ((navigator as any).brave && await (navigator as any).brave.isBrave()) {
         setShowBraveWarning(true);
-        console.log("Brave browser detected - showing warning");
       }
     };
     detectBrave();
-    
-    return () => {
-      console.log('🔴 Component UNMOUNTING (from Brave detection effect)');
-    };
   }, []);
 
   // Cleanup blob URLs when component unmounts or changes
   useEffect(() => {
-    console.log('🟡 useEffect [blobUrl cleanup] - blobUrl changed to:', blobUrl);
-    
     return () => {
-      console.log('🧹 CLEANUP - Revoking blob URL:', blobUrl);
       if (blobUrl) {
         URL.revokeObjectURL(blobUrl);
-        console.log('✅ Blob URL revoked successfully');
       }
     };
   }, [blobUrl]);
 
   useEffect(() => {
-    console.log('🟢 useEffect [currentStep] - Step changed to:', currentStep);
     loadStepData();
     setIframeError(false);
     setIframeLoaded(false);
   }, [currentStep]);
 
   useEffect(() => {
-    console.log('🟡 useEffect [iframe timeout] - blobUrl:', blobUrl, 'iframeLoaded:', iframeLoaded, 'iframeError:', iframeError);
-    // Detect if iframe fails to load within 5 seconds
+    // Detect if object fails to load within 5 seconds
     if (blobUrl && !iframeLoaded && !iframeError) {
-      console.log('⏰ Setting 5-second timeout for iframe load');
       const timer = setTimeout(() => {
         if (!iframeLoaded) {
-          console.log('⚠️ Iframe failed to load within 5 seconds');
           setIframeError(true);
           setShowBraveWarning(true);
         }
       }, 5000);
 
-      return () => {
-        console.log('⏰ Clearing iframe timeout');
-        clearTimeout(timer);
-      };
+      return () => clearTimeout(timer);
     }
   }, [blobUrl, iframeLoaded, iframeError]);
 
@@ -158,13 +135,6 @@ export default function ElterngeldantragAusfuellen() {
 
   const fillPDF = async (data: any) => {
     try {
-      console.log('Calling fill-elterngeld-form with:', {
-        step: currentStep,
-        documentType: currentConfig.documentType,
-        dataKeys: Object.keys(data),
-        previousPdfPath
-      });
-
       const { data: result, error } = await supabase.functions.invoke('fill-elterngeld-form', {
         body: {
           step: currentStep,
@@ -175,61 +145,33 @@ export default function ElterngeldantragAusfuellen() {
         }
       });
 
-      console.log('Edge function response:', { result, error });
-
-      if (error) {
-        console.error("Edge function error:", error);
-        throw error;
-      }
-
-      if (!result) {
-        throw new Error("No result returned from edge function");
-      }
-
-      if (!result.pdfUrl) {
-        console.error("No pdfUrl in result:", result);
-        throw new Error("No PDF URL returned");
-      }
-
-      console.log('✅ PDF generated successfully:', result.pdfUrl);
+      if (error) throw error;
+      if (!result) throw new Error("No result returned from edge function");
+      if (!result.pdfUrl) throw new Error("No PDF URL returned");
       
       // Revoke previous blob URL if exists
-      console.log('🧹 Checking for previous blobUrl to revoke:', blobUrl);
       if (blobUrl) {
-        console.log('🧹 Revoking previous blob URL');
         URL.revokeObjectURL(blobUrl);
       }
 
       // Store the original Supabase URL for downloads
-      console.log('💾 Setting pdfUrl (for downloads):', result.pdfUrl);
       setPdfUrl(result.pdfUrl);
       setPreviousPdfPath(result.pdfPath);
 
       // Fetch PDF as blob and create local blob URL for display
       try {
-        console.log('🔄 Fetching PDF to create blob URL from:', result.pdfUrl);
         const response = await fetch(result.pdfUrl);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch PDF: ${response.statusText}`);
-        }
+        if (!response.ok) throw new Error(`Failed to fetch PDF: ${response.statusText}`);
 
         const blob = await response.blob();
-        console.log('📦 Blob created, size:', blob.size, 'type:', blob.type);
-        
         const newBlobUrl = URL.createObjectURL(blob);
-        console.log('🎯 NEW Blob URL created:', newBlobUrl);
-        console.log('🔵 CALLING setBlobUrl with:', newBlobUrl);
         
         setBlobUrl(newBlobUrl);
-        
-        console.log('✅ setBlobUrl called successfully, state should update soon');
         setIframeError(false);
         setShowBraveWarning(false);
       } catch (blobError) {
-        console.error('❌ Error creating blob URL, falling back to direct URL:', blobError);
+        console.error('Error creating blob URL, falling back to direct URL:', blobError);
         // Fallback to direct URL if blob creation fails
-        console.log('⚠️ Fallback: Setting blobUrl to direct URL:', result.pdfUrl);
         setBlobUrl(result.pdfUrl);
         setShowBraveWarning(true);
       }
@@ -293,13 +235,11 @@ export default function ElterngeldantragAusfuellen() {
   };
 
   const handleIframeLoad = () => {
-    console.log('✅ Iframe loaded successfully');
     setIframeLoaded(true);
     setIframeError(false);
   };
 
   const handleIframeError = () => {
-    console.error('❌ Iframe error occurred');
     setIframeError(true);
     setShowBraveWarning(true);
   };
@@ -434,55 +374,56 @@ export default function ElterngeldantragAusfuellen() {
               </Alert>
             )}
 
-            {(() => {
-              console.log('🖼️ RENDER: blobUrl state is:', blobUrl);
-              if (blobUrl) {
-                console.log('✅ RENDER: Showing iframe with blobUrl');
-                return (
-                  <div className="relative">
-                    <iframe
-                      src={blobUrl}
-                      className="w-full h-[600px] border rounded-lg"
-                      title="PDF Preview"
-                      onLoad={handleIframeLoad}
-                      onError={handleIframeError}
-                    />
+            {blobUrl ? (
+              <div className="relative">
+                <object
+                  data={blobUrl}
+                  type="application/pdf"
+                  className="w-full h-[600px] border rounded-lg"
+                  onLoad={handleIframeLoad}
+                  onError={handleIframeError}
+                >
+                  <div className="w-full h-[600px] border rounded-lg bg-muted flex items-center justify-center">
+                    <div className="text-center space-y-4">
+                      <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">PDF-Vorschau nicht verfügbar</p>
+                        <p className="text-xs text-muted-foreground">Ihr Browser unterstützt keine PDF-Anzeige</p>
+                      </div>
+                      <Button
+                        onClick={handleOpenInNewTab}
+                        variant="default"
+                        size="sm"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        PDF in neuem Tab öffnen
+                      </Button>
+                    </div>
+                  </div>
+                </object>
                 {!iframeLoaded && !iframeError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg">
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg pointer-events-none">
                     <div className="text-center space-y-2">
                       <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
                       <p className="text-sm text-muted-foreground">PDF wird geladen...</p>
                     </div>
                   </div>
                 )}
-                {iframeError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
-                    <div className="text-center space-y-4 p-6">
-                      <AlertCircle className="h-12 w-12 text-orange-500 mx-auto" />
-                      <div className="space-y-2">
-                        <p className="font-semibold">PDF-Vorschau nicht verfügbar</p>
-                        <p className="text-sm text-muted-foreground">
-                          Bitte verwenden Sie den Button "In neuem Tab öffnen"
-                        </p>
-                      </div>
-                      <Button onClick={handleOpenInNewTab} variant="default">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        PDF in neuem Tab öffnen
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </div>
-                );
-              } else {
-                console.log('⚠️ RENDER: No blobUrl available, showing "Keine Vorschau verfügbar"');
-                return (
-                  <div className="h-[600px] border rounded-lg flex items-center justify-center bg-muted">
-                    <p className="text-muted-foreground">Keine Vorschau verfügbar</p>
-                  </div>
-                );
-              }
-            })()}
+            ) : (
+              <div className="w-full h-[600px] border rounded-lg bg-muted flex items-center justify-center">
+                <div className="text-center space-y-2">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto" />
+                  <p className="text-muted-foreground">Keine Vorschau verfügbar</p>
+                  {pdfUrl && (
+                    <Button variant="outline" size="sm" onClick={handleOpenInNewTab}>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      PDF öffnen
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </Card>
         </div>
 
