@@ -24,7 +24,6 @@ const TABLE_SCHEMA = {
     { name: "mutter_nachname", type: "string", description: "Mother's last name" },
     { name: "mutter_geburtsname", type: "string", description: "Mother's birth name (Geburtsname)" },
     { name: "vater_vorname", type: "string", description: "Father's first name" },
-    { name: "vater_geburtsname", type: "string", description: "Father's birth name (Geburtsname)" },
     { name: "vater_nachname", type: "string", description: "Father's last name" },
     { name: "urkundennummer", type: "string", description: "Certificate number (Urkundennummer)" },
     { name: "behoerde_name", type: "string", description: "Issuing authority name (Standesamt)" },
