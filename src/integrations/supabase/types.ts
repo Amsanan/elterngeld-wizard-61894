@@ -714,49 +714,79 @@ export type Database = {
           abrechnungsmonat: string | null
           antrag_id: string | null
           arbeitgeber_name: string | null
+          arbeitslosenversicherung: number | null
           bruttogehalt: number | null
           confidence_scores: Json | null
           created_at: string
           file_path: string | null
           id: string
+          kirchensteuer: number | null
+          krankenversicherung: number | null
+          lohnsteuer: number | null
           nettogehalt: number | null
           person_type: string
+          pflegeversicherung: number | null
+          rentenversicherung: number | null
+          solidaritaetszuschlag: number | null
+          sonstige_abzuege: number | null
+          sonstige_bezuege: number | null
           sozialversicherungsnummer: string | null
           steuer_id: string | null
           updated_at: string
           user_id: string
+          vermoegenswirksame_leistungen: number | null
         }
         Insert: {
           abrechnungsmonat?: string | null
           antrag_id?: string | null
           arbeitgeber_name?: string | null
+          arbeitslosenversicherung?: number | null
           bruttogehalt?: number | null
           confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           id?: string
+          kirchensteuer?: number | null
+          krankenversicherung?: number | null
+          lohnsteuer?: number | null
           nettogehalt?: number | null
           person_type: string
+          pflegeversicherung?: number | null
+          rentenversicherung?: number | null
+          solidaritaetszuschlag?: number | null
+          sonstige_abzuege?: number | null
+          sonstige_bezuege?: number | null
           sozialversicherungsnummer?: string | null
           steuer_id?: string | null
           updated_at?: string
           user_id: string
+          vermoegenswirksame_leistungen?: number | null
         }
         Update: {
           abrechnungsmonat?: string | null
           antrag_id?: string | null
           arbeitgeber_name?: string | null
+          arbeitslosenversicherung?: number | null
           bruttogehalt?: number | null
           confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
           id?: string
+          kirchensteuer?: number | null
+          krankenversicherung?: number | null
+          lohnsteuer?: number | null
           nettogehalt?: number | null
           person_type?: string
+          pflegeversicherung?: number | null
+          rentenversicherung?: number | null
+          solidaritaetszuschlag?: number | null
+          sonstige_abzuege?: number | null
+          sonstige_bezuege?: number | null
           sozialversicherungsnummer?: string | null
           steuer_id?: string | null
           updated_at?: string
           user_id?: string
+          vermoegenswirksame_leistungen?: number | null
         }
         Relationships: [
           {

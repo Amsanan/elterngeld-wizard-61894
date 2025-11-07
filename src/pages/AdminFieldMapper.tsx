@@ -164,7 +164,7 @@ export default function AdminFieldMapper() {
 
       console.log('Vision Analysis Results:', data);
 
-      // Create mappings from vision analysis
+      // Create mappings from vision analysis with validation
       const visionMappings = data.analyses
         .filter((analysis: any) => analysis.confidence >= 40)
         .map((analysis: any) => {
@@ -172,12 +172,20 @@ export default function AdminFieldMapper() {
           let matchedTable = '';
           let matchedField = '';
           
-          // Simple matching logic - can be enhanced later
+          // Enhanced matching logic with exact match priority
           for (const table of databaseSchema) {
             for (const column of table.columns) {
               const semanticLower = analysis.semantic_meaning.toLowerCase();
               const columnLower = column.name.toLowerCase();
               
+              // Exact match first (highest priority)
+              if (columnLower === semanticLower) {
+                matchedTable = table.table_name;
+                matchedField = column.name;
+                break;
+              }
+              
+              // Partial match as fallback
               if (semanticLower.includes(columnLower) || columnLower.includes(semanticLower.split(' ')[0])) {
                 matchedTable = table.table_name;
                 matchedField = column.name;
@@ -193,13 +201,26 @@ export default function AdminFieldMapper() {
             source_field: matchedField || 'unknown',
             pdf_field_name: analysis.field_name,
             confidence_score: analysis.confidence,
-            mapping_status: 'vision',
-            is_active: true,
+            mapping_status: matchedField ? 'vision' : 'needs_review',
+            is_active: !!matchedField,
             notes: `Visual Label: ${analysis.visual_label}\nSemantic: ${analysis.semantic_meaning}`
           };
         });
 
-      setMappings(visionMappings);
+      // Filter out invalid mappings before saving
+      const validMappings = visionMappings.filter(m => m.source_field !== 'unknown');
+      const invalidMappings = visionMappings.filter(m => m.source_field === 'unknown');
+
+      setMappings(validMappings);
+      
+      // Show warning about unmapped fields
+      if (invalidMappings.length > 0) {
+        toast.warning(
+          `${invalidMappings.length} fields could not be auto-mapped and need manual review.`,
+          { duration: 5000 }
+        );
+        console.log('Unmapped fields requiring manual review:', invalidMappings);
+      }
       
       toast.success(
         `Vision analysis complete: ${data.total_analyzed} fields analyzed, ${visionMappings.length} high-confidence matches found`,
