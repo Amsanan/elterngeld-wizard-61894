@@ -31,6 +31,8 @@ const WORKFLOW_STEPS = [
 ];
 
 export default function ElterngeldantragAusfuellen() {
+  console.log('🔵 Component ElterngeldantragAusfuellen MOUNTED/RENDERED');
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [stepData, setStepData] = useState<any>(null);
   const [editedData, setEditedData] = useState<any>({});
@@ -45,10 +47,15 @@ export default function ElterngeldantragAusfuellen() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  console.log('📊 STATE CHECK - blobUrl:', blobUrl);
+  console.log('📊 STATE CHECK - pdfUrl:', pdfUrl);
+  console.log('📊 STATE CHECK - currentStep:', currentStep);
+
   const currentConfig = WORKFLOW_STEPS[currentStep - 1];
 
   // Detect Brave browser on mount
   useEffect(() => {
+    console.log('🟢 useEffect [mount] - Detect Brave running');
     const detectBrave = async () => {
       if ((navigator as any).brave && await (navigator as any).brave.isBrave()) {
         setShowBraveWarning(true);
@@ -56,34 +63,49 @@ export default function ElterngeldantragAusfuellen() {
       }
     };
     detectBrave();
+    
+    return () => {
+      console.log('🔴 Component UNMOUNTING (from Brave detection effect)');
+    };
   }, []);
 
   // Cleanup blob URLs when component unmounts or changes
   useEffect(() => {
+    console.log('🟡 useEffect [blobUrl cleanup] - blobUrl changed to:', blobUrl);
+    
     return () => {
+      console.log('🧹 CLEANUP - Revoking blob URL:', blobUrl);
       if (blobUrl) {
         URL.revokeObjectURL(blobUrl);
+        console.log('✅ Blob URL revoked successfully');
       }
     };
   }, [blobUrl]);
 
   useEffect(() => {
+    console.log('🟢 useEffect [currentStep] - Step changed to:', currentStep);
     loadStepData();
     setIframeError(false);
     setIframeLoaded(false);
   }, [currentStep]);
 
   useEffect(() => {
+    console.log('🟡 useEffect [iframe timeout] - blobUrl:', blobUrl, 'iframeLoaded:', iframeLoaded, 'iframeError:', iframeError);
     // Detect if iframe fails to load within 5 seconds
     if (blobUrl && !iframeLoaded && !iframeError) {
+      console.log('⏰ Setting 5-second timeout for iframe load');
       const timer = setTimeout(() => {
         if (!iframeLoaded) {
+          console.log('⚠️ Iframe failed to load within 5 seconds');
           setIframeError(true);
           setShowBraveWarning(true);
         }
       }, 5000);
 
-      return () => clearTimeout(timer);
+      return () => {
+        console.log('⏰ Clearing iframe timeout');
+        clearTimeout(timer);
+      };
     }
   }, [blobUrl, iframeLoaded, iframeError]);
 
@@ -169,20 +191,23 @@ export default function ElterngeldantragAusfuellen() {
         throw new Error("No PDF URL returned");
       }
 
-      console.log('PDF generated successfully:', result.pdfUrl);
+      console.log('✅ PDF generated successfully:', result.pdfUrl);
       
       // Revoke previous blob URL if exists
+      console.log('🧹 Checking for previous blobUrl to revoke:', blobUrl);
       if (blobUrl) {
+        console.log('🧹 Revoking previous blob URL');
         URL.revokeObjectURL(blobUrl);
       }
 
       // Store the original Supabase URL for downloads
+      console.log('💾 Setting pdfUrl (for downloads):', result.pdfUrl);
       setPdfUrl(result.pdfUrl);
       setPreviousPdfPath(result.pdfPath);
 
       // Fetch PDF as blob and create local blob URL for display
       try {
-        console.log('Fetching PDF to create blob URL...');
+        console.log('🔄 Fetching PDF to create blob URL from:', result.pdfUrl);
         const response = await fetch(result.pdfUrl);
         
         if (!response.ok) {
@@ -190,15 +215,21 @@ export default function ElterngeldantragAusfuellen() {
         }
 
         const blob = await response.blob();
+        console.log('📦 Blob created, size:', blob.size, 'type:', blob.type);
+        
         const newBlobUrl = URL.createObjectURL(blob);
-        console.log('Blob URL created successfully');
+        console.log('🎯 NEW Blob URL created:', newBlobUrl);
+        console.log('🔵 CALLING setBlobUrl with:', newBlobUrl);
         
         setBlobUrl(newBlobUrl);
+        
+        console.log('✅ setBlobUrl called successfully, state should update soon');
         setIframeError(false);
         setShowBraveWarning(false);
       } catch (blobError) {
-        console.error('Error creating blob URL, falling back to direct URL:', blobError);
+        console.error('❌ Error creating blob URL, falling back to direct URL:', blobError);
         // Fallback to direct URL if blob creation fails
+        console.log('⚠️ Fallback: Setting blobUrl to direct URL:', result.pdfUrl);
         setBlobUrl(result.pdfUrl);
         setShowBraveWarning(true);
       }
@@ -262,11 +293,13 @@ export default function ElterngeldantragAusfuellen() {
   };
 
   const handleIframeLoad = () => {
+    console.log('✅ Iframe loaded successfully');
     setIframeLoaded(true);
     setIframeError(false);
   };
 
   const handleIframeError = () => {
+    console.error('❌ Iframe error occurred');
     setIframeError(true);
     setShowBraveWarning(true);
   };
@@ -401,15 +434,19 @@ export default function ElterngeldantragAusfuellen() {
               </Alert>
             )}
 
-            {blobUrl ? (
-              <div className="relative">
-                <iframe
-                  src={blobUrl}
-                  className="w-full h-[600px] border rounded-lg"
-                  title="PDF Preview"
-                  onLoad={handleIframeLoad}
-                  onError={handleIframeError}
-                />
+            {(() => {
+              console.log('🖼️ RENDER: blobUrl state is:', blobUrl);
+              if (blobUrl) {
+                console.log('✅ RENDER: Showing iframe with blobUrl');
+                return (
+                  <div className="relative">
+                    <iframe
+                      src={blobUrl}
+                      className="w-full h-[600px] border rounded-lg"
+                      title="PDF Preview"
+                      onLoad={handleIframeLoad}
+                      onError={handleIframeError}
+                    />
                 {!iframeLoaded && !iframeError && (
                   <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg">
                     <div className="text-center space-y-2">
@@ -436,11 +473,16 @@ export default function ElterngeldantragAusfuellen() {
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="h-[600px] border rounded-lg flex items-center justify-center bg-muted">
-                <p className="text-muted-foreground">Keine Vorschau verfügbar</p>
-              </div>
-            )}
+                );
+              } else {
+                console.log('⚠️ RENDER: No blobUrl available, showing "Keine Vorschau verfügbar"');
+                return (
+                  <div className="h-[600px] border rounded-lg flex items-center justify-center bg-muted">
+                    <p className="text-muted-foreground">Keine Vorschau verfügbar</p>
+                  </div>
+                );
+              }
+            })()}
           </Card>
         </div>
 
