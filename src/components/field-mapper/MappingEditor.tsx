@@ -54,7 +54,7 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
   );
 
   const handleSave = () => {
-    const filterCondition = filterField && filterValue 
+    const filterCondition = filterField && filterField !== 'none' && filterValue 
       ? { [filterField]: filterValue }
       : null;
     
@@ -124,12 +124,12 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Filter Field</Label>
-                <Select value={filterField} onValueChange={setFilterField}>
+                <Select value={filterField || 'none'} onValueChange={setFilterField}>
                   <SelectTrigger className="text-sm">
                     <SelectValue placeholder="Select field..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     <SelectItem value="person_type">person_type</SelectItem>
                     <SelectItem value="document_type">document_type</SelectItem>
                     <SelectItem value="custom">Custom</SelectItem>
@@ -164,7 +164,7 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
                     onChange={(e) => setFilterValue(e.target.value)}
                     placeholder="Enter value..."
                     className="text-sm"
-                    disabled={!filterField}
+                    disabled={!filterField || filterField === 'none'}
                   />
                 )}
               </div>
