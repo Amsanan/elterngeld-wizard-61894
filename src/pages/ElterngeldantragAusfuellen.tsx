@@ -8,11 +8,12 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   FileText, User, Home, FileCheck, DollarSign, 
   Briefcase, Heart, CreditCard, Users, ChevronLeft, 
-  ChevronRight, Download, Loader2, ExternalLink, AlertCircle, Shield
+  ChevronRight, Download, Loader2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PdfViewer } from "@/components/pdf/PdfViewer";
 
 const WORKFLOW_STEPS = [
   { step: 1, title: "Geburtsurkunde", documentType: "geburtsurkunde", tableName: "geburtsurkunden", icon: FileText },
@@ -34,57 +35,18 @@ export default function ElterngeldantragAusfuellen() {
   const [currentStep, setCurrentStep] = useState(1);
   const [stepData, setStepData] = useState<any>(null);
   const [editedData, setEditedData] = useState<any>({});
-  const [pdfUrl, setPdfUrl] = useState<string>(""); // Original Supabase URL for downloads
-  const [blobUrl, setBlobUrl] = useState<string>(""); // Local blob URL for display
+  const [pdfUrl, setPdfUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [previousPdfPath, setPreviousPdfPath] = useState<string | null>(null);
   const [hasData, setHasData] = useState(true);
-  const [iframeError, setIframeError] = useState(false);
-  const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [showBraveWarning, setShowBraveWarning] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const currentConfig = WORKFLOW_STEPS[currentStep - 1];
 
-  // Detect Brave browser on mount
-  useEffect(() => {
-    const detectBrave = async () => {
-      if ((navigator as any).brave && await (navigator as any).brave.isBrave()) {
-        setShowBraveWarning(true);
-      }
-    };
-    detectBrave();
-  }, []);
-
-  // Cleanup blob URLs when component unmounts or changes
-  useEffect(() => {
-    return () => {
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
-      }
-    };
-  }, [blobUrl]);
-
   useEffect(() => {
     loadStepData();
-    setIframeError(false);
-    setIframeLoaded(false);
   }, [currentStep]);
-
-  useEffect(() => {
-    // Detect if object fails to load within 5 seconds
-    if (blobUrl && !iframeLoaded && !iframeError) {
-      const timer = setTimeout(() => {
-        if (!iframeLoaded) {
-          setIframeError(true);
-          setShowBraveWarning(true);
-        }
-      }, 5000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [blobUrl, iframeLoaded, iframeError]);
 
   const loadStepData = async () => {
     setIsLoading(true);
@@ -149,32 +111,8 @@ export default function ElterngeldantragAusfuellen() {
       if (!result) throw new Error("No result returned from edge function");
       if (!result.pdfUrl) throw new Error("No PDF URL returned");
       
-      // Revoke previous blob URL if exists
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
-      }
-
-      // Store the original Supabase URL for downloads
       setPdfUrl(result.pdfUrl);
       setPreviousPdfPath(result.pdfPath);
-
-      // Fetch PDF as blob and create local blob URL for display
-      try {
-        const response = await fetch(result.pdfUrl);
-        if (!response.ok) throw new Error(`Failed to fetch PDF: ${response.statusText}`);
-
-        const blob = await response.blob();
-        const newBlobUrl = URL.createObjectURL(blob);
-        
-        setBlobUrl(newBlobUrl);
-        setIframeError(false);
-        setShowBraveWarning(false);
-      } catch (blobError) {
-        console.error('Error creating blob URL, falling back to direct URL:', blobError);
-        // Fallback to direct URL if blob creation fails
-        setBlobUrl(result.pdfUrl);
-        setShowBraveWarning(true);
-      }
 
       toast({
         title: "PDF aktualisiert",
@@ -222,26 +160,6 @@ export default function ElterngeldantragAusfuellen() {
     if (pdfUrl) {
       window.open(pdfUrl, '_blank');
     }
-  };
-
-  const handleOpenInNewTab = () => {
-    if (pdfUrl) {
-      window.open(pdfUrl, '_blank');
-      toast({
-        title: "PDF geöffnet",
-        description: "Das PDF wurde in einem neuen Tab geöffnet",
-      });
-    }
-  };
-
-  const handleIframeLoad = () => {
-    setIframeLoaded(true);
-    setIframeError(false);
-  };
-
-  const handleIframeError = () => {
-    setIframeError(true);
-    setShowBraveWarning(true);
   };
 
   const Icon = currentConfig.icon;
@@ -341,89 +259,12 @@ export default function ElterngeldantragAusfuellen() {
 
           {/* Right: PDF Preview */}
           <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">PDF Vorschau</h3>
-              {pdfUrl && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleOpenInNewTab}
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  In neuem Tab öffnen
-                </Button>
-              )}
-            </div>
-
-            {showBraveWarning && (
-              <Alert className="mb-4 border-orange-500/50 bg-orange-500/10">
-                <Shield className="h-4 w-4 text-orange-500" />
-                <AlertDescription className="space-y-2">
-                  <p className="font-semibold text-foreground">Browser blockiert PDF-Vorschau</p>
-                  <p className="text-sm">
-                    Ihr Browser (möglicherweise Brave) blockiert die PDF-Vorschau aus Sicherheitsgründen.
-                  </p>
-                  <div className="text-sm space-y-1">
-                    <p className="font-medium">Lösungen:</p>
-                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      <li>Klicken Sie auf "In neuem Tab öffnen" oben rechts</li>
-                      <li>Oder: Deaktivieren Sie die Shields für diese Seite (Klick auf das Löwen-Symbol in der Adressleiste)</li>
-                    </ul>
-                  </div>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {blobUrl ? (
-              <div className="relative">
-                <object
-                  data={blobUrl}
-                  type="application/pdf"
-                  className="w-full h-[600px] border rounded-lg"
-                  onLoad={handleIframeLoad}
-                  onError={handleIframeError}
-                >
-                  <div className="w-full h-[600px] border rounded-lg bg-muted flex items-center justify-center">
-                    <div className="text-center space-y-4">
-                      <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">PDF-Vorschau nicht verfügbar</p>
-                        <p className="text-xs text-muted-foreground">Ihr Browser unterstützt keine PDF-Anzeige</p>
-                      </div>
-                      <Button
-                        onClick={handleOpenInNewTab}
-                        variant="default"
-                        size="sm"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        PDF in neuem Tab öffnen
-                      </Button>
-                    </div>
-                  </div>
-                </object>
-                {!iframeLoaded && !iframeError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg pointer-events-none">
-                    <div className="text-center space-y-2">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-                      <p className="text-sm text-muted-foreground">PDF wird geladen...</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="w-full h-[600px] border rounded-lg bg-muted flex items-center justify-center">
-                <div className="text-center space-y-2">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto" />
-                  <p className="text-muted-foreground">Keine Vorschau verfügbar</p>
-                  {pdfUrl && (
-                    <Button variant="outline" size="sm" onClick={handleOpenInNewTab}>
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      PDF öffnen
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
+            <h3 className="text-lg font-semibold mb-4">PDF Vorschau</h3>
+            
+            <PdfViewer
+              pdfUrl={pdfUrl}
+              downloadUrl={pdfUrl}
+            />
           </Card>
         </div>
 
