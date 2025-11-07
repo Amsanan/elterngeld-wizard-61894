@@ -21,6 +21,16 @@ const TABLE_SCHEMA = {
     { name: "nettogehalt", type: "decimal", description: "Net salary as decimal string" },
     { name: "sozialversicherungsnummer", type: "string", description: "Social security number" },
     { name: "steuer_id", type: "string", description: "Tax ID (11 digits)" },
+    { name: "lohnsteuer", type: "decimal", description: "Income tax deduction" },
+    { name: "solidaritaetszuschlag", type: "decimal", description: "Solidarity surcharge" },
+    { name: "kirchensteuer", type: "decimal", description: "Church tax" },
+    { name: "krankenversicherung", type: "decimal", description: "Health insurance contribution" },
+    { name: "pflegeversicherung", type: "decimal", description: "Care insurance contribution" },
+    { name: "rentenversicherung", type: "decimal", description: "Pension insurance contribution" },
+    { name: "arbeitslosenversicherung", type: "decimal", description: "Unemployment insurance contribution" },
+    { name: "vermoegenswirksame_leistungen", type: "decimal", description: "Capital-forming benefits" },
+    { name: "sonstige_bezuege", type: "decimal", description: "Other income/allowances" },
+    { name: "sonstige_abzuege", type: "decimal", description: "Other deductions" },
   ],
 };
 

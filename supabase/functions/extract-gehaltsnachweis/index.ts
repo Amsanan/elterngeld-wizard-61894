@@ -90,36 +90,20 @@ Deno.serve(async (req) => {
       // Extract month (YYYY-MM)
       const monatMatch = ocrText.match(/(\d{2})\.(\d{4})|(\d{4})-(\d{2})/);
       if (monatMatch) {
-        extractedData.monat = monatMatch[3] ? `${monatMatch[3]}-${monatMatch[4]}` : `${monatMatch[2]}-${monatMatch[1]}`;
+        extractedData.abrechnungsmonat = monatMatch[3] ? `${monatMatch[3]}-${monatMatch[4]}` : `${monatMatch[2]}-${monatMatch[1]}`;
       }
 
       // Extract employer name
       const arbeitgeberMatch = ocrText.match(/(?:Arbeitgeber|Firma)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s&.,-]+?)(?=\n)/i);
       if (arbeitgeberMatch) extractedData.arbeitgeber_name = arbeitgeberMatch[1].trim();
 
-      // Extract employee name
-      const arbeitnehmerMatch = ocrText.match(/(?:Name|Arbeitnehmer)[:\s]*([A-ZÄÖÜ][A-Za-zäöüÄÖÜß\s-]+?)(?=\n)/i);
-      if (arbeitnehmerMatch) extractedData.arbeitnehmer_name = arbeitnehmerMatch[1].trim();
+      // Extract gross salary (correct column name: bruttogehalt)
+      const bruttoMatch = ocrText.match(/(?:Brutto|Bruttogehalt|Gesetzliches Brutto)[^\d]*?€?\s*([0-9.,]+)/i);
+      if (bruttoMatch) extractedData.bruttogehalt = parseAmount(bruttoMatch[1]);
 
-      // Extract personnel number
-      const personalnummerMatch = ocrText.match(/(?:Personalnummer|Personal-Nr)[.:\s]*([A-Z0-9]+)/i);
-      if (personalnummerMatch) extractedData.personalnummer = personalnummerMatch[1].trim();
-
-      // Extract gross salary
-      const bruttoMatch = ocrText.match(/(?:Brutto|Bruttogehalt)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (bruttoMatch) extractedData.brutto_gehalt = parseAmount(bruttoMatch[1]);
-
-      // Extract net salary
-      const nettoMatch = ocrText.match(/(?:Netto|Nettogehalt|Auszahlung)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (nettoMatch) extractedData.netto_gehalt = parseAmount(nettoMatch[1]);
-
-      // Extract tax class
-      const steuerklasseMatch = ocrText.match(/(?:Steuerklasse|StKl)[.:\s]*([1-6])/i);
-      if (steuerklasseMatch) extractedData.steuerklasse = steuerklasseMatch[1];
-
-      // Extract social insurance
-      const sozialversicherungMatch = ocrText.match(/(?:Sozialversicherung|SV-Beiträge)[^\d]*?€?\s*([0-9.,]+)/i);
-      if (sozialversicherungMatch) extractedData.sozialversicherung_gesamt = parseAmount(sozialversicherungMatch[1]);
+      // Extract net salary (correct column name: nettogehalt)
+      const nettoMatch = ocrText.match(/(?:Netto|Nettogehalt|Auszahlung|Überweisungsbetrag)[^\d]*?€?\s*([0-9.,]+)/i);
+      if (nettoMatch) extractedData.nettogehalt = parseAmount(nettoMatch[1]);
 
       // Extract wage tax
       const lohnsteuerMatch = ocrText.match(/(?:Lohnsteuer|LSt)[^\d]*?€?\s*([0-9.,]+)/i);
