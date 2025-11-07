@@ -267,7 +267,7 @@ export default function AdminFieldMapper() {
       source_table: source.table,
       source_field: source.field,
       pdf_field_name: pdfField,
-      confidence_score: 0,
+      confidence_score: 100,
       mapping_status: 'manual',
       is_active: true,
       notes: null
