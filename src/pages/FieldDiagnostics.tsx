@@ -8,7 +8,6 @@ import { ChevronLeft, Loader2, CheckCircle2, XCircle, AlertCircle } from "lucide
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FIELD_MAPPINGS } from "../../supabase/functions/_shared/elterngeld-field-mappings";
 
 interface PdfFieldInfo {
   name: string;
@@ -70,34 +69,53 @@ export default function FieldDiagnostics() {
     }
   };
 
-  const analyzeMappings = (fields: PdfFieldInfo[]) => {
+  const analyzeMappings = async (fields: PdfFieldInfo[]) => {
     const fieldNames = fields.map(f => f.name);
     const statuses: MappingStatus[] = [];
 
-    Object.entries(FIELD_MAPPINGS).forEach(([docType, mappings]) => {
-      Object.entries(mappings).forEach(([sourceField, pdfFieldName]) => {
-        const exists = fieldNames.includes(pdfFieldName);
+    try {
+      // Fetch all active mappings from database
+      const { data: dbMappings, error } = await supabase
+        .from('pdf_field_mappings')
+        .select('document_type, source_table, source_field, pdf_field_name')
+        .eq('is_active', true);
+
+      if (error) {
+        console.error('Error fetching mappings:', error);
+        toast({
+          title: "Warnung",
+          description: "Mappings konnten nicht aus der Datenbank geladen werden",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Analyze each mapping
+      (dbMappings || []).forEach((mapping) => {
+        const exists = fieldNames.includes(mapping.pdf_field_name);
         
         // Find similar fields if not exact match
         let similarFields: string[] = [];
         if (!exists) {
           similarFields = fieldNames.filter(fn => 
-            fn.toLowerCase().includes(sourceField.toLowerCase()) ||
-            sourceField.toLowerCase().includes(fn.toLowerCase().split('.')[1] || '')
+            fn.toLowerCase().includes(mapping.source_field.toLowerCase()) ||
+            mapping.source_field.toLowerCase().includes(fn.toLowerCase().split('.')[1] || '')
           ).slice(0, 3);
         }
 
         statuses.push({
-          sourceTable: docType,
-          sourceField,
-          pdfFieldName,
+          sourceTable: mapping.document_type,
+          sourceField: mapping.source_field,
+          pdfFieldName: mapping.pdf_field_name,
           exists,
           actualPdfFields: exists ? undefined : similarFields
         });
       });
-    });
 
-    setMappingStatuses(statuses);
+      setMappingStatuses(statuses);
+    } catch (error) {
+      console.error('Error analyzing mappings:', error);
+    }
   };
 
   const validMappings = mappingStatuses.filter(m => m.exists);
