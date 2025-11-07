@@ -1,5 +1,5 @@
 // Field mappings from database tables to PDF AcroForm fields
-// This will be refined after analyzing the actual PDF form fields
+// FOCUSED MAPPING: Only Geburtsurkunde and Ausweis (Parent ID Documents)
 
 export const WORKFLOW_STEPS = [
   {
@@ -45,159 +45,134 @@ export const WORKFLOW_STEPS = [
     filter: { person_type: "mutter" },
     description: "Wohnsitz Mutter",
     icon: "Home"
-  },
-  {
-    step: 6,
-    title: "Einkommenssteuerbescheid",
-    documentType: "einkommensteuerbescheid",
-    tableName: "einkommensteuerbescheide",
-    description: "Einkommensnachweis",
-    icon: "FileCheck"
-  },
-  {
-    step: 7,
-    title: "Gehaltsnachweise Vater",
-    documentType: "gehaltsnachweis_vater",
-    tableName: "gehaltsnachweise",
-    filter: { person_type: "vater" },
-    description: "Gehälter Vater (letzte 12 Monate)",
-    icon: "DollarSign"
-  },
-  {
-    step: 8,
-    title: "Gehaltsnachweise Mutter",
-    documentType: "gehaltsnachweis_mutter",
-    tableName: "gehaltsnachweise",
-    filter: { person_type: "mutter" },
-    description: "Gehälter Mutter (letzte 12 Monate)",
-    icon: "DollarSign"
-  },
-  {
-    step: 9,
-    title: "Arbeitgeberbescheinigung Vater",
-    documentType: "arbeitgeberbescheinigung_vater",
-    tableName: "arbeitgeberbescheinigungen",
-    filter: { person_type: "vater" },
-    description: "Beschäftigungsnachweis Vater",
-    icon: "Briefcase"
-  },
-  {
-    step: 10,
-    title: "Arbeitgeberbescheinigung Mutter",
-    documentType: "arbeitgeberbescheinigung_mutter",
-    tableName: "arbeitgeberbescheinigungen",
-    filter: { person_type: "mutter" },
-    description: "Beschäftigungsnachweis Mutter",
-    icon: "Briefcase"
-  },
-  {
-    step: 11,
-    title: "Krankenversicherung",
-    documentType: "krankenversicherung",
-    tableName: "krankenversicherung_nachweise",
-    description: "Versicherungsnachweis",
-    icon: "Heart"
-  },
-  {
-    step: 12,
-    title: "Bankverbindung",
-    documentType: "bankverbindung",
-    tableName: "bankverbindungen",
-    description: "Kontoangaben für Auszahlung",
-    icon: "CreditCard"
-  },
-  {
-    step: 13,
-    title: "Ehe-/Sorgerecht",
-    documentType: "ehe_sorgerecht",
-    tableName: "ehe_sorgerecht_nachweise",
-    description: "Familienstand und Sorgerecht",
-    icon: "Users"
   }
 ];
 
-// Field mappings from Excel file: Mapping032025_1.xlsx (spaces removed from field names)
-// Maps database fields to actual PDF AcroForm field names
+// Field mappings from database tables to PDF AcroForm fields
+// FOCUSED MAPPING: Only Geburtsurkunde, Ausweis, and Meldebescheinigung
+// Pattern discovered: Parent 1 (Vater) uses fields WITHOUT space, Parent 2 (Mutter) uses fields WITH space+1
+
 export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
+  // ============================================
+  // GEBURTSURKUNDE (Birth Certificate) - Section 1A
+  // ============================================
   geburtsurkunde: {
-    // VERIFIED: These fields exist in the PDF
+    // Child information (VERIFIED - these exist in PDF)
     kind_vorname: "txt.vorname1A 4",
     kind_nachname: "txt.name1A 4",
     kind_geburtsdatum: "txt.geburtsdatum1a 3",
     kind_anzahl_mehrlinge: "txt.anzahl 4",
-    // Parent names from birth certificate
+    
+    // Additional child fields (need verification)
+    kind_geburtsort: "txt.ort1a 3",  // Likely pattern based on other fields
+    kind_geburtsnummer: "txt.nummer1a 3",  // Likely pattern
+    
+    // Parent names from birth certificate (VERIFIED)
     mutter_vorname: "txt.vorname2b 1",  // IMPORTANT: Space before 1!
     mutter_nachname: "txt.name2b 1",    // IMPORTANT: Space before 1!
+    mutter_geburtsname: "txt.geburtsname2b 1",  // Likely pattern
     vater_vorname: "txt.vorname2b",
-    vater_nachname: "txt.name2b"
+    vater_nachname: "txt.name2b",
+    
+    // Certificate metadata
+    behoerde_name: "txt.behoerde1a",  // Likely pattern
+    urkundennummer: "txt.urkunde1a",  // Likely pattern
+    ausstelldatum: "txt.ausstellung1a"  // Likely pattern
   },
+
+  // ============================================
+  // PERSONALAUSWEIS VATER (Father's ID) - Section 2B
+  // ============================================
   eltern_dokument_vater: {
-    // VERIFIED: Basic parent 1 fields
+    // Basic personal information (VERIFIED)
     vorname: "txt.vorname2b",
     nachname: "txt.name2b",
-    geburtsdatum: "txt.geburt2b"
-    // Note: steuer_id field mapping removed - needs to be found in PDF
-    // Note: Gender, nationality, ID number not mapped yet
-  },
-  eltern_dokument_mutter: {
-    // VERIFIED: Basic parent 2 fields - IMPORTANT: Space before 1!
-    vorname: "txt.vorname2b 1",
-    nachname: "txt.name2b 1",
-    geburtsdatum: "txt.geburt2b 1"
-    // Note: steuer_id field mapping removed - needs to be found in PDF
-  },
-  meldebescheinigung_vater: {
-    // VERIFIED: Address fields for parent 1
+    geburtsdatum: "txt.geburt2b",
+    geburtsname: "txt.geburtsname2b",  // Likely pattern
+    
+    // Birth place and location
+    geburtsort: "txt.geburtsort2b",  // Likely pattern
+    
+    // ID document information
+    ausweisnummer: "txt.ausweisnummer2b",  // Need to find
+    staatsangehoerigkeit: "txt.staatsangehoerigkeit2b",  // Need to find
+    ausstellende_behoerde: "txt.behoerde2b",  // Likely pattern
+    ausstelldatum: "txt.ausstellung2b",  // Likely pattern
+    gueltig_bis: "txt.gueltig2b",  // Likely pattern
+    
+    // Address information (covered in meldebescheinigung but may also be in section 2C)
     strasse: "txt.strasse2c",
     hausnummer: "txt.nummer2c",
     plz: "txt.plz2c",
     wohnort: "txt.ort2c"
   },
-  meldebescheinigung_mutter: {
-    // VERIFIED: Address fields for parent 2 - IMPORTANT: Space before 1!
+
+  // ============================================
+  // PERSONALAUSWEIS MUTTER (Mother's ID) - Section 2B with space+1
+  // ============================================
+  eltern_dokument_mutter: {
+    // Basic personal information (VERIFIED - note the space before 1!)
+    vorname: "txt.vorname2b 1",
+    nachname: "txt.name2b 1",
+    geburtsdatum: "txt.geburt2b 1",
+    geburtsname: "txt.geburtsname2b 1",  // Likely pattern
+    
+    // Birth place
+    geburtsort: "txt.geburtsort2b 1",  // Likely pattern
+    
+    // ID document information
+    ausweisnummer: "txt.ausweisnummer2b 1",  // Need to find
+    staatsangehoerigkeit: "txt.staatsangehoerigkeit2b 1",  // Need to find
+    ausstellende_behoerde: "txt.behoerde2b 1",  // Likely pattern
+    ausstelldatum: "txt.ausstellung2b 1",  // Likely pattern
+    gueltig_bis: "txt.gueltig2b 1",  // Likely pattern
+    
+    // Address information
     strasse: "txt.strasse2c 1",
     hausnummer: "txt.nummer2c 1",
     plz: "txt.plz2c 1",
     wohnort: "txt.ort2c 1"
   },
-  einkommensteuerbescheid: {
-    // WARNING: These fields need to be verified in the PDF
-    // Currently using placeholder names - may not exist
-    // person_type: "vater" or "mutter" - needs to be handled separately
+
+  // ============================================
+  // MELDEBESCHEINIGUNG VATER (Father's Address) - Section 2C
+  // ============================================
+  meldebescheinigung_vater: {
+    // Address fields (VERIFIED - these work!)
+    strasse: "txt.strasse2c",
+    hausnummer: "txt.nummer2c",
+    plz: "txt.plz2c",
+    wohnort: "txt.ort2c",
+    
+    // Additional address fields
+    vorname: "txt.vorname2c",  // Likely exists
+    nachname: "txt.name2c",  // Likely exists
+    geburtsdatum: "txt.geburt2c",  // Exists (seen in logs)
+    
+    // Certificate metadata
+    behoerde: "txt.behoerde2c",  // Likely pattern
+    meldedatum: "txt.meldedatum2c",  // Likely pattern
+    ausstelldatum: "txt.ausstellung2c"  // Likely pattern
   },
-  gehaltsnachweis_vater: {
-    // WARNING: These placeholder field names don't exist in PDF
-    // Need to find actual salary-related fields in section 7+
-    // Fields like txt.jahr_1, txt.jahr_2 exist but need proper mapping
-  },
-  gehaltsnachweis_mutter: {
-    // WARNING: These placeholder field names don't exist in PDF
-    // Need to find actual salary-related fields in section 7+
-  },
-  arbeitgeberbescheinigung_vater: {
-    // WARNING: These placeholder field names don't exist in PDF
-    // Need to find actual employer certificate fields
-  },
-  arbeitgeberbescheinigung_mutter: {
-    // WARNING: These placeholder field names don't exist in PDF
-    // Need to find actual employer certificate fields
-  },
-  krankenversicherung: {
-    // VERIFIED: Insurance fields for parent 1 (section 5)
-    versichertennummer: "txt.versichertennummer5",
-    krankenkasse_name: "txt.namekk5",
-    krankenkasse_strasse: "txt.kkstrasse5",
-    krankenkasse_hausnummer: "txt.kknr5",
-    krankenkasse_plz: "txt.kkplz5",
-    krankenkasse_ort: "txt.kkort5"
-    // Note: Parent 2 insurance uses section 6 fields (txt.versichertennummer6, etc.)
-  },
-  bankverbindung: {
-    // WARNING: These field names need to be verified
-    // Actual bank account fields need to be found in section 16A
-  },
-  ehe_sorgerecht: {
-    // WARNING: Checkbox field names need to be verified
-    // These may use different naming convention (cb: vs cb.)
+
+  // ============================================
+  // MELDEBESCHEINIGUNG MUTTER (Mother's Address) - Section 2C with space+1
+  // ============================================
+  meldebescheinigung_mutter: {
+    // Address fields (VERIFIED - with space before 1!)
+    strasse: "txt.strasse2c 1",
+    hausnummer: "txt.nummer2c 1",
+    plz: "txt.plz2c 1",
+    wohnort: "txt.ort2c 1",
+    
+    // Additional address fields
+    vorname: "txt.vorname2c 1",  // Likely exists
+    nachname: "txt.name2c 1",  // Likely exists
+    geburtsdatum: "txt.geburt2c 1",  // Exists (seen in logs)
+    
+    // Certificate metadata
+    behoerde: "txt.behoerde2c 1",  // Likely pattern
+    meldedatum: "txt.meldedatum2c 1",  // Likely pattern
+    ausstelldatum: "txt.ausstellung2c 1"  // Likely pattern
   }
 };
