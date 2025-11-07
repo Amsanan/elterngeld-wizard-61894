@@ -176,6 +176,16 @@ const GehaltsnachweisResult = () => {
                   type="number"
                   onUpdate={(value) => setData({ ...data, nettogehalt: value })}
                 />
+                <EditableField
+                  label="Auszahlungsbetrag"
+                  value={data.auszahlungsbetrag?.toString()}
+                  isEditing={isEditing}
+                  documentId={searchParams.get("id")!}
+                  tableName="gehaltsnachweise"
+                  fieldName="auszahlungsbetrag"
+                  type="number"
+                  onUpdate={(value) => setData({ ...data, auszahlungsbetrag: value })}
+                />
               </div>
             </div>
 

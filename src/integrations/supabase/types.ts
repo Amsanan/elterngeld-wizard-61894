@@ -715,6 +715,7 @@ export type Database = {
           antrag_id: string | null
           arbeitgeber_name: string | null
           arbeitslosenversicherung: number | null
+          auszahlungsbetrag: number | null
           bruttogehalt: number | null
           confidence_scores: Json | null
           created_at: string
@@ -741,6 +742,7 @@ export type Database = {
           antrag_id?: string | null
           arbeitgeber_name?: string | null
           arbeitslosenversicherung?: number | null
+          auszahlungsbetrag?: number | null
           bruttogehalt?: number | null
           confidence_scores?: Json | null
           created_at?: string
@@ -767,6 +769,7 @@ export type Database = {
           antrag_id?: string | null
           arbeitgeber_name?: string | null
           arbeitslosenversicherung?: number | null
+          auszahlungsbetrag?: number | null
           bruttogehalt?: number | null
           confidence_scores?: Json | null
           created_at?: string

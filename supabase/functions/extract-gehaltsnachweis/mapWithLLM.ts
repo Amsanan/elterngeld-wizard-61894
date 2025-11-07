@@ -29,8 +29,9 @@ const TABLE_SCHEMA = {
     { name: "rentenversicherung", type: "decimal", description: "Pension insurance contribution ONLY (Rentenversicherung, RV). Extract individual line item, not from summary box. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
     { name: "arbeitslosenversicherung", type: "decimal", description: "Unemployment insurance contribution ONLY (Arbeitslosenversicherung, AV, ALV). Extract individual line item, not from summary box. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
     { name: "vermoegenswirksame_leistungen", type: "decimal", description: "Capital-forming benefits. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
-    { name: "sonstige_bezuege", type: "decimal", description: "Other income/allowances. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "sonstige_bezuege", type: "decimal", description: "Other income/allowances (Erstattung Spesen, Verpflegungszuschuss, etc.). Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
     { name: "sonstige_abzuege", type: "decimal", description: "Other deductions. Use '0' if document shows '--' or '0,00'. Omit if completely absent." },
+    { name: "auszahlungsbetrag", type: "decimal", description: "Total payout amount (Auszahlungsbetrag, Überweisungsbetrag). This is Nettogehalt + Sonstige Bezüge. Extract if explicitly shown." },
   ],
 };
 
@@ -57,10 +58,12 @@ ZERO VS NULL DISTINCTION (CRITICAL):
 NET SALARY VS PAYOUT AMOUNT (CRITICAL):
 - **Netto-Verdienst / Netto-Bezüge / Nettolohn**: This is the TRUE net salary = Bruttogehalt - all deductions
   → Extract this as "nettogehalt"
-- **Auszahlungsbetrag / Überweisungsbetrag**: This is the payout amount = Net salary + reimbursements/allowances
+- **Auszahlungsbetrag / Überweisungsbetrag / Auszahlung**: This is the total payout amount = Nettogehalt + Sonstige Bezüge
+  → Extract this as "auszahlungsbetrag"
   → DO NOT use this for "nettogehalt"
 - If both are present, ALWAYS prefer "Netto-Verdienst" over "Auszahlungsbetrag" for nettogehalt
 - Validation: nettogehalt should be approximately: bruttogehalt - (lohnsteuer + solidaritätszuschlag + kirchensteuer + krankenversicherung + pflegeversicherung + rentenversicherung + arbeitslosenversicherung + sonstige_abzuege)
+- Validation: auszahlungsbetrag should be approximately: nettogehalt + sonstige_bezuege
 
 ADDITIONAL PAYMENTS AND REIMBURSEMENTS:
 - "Erstattung Spesen/Auslagen", "Spesen", "Auslagenerstattung" → sonstige_bezuege
