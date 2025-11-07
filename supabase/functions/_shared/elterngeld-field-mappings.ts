@@ -120,11 +120,11 @@ export const WORKFLOW_STEPS = [
 // Maps database fields to actual PDF AcroForm field names
 export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
   geburtsurkunde: {
-    // Kind table fields - CRITICAL: PDF field names have spaces!
-    kind_vorname: "txt.txt.vorname1A 4",
-    kind_nachname: "txt.txt.name1A 4",
-    kind_geburtsdatum: "txt.txt.geburtsdatum1a 3",
-    kind_anzahl_mehrlinge: "txt.txt.anzahl4",
+    // Kind table fields - PDF field names with single txt. prefix
+    kind_vorname: "txt.vorname1A 4",
+    kind_nachname: "txt.name1A 4",
+    kind_geburtsdatum: "txt.geburtsdatum1a 3",
+    kind_anzahl_mehrlinge: "txt.anzahl 4",
     // Parent names from birth certificate - parent 2 is mother, parent 1 is father
     mutter_vorname: "txt.vorname2b 1",  // SPACE before 1!
     mutter_nachname: "txt.name2b 1",
@@ -136,7 +136,7 @@ export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
     vorname: "txt.vorname2b",
     nachname: "txt.name2b",
     geburtsdatum: "txt.geburt2b",
-    steuer_id: "txt.txt.steuer2b_1"
+    steuer_id: "txt.steuer2b_1"
     // Note: Gender, nationality, ID number not directly mapped
   },
   eltern_dokument_mutter: {
@@ -144,7 +144,7 @@ export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
     vorname: "txt.vorname2b 1",
     nachname: "txt.name2b 1",
     geburtsdatum: "txt.geburt2b 1",
-    steuer_id: "txt.txt.steuer2b_2"
+    steuer_id: "txt.steuer2b_2"
   },
   meldebescheinigung_vater: {
     // Antrag_2C_Wohnsitz fields for parent 1 (rows 48-51)
