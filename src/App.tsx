@@ -45,6 +45,7 @@ import ElterngeldantragAusfuellen from "./pages/ElterngeldantragAusfuellen";
 import AdminSetup from "./pages/AdminSetup";
 import AutoCleanupSettings from "./pages/AutoCleanupSettings";
 import AdminFieldMapper from "./pages/AdminFieldMapper";
+import FieldDiagnostics from "./pages/FieldDiagnostics";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -97,6 +98,7 @@ function App() {
         <Route path="/admin-setup" element={<AdminSetup />} />
         <Route path="/auto-cleanup-settings" element={<AutoCleanupSettings />} />
         <Route path="/admin/field-mapper" element={<AdminFieldMapper />} />
+        <Route path="/admin/field-diagnostics" element={<FieldDiagnostics />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

@@ -46,11 +46,21 @@ export default function ElterngeldantragAusfuellen() {
 
   const currentConfig = WORKFLOW_STEPS[currentStep - 1];
 
+  // Detect Brave browser on mount
+  useEffect(() => {
+    const detectBrave = async () => {
+      if ((navigator as any).brave && await (navigator as any).brave.isBrave()) {
+        setShowBraveWarning(true);
+        console.log("Brave browser detected - showing warning");
+      }
+    };
+    detectBrave();
+  }, []);
+
   useEffect(() => {
     loadStepData();
     setIframeError(false);
     setIframeLoaded(false);
-    setShowBraveWarning(false);
   }, [currentStep]);
 
   useEffect(() => {
