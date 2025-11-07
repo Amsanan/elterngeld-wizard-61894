@@ -41,8 +41,8 @@ serve(async (req) => {
     console.log('User verified:', user.id);
 
     console.log('Step 4: Parsing request body...');
-    const { step, documentType, extractedData, previousPdfPath } = await req.json();
-    console.log(`Request params - Step: ${step}, DocumentType: ${documentType}, HasPreviousPdf: ${!!previousPdfPath}`);
+    const { step, tableName, filter, extractedData, previousPdfPath } = await req.json();
+    console.log(`Request params - Step: ${step}, TableName: ${tableName}, Filter:`, filter, `HasPreviousPdf: ${!!previousPdfPath}`);
     console.log('ExtractedData keys:', Object.keys(extractedData));
 
     let pdfDoc: any;
@@ -95,12 +95,12 @@ serve(async (req) => {
     });
     console.log('=== END OF FIELD LIST ===');
     
-    // Fetch field mappings from database with filter conditions
-    console.log(`Fetching mappings for documentType: ${documentType}`);
+    // Fetch field mappings from database for this table
+    console.log(`Fetching mappings for table: ${tableName} with filter:`, filter);
     const { data: mappingsData, error: mappingsError } = await supabase
       .from('pdf_field_mappings')
       .select('source_table, source_field, pdf_field_name, filter_condition')
-      .eq('document_type', documentType)
+      .eq('document_type', tableName)
       .eq('is_active', true);
     
     if (mappingsError) {
@@ -108,17 +108,33 @@ serve(async (req) => {
       throw new Error(`Failed to fetch field mappings: ${mappingsError.message}`);
     }
     
-    console.log(`Loaded ${mappingsData?.length || 0} mappings from database for documentType: ${documentType}`);
+    // Filter mappings to only those matching the workflow step's filter
+    let filteredMappings = mappingsData || [];
+    if (filter && Object.keys(filter).length > 0) {
+      filteredMappings = filteredMappings.filter(mapping => {
+        // If mapping has no filter_condition, it's a general field (applies to all)
+        if (!mapping.filter_condition || Object.keys(mapping.filter_condition).length === 0) {
+          return true;
+        }
+        
+        // Check if mapping's filter matches the workflow step's filter
+        return Object.entries(filter).every(([key, value]) => 
+          mapping.filter_condition[key] === value
+        );
+      });
+    }
+    
+    console.log(`Loaded ${filteredMappings.length} mappings (${mappingsData?.length || 0} total) for table: ${tableName} with filter:`, filter);
     
     let filledFieldsCount = 0;
     const filledFieldsList: string[] = [];
     const skippedFields: string[] = [];
     const failedFields: { field: string; reason: string }[] = [];
 
-    console.log(`Processing ${mappingsData?.length || 0} mapped fields for documentType: ${documentType}`);
+    console.log(`Processing ${filteredMappings.length} mapped fields for table: ${tableName}`);
 
     // Fill fields based on mapping with filter conditions
-    for (const mapping of (mappingsData || [])) {
+    for (const mapping of filteredMappings) {
       const { source_table, source_field, pdf_field_name, filter_condition } = mapping;
       let value = extractedData[source_field];
       

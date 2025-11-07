@@ -136,7 +136,8 @@ export default function ElterngeldantragAusfuellen() {
       const { data: result, error } = await supabase.functions.invoke('fill-elterngeld-form', {
         body: {
           step: currentStep,
-          documentType: currentConfig.documentType,
+          tableName: currentConfig.tableName,
+          filter: currentConfig.filter || {},
           extractedData: data,
           previousPdfPath: previousPdfPath
         }
