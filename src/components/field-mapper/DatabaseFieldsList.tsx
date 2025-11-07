@@ -6,12 +6,22 @@ import { Database } from "lucide-react";
 interface DatabaseFieldsListProps {
   schema: any[];
   mappings: any[];
+  selectedDocumentType?: string;
 }
 
-export function DatabaseFieldsList({ schema, mappings }: DatabaseFieldsListProps) {
+export function DatabaseFieldsList({ schema, mappings, selectedDocumentType }: DatabaseFieldsListProps) {
   const getMappedCount = (tableName: string) => {
     return mappings.filter(m => m.source_table === tableName).length;
   };
+
+  // Sort schema so selected document type appears first
+  const sortedSchema = [...schema].sort((a, b) => {
+    if (selectedDocumentType) {
+      if (a.table_name === selectedDocumentType) return -1;
+      if (b.table_name === selectedDocumentType) return 1;
+    }
+    return 0;
+  });
 
   return (
     <Card className="p-4">
@@ -21,7 +31,7 @@ export function DatabaseFieldsList({ schema, mappings }: DatabaseFieldsListProps
       </div>
       <ScrollArea className="h-[600px]">
         <div className="space-y-4">
-          {schema.map(table => (
+          {sortedSchema.map(table => (
             <div key={table.table_name} className="border rounded-lg p-3">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-medium text-sm">{table.table_name}</h3>

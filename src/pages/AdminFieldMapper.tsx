@@ -448,6 +448,7 @@ export default function AdminFieldMapper() {
           <DatabaseFieldsList 
             schema={databaseSchema}
             mappings={mappings}
+            selectedDocumentType={documentType}
           />
           <PdfFieldsList 
             fields={pdfFields}
