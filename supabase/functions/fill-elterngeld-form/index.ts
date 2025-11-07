@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PDFDocument } from "https://esm.sh/pdf-lib@1.17.1";
-import { FIELD_MAPPINGS } from "../_shared/elterngeld-field-mappings.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -96,7 +95,26 @@ serve(async (req) => {
     });
     console.log('=== END OF FIELD LIST ===');
     
-    const fieldMapping = FIELD_MAPPINGS[documentType] || {};
+    // Fetch field mappings from database
+    console.log(`Fetching mappings for documentType: ${documentType}`);
+    const { data: mappingsData, error: mappingsError } = await supabase
+      .from('pdf_field_mappings')
+      .select('source_field, pdf_field_name')
+      .eq('document_type', documentType)
+      .eq('is_active', true);
+    
+    if (mappingsError) {
+      console.error('Error fetching mappings:', mappingsError);
+      throw new Error(`Failed to fetch field mappings: ${mappingsError.message}`);
+    }
+    
+    // Convert to object format for easy lookup
+    const fieldMapping: Record<string, string> = {};
+    (mappingsData || []).forEach(mapping => {
+      fieldMapping[mapping.source_field] = mapping.pdf_field_name;
+    });
+    
+    console.log(`Loaded ${Object.keys(fieldMapping).length} mappings from database for documentType: ${documentType}`);
     
     let filledFieldsCount = 0;
     const filledFieldsList: string[] = [];

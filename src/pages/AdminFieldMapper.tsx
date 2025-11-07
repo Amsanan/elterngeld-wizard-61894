@@ -264,6 +264,17 @@ export default function AdminFieldMapper() {
   };
 
   const handleSaveMappings = async () => {
+    // Validate mappings before saving
+    const invalidMappings = mappings.filter(m => 
+      pdfFields.length > 0 && !pdfFields.includes(m.pdf_field_name)
+    );
+    
+    if (invalidMappings.length > 0) {
+      toast.error(`${invalidMappings.length} mappings reference non-existent PDF fields. Please fix before saving.`);
+      console.error('Invalid mappings:', invalidMappings);
+      return;
+    }
+
     try {
       setLoading(true);
       const { error } = await supabase.functions.invoke('save-field-mappings', {
@@ -271,9 +282,34 @@ export default function AdminFieldMapper() {
       });
       if (error) throw error;
       toast.success('Mappings saved successfully');
+      loadMappings(); // Reload to get server-generated data
     } catch (error: any) {
       console.error('Error saving mappings:', error);
       toast.error('Failed to save mappings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearAllMappings = async () => {
+    if (!confirm(`Are you sure you want to clear all mappings for ${documentType}? This action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      // Delete all mappings for this document type
+      const { error } = await supabase
+        .from('pdf_field_mappings')
+        .delete()
+        .eq('document_type', documentType);
+      
+      if (error) throw error;
+      setMappings([]);
+      toast.success('All mappings cleared');
+    } catch (error: any) {
+      console.error('Error clearing mappings:', error);
+      toast.error('Failed to clear mappings');
     } finally {
       setLoading(false);
     }
@@ -336,22 +372,56 @@ export default function AdminFieldMapper() {
           </div>
         </div>
 
+        {/* Quick Start Help Card */}
+        <Card className="p-4 mb-6 bg-muted/50 border-primary/20">
+          <div className="flex items-start gap-3">
+            <div className="mt-1">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold mb-2">Quick Start Guide</h3>
+              <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>Select a document type below</li>
+                <li>Click "Load PDF Fields" to see all available PDF form fields (657 fields)</li>
+                <li>Drag database fields from the left panel onto PDF fields in the right panel</li>
+                <li>Review your mappings in the table below</li>
+                <li>Click "Save All" to store mappings in the database</li>
+              </ol>
+              <p className="text-xs text-muted-foreground mt-2">
+                💡 Tip: All PDF form filling now uses database-stored mappings. No code changes needed for new mappings!
+              </p>
+            </div>
+          </div>
+        </Card>
+
         {/* Document Type Selector */}
         <Card className="p-4 mb-6">
-          <div className="flex items-center gap-4">
-            <label className="font-medium">Document Type:</label>
-            <Select value={documentType} onValueChange={setDocumentType}>
-              <SelectTrigger className="w-64">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {DOCUMENT_TYPES.map(type => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <label className="font-medium">Document Type:</label>
+              <Select value={documentType} onValueChange={setDocumentType}>
+                <SelectTrigger className="w-64">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DOCUMENT_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {mappings.length > 0 && (
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={handleClearAllMappings}
+                disabled={loading}
+              >
+                Clear All Mappings
+              </Button>
+            )}
           </div>
         </Card>
 
