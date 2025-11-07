@@ -23,7 +23,7 @@ export function PdfFieldsList({ fields, mappings, onCreateMapping }: PdfFieldsLi
   const [dragOver, setDragOver] = useState<string | null>(null);
 
   // Detect page filter queries (P1, Page 2, p2, etc.)
-  const pageMatch = searchTerm.match(/^(?:page?\s*)?(\d+)$/i);
+  const pageMatch = searchTerm.match(/^(?:p(?:age)?\s*)?(\d+)$/i);
   
   const filteredFields = fields.filter(field => {
     if (pageMatch) {

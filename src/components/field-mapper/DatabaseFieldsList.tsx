@@ -31,10 +31,19 @@ export function DatabaseFieldsList({ schema, mappings, selectedDocumentType }: D
       </div>
       <ScrollArea className="h-[600px]">
         <div className="space-y-4">
-          {sortedSchema.map(table => (
-            <div key={table.table_name} className="border rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-sm">{table.table_name}</h3>
+          {sortedSchema.map(table => {
+            const isSelected = selectedDocumentType === table.table_name;
+            return (
+              <div 
+                key={table.table_name} 
+                className={`border rounded-lg p-3 transition-all ${
+                  isSelected 
+                    ? 'border-primary border-2 bg-primary/5 shadow-md' 
+                    : ''
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium text-sm">{table.table_name}</h3>
                 <Badge variant="secondary" className="text-xs">
                   {getMappedCount(table.table_name)}/{table.columns.length}
                 </Badge>
@@ -69,7 +78,8 @@ export function DatabaseFieldsList({ schema, mappings, selectedDocumentType }: D
                 })}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </ScrollArea>
     </Card>
