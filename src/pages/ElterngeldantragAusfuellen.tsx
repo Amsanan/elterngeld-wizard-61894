@@ -158,7 +158,16 @@ export default function ElterngeldantragAusfuellen() {
 
   const handleDownload = () => {
     if (pdfUrl) {
-      window.open(pdfUrl, '_blank');
+      // Add download parameter to Supabase Storage URL for proper file download
+      const url = new URL(pdfUrl);
+      url.searchParams.set('download', 'elterngeldantrag.pdf');
+      
+      const link = document.createElement('a');
+      link.href = url.toString();
+      link.download = 'elterngeldantrag.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -208,8 +217,17 @@ export default function ElterngeldantragAusfuellen() {
         </div>
 
         {/* Main Content */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Left: Data Review & Edit */}
+        <div className="space-y-6">
+          {/* PDF Preview - Full Width on Top */}
+          <Card className="p-6 w-full">
+            <h3 className="text-lg font-semibold mb-4">PDF Vorschau</h3>
+            <PdfViewer
+              pdfUrl={pdfUrl}
+              downloadUrl={pdfUrl}
+            />
+          </Card>
+
+          {/* Data Review & Edit - Below PDF */}
           <Card className="p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -255,16 +273,6 @@ export default function ElterngeldantragAusfuellen() {
                 })}
               </div>
             )}
-          </Card>
-
-          {/* Right: PDF Preview */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">PDF Vorschau</h3>
-            
-            <PdfViewer
-              pdfUrl={pdfUrl}
-              downloadUrl={pdfUrl}
-            />
           </Card>
         </div>
 

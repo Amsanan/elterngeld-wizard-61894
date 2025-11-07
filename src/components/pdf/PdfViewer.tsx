@@ -35,27 +35,18 @@ export const PdfViewer = ({
     onLoadError(error);
   }
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (downloadUrl) {
-      try {
-        // Fetch the PDF as a blob to handle cross-origin downloads
-        const response = await fetch(downloadUrl);
-        const blob = await response.blob();
-        
-        // Create a blob URL and trigger download
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = 'elterngeldantrag.pdf';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Clean up the blob URL
-        URL.revokeObjectURL(blobUrl);
-      } catch (error) {
-        console.error('Download failed:', error);
-      }
+      // Add download parameter to Supabase Storage URL
+      const url = new URL(downloadUrl);
+      url.searchParams.set('download', 'elterngeldantrag.pdf');
+      
+      const link = document.createElement('a');
+      link.href = url.toString();
+      link.download = 'elterngeldantrag.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -112,7 +103,7 @@ export const PdfViewer = ({
         />
       )}
 
-      <div className="relative w-full border rounded-lg bg-muted/30 overflow-auto max-h-[800px] scroll-smooth">
+      <div className="relative w-full border rounded-lg bg-muted/30 overflow-auto max-h-[900px] scroll-smooth">
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
             <div className="text-center space-y-2">
