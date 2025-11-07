@@ -82,6 +82,10 @@ serve(async (req) => {
     
     let filledFieldsCount = 0;
     const filledFieldsList: string[] = [];
+    const skippedFields: string[] = [];
+    const failedFields: { field: string; reason: string }[] = [];
+
+    console.log(`Processing ${Object.keys(fieldMapping).length} mapped fields for documentType: ${documentType}`);
 
     // Fill fields based on mapping
     for (const [dataKey, pdfFieldName] of Object.entries(fieldMapping)) {
@@ -98,26 +102,38 @@ serve(async (req) => {
             textField.setText(stringValue);
             filledFieldsList.push(pdfFieldName);
             filledFieldsCount++;
-            console.log(`Filled text field ${pdfFieldName} with: ${stringValue}`);
+            console.log(`✓ Filled text field "${pdfFieldName}" with: "${stringValue}"`);
           } else if (fieldType === 'PDFCheckBox') {
             const checkbox = field as any;
             if (value === true || value === 'true' || value === 'ja' || value === 'yes') {
               checkbox.check();
               filledFieldsList.push(pdfFieldName);
               filledFieldsCount++;
-              console.log(`Checked checkbox: ${pdfFieldName}`);
+              console.log(`✓ Checked checkbox: "${pdfFieldName}"`);
             }
           } else if (fieldType === 'PDFDropdown') {
             const dropdown = field as any;
             dropdown.select(String(value));
             filledFieldsList.push(pdfFieldName);
             filledFieldsCount++;
-            console.log(`Selected dropdown ${pdfFieldName}: ${value}`);
+            console.log(`✓ Selected dropdown "${pdfFieldName}": "${value}"`);
           }
         } catch (error) {
-          console.log(`Could not fill field ${pdfFieldName}:`, error instanceof Error ? error.message : 'Unknown error');
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          failedFields.push({ field: pdfFieldName, reason: errorMsg });
+          console.log(`✗ Could not fill field "${pdfFieldName}" (dataKey: ${dataKey}): ${errorMsg}`);
         }
+      } else {
+        skippedFields.push(`${dataKey} -> ${pdfFieldName}`);
       }
+    }
+
+    console.log(`=== FILL SUMMARY ===`);
+    console.log(`Successfully filled: ${filledFieldsCount} fields`);
+    console.log(`Skipped (no data): ${skippedFields.length} fields`);
+    console.log(`Failed: ${failedFields.length} fields`);
+    if (failedFields.length > 0) {
+      console.log('Failed fields:', JSON.stringify(failedFields, null, 2));
     }
 
     console.log(`Filled ${filledFieldsCount} fields`);

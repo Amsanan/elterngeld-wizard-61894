@@ -120,15 +120,15 @@ export const WORKFLOW_STEPS = [
 // Maps database fields to actual PDF AcroForm field names
 export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
   geburtsurkunde: {
-    // Kind table fields (rows 15-18 in Excel) - removed spaces from field names
-    kind_vorname: "txt.txt.vorname1A4",
-    kind_nachname: "txt.txt.name1A4",
-    kind_geburtsdatum: "txt.txt.geburtsdatum1a3",
+    // Kind table fields - CRITICAL: PDF field names have spaces!
+    kind_vorname: "txt.txt.vorname1A 4",
+    kind_nachname: "txt.txt.name1A 4",
+    kind_geburtsdatum: "txt.txt.geburtsdatum1a 3",
     kind_anzahl_mehrlinge: "txt.txt.anzahl4",
-    // Parent names from birth certificate
-    mutter_vorname: "txt.vorname2b1",  // Using parent 2 fields (mother)
-    mutter_nachname: "txt.name2b1",
-    vater_vorname: "txt.vorname2b",     // Using parent 1 fields (father)
+    // Parent names from birth certificate - parent 2 is mother, parent 1 is father
+    mutter_vorname: "txt.vorname2b 1",  // SPACE before 1!
+    mutter_nachname: "txt.name2b 1",
+    vater_vorname: "txt.vorname2b",
     vater_nachname: "txt.name2b"
   },
   eltern_dokument_vater: {
@@ -140,10 +140,10 @@ export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
     // Note: Gender, nationality, ID number not directly mapped
   },
   eltern_dokument_mutter: {
-    // Antrag_2B_Elternteil fields for parent 2 (rows 37-41)
-    vorname: "txt.vorname2b1",
-    nachname: "txt.name2b1",
-    geburtsdatum: "txt.geburt2b1",
+    // Antrag_2B_Elternteil fields for parent 2 - SPACE before 1!
+    vorname: "txt.vorname2b 1",
+    nachname: "txt.name2b 1",
+    geburtsdatum: "txt.geburt2b 1",
     steuer_id: "txt.txt.steuer2b_2"
   },
   meldebescheinigung_vater: {
@@ -154,11 +154,11 @@ export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
     wohnort: "txt.ort2c"
   },
   meldebescheinigung_mutter: {
-    // Antrag_2C_Wohnsitz fields for parent 2 (rows 74-77)
-    strasse: "txt.strasse2c1",
-    hausnummer: "txt.nummer2c1",
-    plz: "txt.plz2c1",
-    wohnort: "txt.ort2c1"
+    // Antrag_2C_Wohnsitz fields for parent 2 - SPACE before 1!
+    strasse: "txt.strasse2c 1",
+    hausnummer: "txt.nummer2c 1",
+    plz: "txt.plz2c 1",
+    wohnort: "txt.ort2c 1"
   },
   einkommensteuerbescheid: {
     // Note: Tax document fields not found in basic mapping
