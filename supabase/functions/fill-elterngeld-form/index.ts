@@ -95,11 +95,11 @@ serve(async (req) => {
     });
     console.log('=== END OF FIELD LIST ===');
     
-    // Fetch field mappings from database
+    // Fetch field mappings from database with filter conditions
     console.log(`Fetching mappings for documentType: ${documentType}`);
     const { data: mappingsData, error: mappingsError } = await supabase
       .from('pdf_field_mappings')
-      .select('source_field, pdf_field_name')
+      .select('source_table, source_field, pdf_field_name, filter_condition')
       .eq('document_type', documentType)
       .eq('is_active', true);
     
@@ -108,59 +108,93 @@ serve(async (req) => {
       throw new Error(`Failed to fetch field mappings: ${mappingsError.message}`);
     }
     
-    // Convert to object format for easy lookup
-    const fieldMapping: Record<string, string> = {};
-    (mappingsData || []).forEach(mapping => {
-      fieldMapping[mapping.source_field] = mapping.pdf_field_name;
-    });
-    
-    console.log(`Loaded ${Object.keys(fieldMapping).length} mappings from database for documentType: ${documentType}`);
+    console.log(`Loaded ${mappingsData?.length || 0} mappings from database for documentType: ${documentType}`);
     
     let filledFieldsCount = 0;
     const filledFieldsList: string[] = [];
     const skippedFields: string[] = [];
     const failedFields: { field: string; reason: string }[] = [];
 
-    console.log(`Processing ${Object.keys(fieldMapping).length} mapped fields for documentType: ${documentType}`);
+    console.log(`Processing ${mappingsData?.length || 0} mapped fields for documentType: ${documentType}`);
 
-    // Fill fields based on mapping
-    for (const [dataKey, pdfFieldName] of Object.entries(fieldMapping)) {
-      const value = extractedData[dataKey];
+    // Fill fields based on mapping with filter conditions
+    for (const mapping of (mappingsData || [])) {
+      const { source_table, source_field, pdf_field_name, filter_condition } = mapping;
+      let value = extractedData[source_field];
+      
+      // If there's a filter condition, we need to fetch filtered data from the table
+      if (filter_condition && Object.keys(filter_condition).length > 0) {
+        console.log(`Applying filter for ${source_table}.${source_field}:`, filter_condition);
+        
+        try {
+          let query = supabase
+            .from(source_table)
+            .select(source_field)
+            .eq('user_id', user.id);
+          
+          // Apply each filter condition
+          for (const [filterField, filterValue] of Object.entries(filter_condition)) {
+            query = query.eq(filterField, filterValue);
+          }
+          
+          const { data: filteredData, error: filterError } = await query.maybeSingle();
+          
+          if (filterError) {
+            console.error(`Error fetching filtered data for ${source_table}.${source_field}:`, filterError);
+            failedFields.push({ field: pdf_field_name, reason: `Filter query failed: ${filterError.message}` });
+            continue;
+          }
+          
+          if (filteredData && filteredData[source_field]) {
+            value = filteredData[source_field];
+            console.log(`✓ Fetched filtered value for ${source_field}:`, value);
+          } else {
+            console.log(`No data found for ${source_table}.${source_field} with filter:`, filter_condition);
+            skippedFields.push(`${source_field} (filtered) -> ${pdf_field_name}`);
+            continue;
+          }
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          failedFields.push({ field: pdf_field_name, reason: `Filter error: ${errorMsg}` });
+          console.error(`Error applying filter for ${source_field}:`, error);
+          continue;
+        }
+      }
       
       if (value !== null && value !== undefined && value !== '') {
         try {
-          const field = form.getField(pdfFieldName);
+          const field = form.getField(pdf_field_name);
           const fieldType = field.constructor.name;
 
           if (fieldType === 'PDFTextField') {
             const textField = field as any;
             const stringValue = String(value);
             textField.setText(stringValue);
-            filledFieldsList.push(pdfFieldName);
+            filledFieldsList.push(pdf_field_name);
             filledFieldsCount++;
-            console.log(`✓ Filled text field "${pdfFieldName}" with: "${stringValue}"`);
+            console.log(`✓ Filled text field "${pdf_field_name}" with: "${stringValue}"`);
           } else if (fieldType === 'PDFCheckBox') {
             const checkbox = field as any;
             if (value === true || value === 'true' || value === 'ja' || value === 'yes') {
               checkbox.check();
-              filledFieldsList.push(pdfFieldName);
+              filledFieldsList.push(pdf_field_name);
               filledFieldsCount++;
-              console.log(`✓ Checked checkbox: "${pdfFieldName}"`);
+              console.log(`✓ Checked checkbox: "${pdf_field_name}"`);
             }
           } else if (fieldType === 'PDFDropdown') {
             const dropdown = field as any;
             dropdown.select(String(value));
-            filledFieldsList.push(pdfFieldName);
+            filledFieldsList.push(pdf_field_name);
             filledFieldsCount++;
-            console.log(`✓ Selected dropdown "${pdfFieldName}": "${value}"`);
+            console.log(`✓ Selected dropdown "${pdf_field_name}": "${value}"`);
           }
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-          failedFields.push({ field: pdfFieldName, reason: errorMsg });
-          console.log(`✗ Could not fill field "${pdfFieldName}" (dataKey: ${dataKey}): ${errorMsg}`);
+          failedFields.push({ field: pdf_field_name, reason: errorMsg });
+          console.log(`✗ Could not fill field "${pdf_field_name}" (${source_field}): ${errorMsg}`);
         }
       } else {
-        skippedFields.push(`${dataKey} -> ${pdfFieldName}`);
+        skippedFields.push(`${source_field} -> ${pdf_field_name}`);
       }
     }
 

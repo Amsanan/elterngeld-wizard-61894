@@ -39,6 +39,11 @@ export function MappingRow({ mapping, onUpdate, onDelete, pdfFields }: MappingRo
             <span className="text-sm font-medium">
               {mapping.source_table}.{mapping.source_field}
             </span>
+            {mapping.filter_condition && (
+              <span className="text-xs text-muted-foreground mt-1">
+                Filter: {Object.entries(mapping.filter_condition).map(([k, v]) => `${k}='${v}'`).join(', ')}
+              </span>
+            )}
           </div>
           <div className="flex flex-col">
             <span className="text-xs text-muted-foreground">PDF Field</span>

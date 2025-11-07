@@ -1052,6 +1052,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           document_type: string
+          filter_condition: Json | null
           id: string
           is_active: boolean | null
           mapping_status: string | null
@@ -1066,6 +1067,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           document_type: string
+          filter_condition?: Json | null
           id?: string
           is_active?: boolean | null
           mapping_status?: string | null
@@ -1080,6 +1082,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           document_type?: string
+          filter_condition?: Json | null
           id?: string
           is_active?: boolean | null
           mapping_status?: string | null

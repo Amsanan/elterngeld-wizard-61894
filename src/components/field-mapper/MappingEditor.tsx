@@ -18,15 +18,28 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
   const [pdfFieldName, setPdfFieldName] = useState(mapping.pdf_field_name);
   const [notes, setNotes] = useState(mapping.notes || "");
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Parse filter_condition which is stored as {"field_name": "value"}
+  const existingFilter = mapping.filter_condition && typeof mapping.filter_condition === 'object' 
+    ? Object.entries(mapping.filter_condition)[0] || ['', '']
+    : ['', ''];
+  
+  const [filterField, setFilterField] = useState(String(existingFilter[0] || ''));
+  const [filterValue, setFilterValue] = useState(String(existingFilter[1] || ''));
 
   const filteredFields = pdfFields.filter(field =>
     field.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSave = () => {
+    const filterCondition = filterField && filterValue 
+      ? { [filterField]: filterValue }
+      : null;
+    
     onSave({
       pdf_field_name: pdfFieldName,
       notes,
+      filter_condition: filterCondition,
       mapping_status: 'manual'
     });
     onOpenChange(false);
@@ -77,6 +90,32 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
                 )}
               </SelectContent>
             </Select>
+          </div>
+          <div className="border-t pt-4">
+            <Label className="text-sm font-semibold">Filter Condition (Optional)</Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              For tables with person_type (mutter/vater), specify filter to fetch correct record
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Field Name</Label>
+                <Input
+                  value={filterField}
+                  onChange={(e) => setFilterField(e.target.value)}
+                  placeholder="e.g., person_type"
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Field Value</Label>
+                <Input
+                  value={filterValue}
+                  onChange={(e) => setFilterValue(e.target.value)}
+                  placeholder="e.g., mutter"
+                  className="text-sm"
+                />
+              </div>
+            </div>
           </div>
           <div>
             <Label>Notes</Label>
