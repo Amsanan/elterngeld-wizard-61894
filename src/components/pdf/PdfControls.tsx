@@ -9,7 +9,7 @@ interface PdfControlsProps {
   onZoomChange: (scale: number) => void;
 }
 
-const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 4, 5];
 
 export const PdfControls = ({
   pageNumber,

@@ -66,13 +66,19 @@ export const usePdfRenderer = ({ pdfUrl, scale, pageNumber }: UsePdfRendererProp
         if (!context) return;
 
         const viewport = page.getViewport({ scale });
+        const outputScale = window.devicePixelRatio || 1;
         
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+        canvas.height = Math.floor(viewport.height * outputScale);
+        canvas.width = Math.floor(viewport.width * outputScale);
+        canvas.style.height = Math.floor(viewport.height) + "px";
+        canvas.style.width = Math.floor(viewport.width) + "px";
+
+        const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
 
         const renderContext = {
           canvasContext: context,
           viewport: viewport,
+          transform: transform,
         };
 
         await page.render(renderContext).promise;
