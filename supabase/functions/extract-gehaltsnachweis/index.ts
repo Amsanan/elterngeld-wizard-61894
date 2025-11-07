@@ -57,9 +57,10 @@ Deno.serve(async (req) => {
     const formData = new FormData();
     formData.append("file", fileData, fileName);
     formData.append("filetype", fileExtension.toUpperCase());
-    formData.append("language", "ger");
+    formData.append("language", "auto");
     formData.append("isOverlayRequired", "false");
     formData.append("detectOrientation", "true");
+    formData.append("isTable", "true");
     formData.append("scale", "true");
     formData.append("OCREngine", "2");
 
