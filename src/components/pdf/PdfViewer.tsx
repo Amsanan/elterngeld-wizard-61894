@@ -19,7 +19,7 @@ export const PdfViewer = ({
   onLoadError 
 }: PdfViewerProps) => {
   const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(1.25);
 
   const { canvasRef, numPages, loading, error } = usePdfRenderer({
     pdfUrl,
@@ -99,7 +99,7 @@ export const PdfViewer = ({
         />
       )}
 
-      <div className="relative w-full border rounded-lg bg-muted/30 overflow-auto">
+      <div className="relative w-full border rounded-lg bg-muted/30 overflow-auto max-h-[800px] scroll-smooth">
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
             <div className="text-center space-y-2">
@@ -113,6 +113,7 @@ export const PdfViewer = ({
           <canvas
             ref={canvasRef}
             className="max-w-full h-auto shadow-lg"
+            style={{ imageRendering: 'crisp-edges' }}
           />
         </div>
       </div>

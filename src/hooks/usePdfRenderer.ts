@@ -16,6 +16,7 @@ export const usePdfRenderer = ({ pdfUrl, scale, pageNumber }: UsePdfRendererProp
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pdfDocRef = useRef<any>(null);
+  const renderTaskRef = useRef<any>(null);
 
   useEffect(() => {
     if (!pdfUrl) {
@@ -58,6 +59,11 @@ export const usePdfRenderer = ({ pdfUrl, scale, pageNumber }: UsePdfRendererProp
 
     const renderPage = async () => {
       try {
+        // Cancel any ongoing render
+        if (renderTaskRef.current) {
+          renderTaskRef.current.cancel();
+        }
+
         const page = await pdfDocRef.current.getPage(pageNumber);
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -73,6 +79,10 @@ export const usePdfRenderer = ({ pdfUrl, scale, pageNumber }: UsePdfRendererProp
         canvas.style.height = Math.floor(viewport.height) + "px";
         canvas.style.width = Math.floor(viewport.width) + "px";
 
+        // Clear canvas and set quality settings
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.imageSmoothingEnabled = false;
+
         const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
 
         const renderContext = {
@@ -81,7 +91,9 @@ export const usePdfRenderer = ({ pdfUrl, scale, pageNumber }: UsePdfRendererProp
           transform: transform,
         };
 
-        await page.render(renderContext).promise;
+        renderTaskRef.current = page.render(renderContext);
+        await renderTaskRef.current.promise;
+        renderTaskRef.current = null;
       } catch (err) {
         console.error('Error rendering page:', err);
         setError('Seite konnte nicht gerendert werden');
