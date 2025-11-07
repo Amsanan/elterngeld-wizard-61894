@@ -120,97 +120,84 @@ export const WORKFLOW_STEPS = [
 // Maps database fields to actual PDF AcroForm field names
 export const FIELD_MAPPINGS: Record<string, Record<string, string>> = {
   geburtsurkunde: {
-    // Kind table fields - PDF field names with single txt. prefix
+    // VERIFIED: These fields exist in the PDF
     kind_vorname: "txt.vorname1A 4",
     kind_nachname: "txt.name1A 4",
     kind_geburtsdatum: "txt.geburtsdatum1a 3",
     kind_anzahl_mehrlinge: "txt.anzahl 4",
-    // Parent names from birth certificate - parent 2 is mother, parent 1 is father
-    mutter_vorname: "txt.vorname2b 1",  // SPACE before 1!
-    mutter_nachname: "txt.name2b 1",
+    // Parent names from birth certificate
+    mutter_vorname: "txt.vorname2b 1",  // IMPORTANT: Space before 1!
+    mutter_nachname: "txt.name2b 1",    // IMPORTANT: Space before 1!
     vater_vorname: "txt.vorname2b",
     vater_nachname: "txt.name2b"
   },
   eltern_dokument_vater: {
-    // Antrag_2B_Elternteil fields for parent 1 (rows 32-36)
+    // VERIFIED: Basic parent 1 fields
     vorname: "txt.vorname2b",
     nachname: "txt.name2b",
-    geburtsdatum: "txt.geburt2b",
-    steuer_id: "txt.steuer2b_1"
-    // Note: Gender, nationality, ID number not directly mapped
+    geburtsdatum: "txt.geburt2b"
+    // Note: steuer_id field mapping removed - needs to be found in PDF
+    // Note: Gender, nationality, ID number not mapped yet
   },
   eltern_dokument_mutter: {
-    // Antrag_2B_Elternteil fields for parent 2 - SPACE before 1!
+    // VERIFIED: Basic parent 2 fields - IMPORTANT: Space before 1!
     vorname: "txt.vorname2b 1",
     nachname: "txt.name2b 1",
-    geburtsdatum: "txt.geburt2b 1",
-    steuer_id: "txt.steuer2b_2"
+    geburtsdatum: "txt.geburt2b 1"
+    // Note: steuer_id field mapping removed - needs to be found in PDF
   },
   meldebescheinigung_vater: {
-    // Antrag_2C_Wohnsitz fields for parent 1 (rows 48-51)
+    // VERIFIED: Address fields for parent 1
     strasse: "txt.strasse2c",
     hausnummer: "txt.nummer2c",
     plz: "txt.plz2c",
     wohnort: "txt.ort2c"
   },
   meldebescheinigung_mutter: {
-    // Antrag_2C_Wohnsitz fields for parent 2 - SPACE before 1!
+    // VERIFIED: Address fields for parent 2 - IMPORTANT: Space before 1!
     strasse: "txt.strasse2c 1",
     hausnummer: "txt.nummer2c 1",
     plz: "txt.plz2c 1",
     wohnort: "txt.ort2c 1"
   },
   einkommensteuerbescheid: {
-    // Note: Tax document fields not found in basic mapping
-    // May need section 7+ fields for income documentation
-    steuerjahr: "txt.steuerjahr", // Placeholder - needs verification
-    jahreseinkommen: "txt.jahreseinkommen",
-    zu_versteuerndes_einkommen: "txt.zu_versteuerndes_einkommen"
+    // WARNING: These fields need to be verified in the PDF
+    // Currently using placeholder names - may not exist
+    // person_type: "vater" or "mutter" - needs to be handled separately
   },
   gehaltsnachweis_vater: {
-    // Salary fields - section 7+ (not fully mapped in basic sections)
-    bruttogehalt: "txt.bruttogehalt_vater",
-    nettogehalt: "txt.nettogehalt_vater",
-    arbeitgeber_name: "txt.arbeitgeber_vater"
+    // WARNING: These placeholder field names don't exist in PDF
+    // Need to find actual salary-related fields in section 7+
+    // Fields like txt.jahr_1, txt.jahr_2 exist but need proper mapping
   },
   gehaltsnachweis_mutter: {
-    bruttogehalt: "txt.bruttogehalt_mutter",
-    nettogehalt: "txt.nettogehalt_mutter",
-    arbeitgeber_name: "txt.arbeitgeber_mutter"
+    // WARNING: These placeholder field names don't exist in PDF
+    // Need to find actual salary-related fields in section 7+
   },
   arbeitgeberbescheinigung_vater: {
-    // Employer certificate fields - not in basic mapping
-    arbeitgeber_name: "txt.arbeitgeber_name_vater",
-    beschaeftigungsbeginn: "txt.beschaeftigung_von_vater",
-    wochenstunden: "txt.wochenstunden_vater"
+    // WARNING: These placeholder field names don't exist in PDF
+    // Need to find actual employer certificate fields
   },
   arbeitgeberbescheinigung_mutter: {
-    arbeitgeber_name: "txt.arbeitgeber_name_mutter",
-    beschaeftigungsbeginn: "txt.beschaeftigung_von_mutter",
-    wochenstunden: "txt.wochenstunden_mutter"
+    // WARNING: These placeholder field names don't exist in PDF
+    // Need to find actual employer certificate fields
   },
   krankenversicherung: {
-    // Antrag_5_Krankenversicherung fields for parent 1 (rows 225-231)
+    // VERIFIED: Insurance fields for parent 1 (section 5)
     versichertennummer: "txt.versichertennummer5",
     krankenkasse_name: "txt.namekk5",
     krankenkasse_strasse: "txt.kkstrasse5",
     krankenkasse_hausnummer: "txt.kknr5",
     krankenkasse_plz: "txt.kkplz5",
     krankenkasse_ort: "txt.kkort5"
+    // Note: Parent 2 insurance uses section 6 fields (txt.versichertennummer6, etc.)
   },
   bankverbindung: {
-    // Antrag_16A_Bankverbindung fields (rows 697-698)
-    iban: "txt.Kontonummer_1",
-    bic: "txt.bankcode1",
-    // Note: Account holder name uses txt.konto_name_1 / txt.konto_nachname_1 
-    // when it's not own account (row 702-703)
+    // WARNING: These field names need to be verified
+    // Actual bank account fields need to be found in section 16A
   },
   ehe_sorgerecht: {
-    // Marriage/custody fields from Antrag_2G_Familienstand (rows 139-147)
-    // Note: These are checkboxes, not text fields
-    verheiratet: "cb:verheiratet2g",
-    ledig: "cb.ledig2g",
-    geschieden: "cb.geschieden2g",
-    verwitwet: "cb.verwirtwet2g"
+    // WARNING: Checkbox field names need to be verified
+    // These may use different naming convention (cb: vs cb.)
   }
 };

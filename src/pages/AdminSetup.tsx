@@ -403,6 +403,37 @@ const AdminSetup = () => {
 
         <Card className="mt-6">
           <CardHeader>
+            <CardTitle>Field Mapping Diagnostics</CardTitle>
+            <CardDescription>
+              Verify and troubleshoot PDF field mappings
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
+              <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium mb-1">What this does:</p>
+                <p>
+                  Compares your database field mappings with actual PDF field names to identify 
+                  mismatches. Shows which mappings work and which need correction.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => navigate('/admin/field-diagnostics')}
+              variant="outline"
+              className="w-full"
+              size="lg"
+            >
+              <Search className="mr-2 h-4 w-4" />
+              Open Field Diagnostics
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
             <CardTitle>Storage Management</CardTitle>
             <CardDescription>
               Configure automatic cleanup of old documents
