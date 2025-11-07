@@ -60,11 +60,24 @@ export default function AdminFieldMapper() {
   const loadMappings = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.functions.invoke('get-field-mappings', {
-        body: { document_type: documentType }
-      });
-      if (error) throw error;
-      setMappings(data.mappings || []);
+      
+      if (documentType === 'all') {
+        // Load mappings for all document types
+        const { data, error } = await supabase
+          .from('pdf_field_mappings')
+          .select('*')
+          .order('document_type');
+        
+        if (error) throw error;
+        setMappings(data || []);
+      } else {
+        // Load mappings for specific document type
+        const { data, error } = await supabase.functions.invoke('get-field-mappings', {
+          body: { document_type: documentType }
+        });
+        if (error) throw error;
+        setMappings(data.mappings || []);
+      }
     } catch (error: any) {
       console.error('Error loading mappings:', error);
       toast.error('Failed to load mappings');
@@ -419,6 +432,7 @@ export default function AdminFieldMapper() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
+                  <SelectItem value="all">📋 All Document Types</SelectItem>
                   {databaseSchema.map(table => (
                     <SelectItem key={table.table_name} value={table.table_name}>
                       {table.table_name}
