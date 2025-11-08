@@ -112,15 +112,20 @@ serve(async (req) => {
     let filteredMappings = mappingsData || [];
     if (filter && Object.keys(filter).length > 0) {
       filteredMappings = filteredMappings.filter(mapping => {
-        // If mapping has no filter_condition, it's a general field (applies to all)
+        // If mapping has no filter_condition, it applies to all (like geburtsurkunden)
         if (!mapping.filter_condition || Object.keys(mapping.filter_condition).length === 0) {
           return true;
         }
         
-        // Check if mapping's filter matches the workflow step's filter
-        return Object.entries(filter).every(([key, value]) => 
-          mapping.filter_condition[key] === value
-        );
+        // ALL keys in mapping's filter_condition must match the workflow filter
+        // But workflow can have additional keys (like document_type)
+        return Object.entries(mapping.filter_condition).every(([key, value]) => {
+          // Case-insensitive comparison for person_type
+          if (key === 'person_type' && typeof value === 'string' && typeof filter[key] === 'string') {
+            return filter[key].toLowerCase() === value.toLowerCase();
+          }
+          return filter[key] === value;
+        });
       });
     }
     
