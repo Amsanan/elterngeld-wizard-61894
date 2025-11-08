@@ -54,20 +54,24 @@ serve(async (req) => {
       console.log('First mapping sample:', JSON.stringify(mappings[0], null, 2));
     }
 
-    // Batch upsert mappings - clean up undefined/null id fields for new records
+    // Batch upsert mappings - remove id field for new records (let DB generate UUID)
     const mappingsWithUser = mappings.map((m: any) => {
-      const cleaned: any = {
-        ...m,
+      const { id, created_at, ...rest } = m;
+      
+      // For new records (no id or null id), omit id entirely so DB generates it
+      // For existing records, include the id for upsert
+      const mapping: any = {
+        ...rest,
         created_by: user.id,
         updated_at: new Date().toISOString()
       };
       
-      // Remove id if it's undefined or null (new records should let DB generate UUID)
-      if (!cleaned.id) {
-        delete cleaned.id;
+      // Only include id if it has a real value (not null/undefined)
+      if (id && id !== null) {
+        mapping.id = id;
       }
       
-      return cleaned;
+      return mapping;
     });
 
     console.log('Prepared mappings for upsert, count:', mappingsWithUser.length);
