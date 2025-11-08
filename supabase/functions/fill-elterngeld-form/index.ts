@@ -176,7 +176,7 @@ serve(async (req) => {
             if (filterField === 'person_type') {
               // Case-insensitive comparison for person_type (Vater/vater/VATER all match)
               console.log(`  → Using case-insensitive filter for person_type: ${filterValue}`);
-              query = query.ilike(filterField, filterValue);
+              query = query.ilike(filterField, String(filterValue));
             } else {
               query = query.eq(filterField, filterValue);
             }

@@ -54,12 +54,21 @@ serve(async (req) => {
       console.log('First mapping sample:', JSON.stringify(mappings[0], null, 2));
     }
 
-    // Batch upsert mappings
-    const mappingsWithUser = mappings.map((m: any) => ({
-      ...m,
-      created_by: user.id,
-      updated_at: new Date().toISOString()
-    }));
+    // Batch upsert mappings - clean up undefined/null id fields for new records
+    const mappingsWithUser = mappings.map((m: any) => {
+      const cleaned: any = {
+        ...m,
+        created_by: user.id,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Remove id if it's undefined or null (new records should let DB generate UUID)
+      if (!cleaned.id) {
+        delete cleaned.id;
+      }
+      
+      return cleaned;
+    });
 
     console.log('Prepared mappings for upsert, count:', mappingsWithUser.length);
 
