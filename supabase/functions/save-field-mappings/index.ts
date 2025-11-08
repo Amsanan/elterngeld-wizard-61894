@@ -44,6 +44,15 @@ serve(async (req) => {
 
     const { mappings } = await req.json();
     console.log('Received mappings count:', mappings?.length);
+    
+    if (!mappings || !Array.isArray(mappings)) {
+      throw new Error('Invalid mappings data: must be an array');
+    }
+
+    // Log first mapping for debugging
+    if (mappings.length > 0) {
+      console.log('First mapping sample:', JSON.stringify(mappings[0], null, 2));
+    }
 
     // Batch upsert mappings
     const mappingsWithUser = mappings.map((m: any) => ({
@@ -51,6 +60,8 @@ serve(async (req) => {
       created_by: user.id,
       updated_at: new Date().toISOString()
     }));
+
+    console.log('Prepared mappings for upsert, count:', mappingsWithUser.length);
 
     // Use admin client for database operations
     const { data, error } = await supabaseAdmin
@@ -62,7 +73,7 @@ serve(async (req) => {
       .select();
 
     if (error) {
-      console.error('Database error:', error);
+      console.error('Database error details:', JSON.stringify(error, null, 2));
       throw error;
     }
 

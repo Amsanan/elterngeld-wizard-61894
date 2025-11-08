@@ -171,9 +171,15 @@ serve(async (req) => {
             .select(source_field)
             .eq('user_id', user.id);
           
-          // Apply each filter condition
+          // Apply each filter condition with case-insensitive comparison for person_type
           for (const [filterField, filterValue] of Object.entries(filter_condition)) {
-            query = query.eq(filterField, filterValue);
+            if (filterField === 'person_type') {
+              // Case-insensitive comparison for person_type (Vater/vater/VATER all match)
+              console.log(`  → Using case-insensitive filter for person_type: ${filterValue}`);
+              query = query.ilike(filterField, filterValue);
+            } else {
+              query = query.eq(filterField, filterValue);
+            }
           }
           
           const { data: filteredData, error: filterError } = await query.maybeSingle();

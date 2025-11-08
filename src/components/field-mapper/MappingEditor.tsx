@@ -54,8 +54,15 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
   );
 
   const handleSave = () => {
-    const filterCondition = filterField && filterField !== 'none' && filterValue 
-      ? { [filterField]: filterValue }
+    // Normalize person_type values to lowercase for consistency
+    let normalizedFilterValue = filterValue;
+    if (filterField === 'person_type' && filterValue) {
+      normalizedFilterValue = filterValue.toLowerCase();
+      console.log(`Normalizing person_type: "${filterValue}" → "${normalizedFilterValue}"`);
+    }
+    
+    const filterCondition = filterField && filterField !== 'none' && normalizedFilterValue 
+      ? { [filterField]: normalizedFilterValue }
       : null;
     
     onSave({
