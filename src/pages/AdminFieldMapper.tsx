@@ -263,6 +263,12 @@ export default function AdminFieldMapper() {
   };
 
   const handleCreateMapping = (source: { table: string; field: string }, pdfField: string) => {
+    // Prevent creating mappings when "All Document Types" is selected
+    if (documentType === 'all') {
+      toast.error('Please select a specific document type before creating mappings');
+      return;
+    }
+
     // Check if mapping already exists
     const exists = mappings.some(
       m => m.source_table === source.table && 

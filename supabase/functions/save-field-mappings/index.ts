@@ -54,8 +54,27 @@ serve(async (req) => {
       console.log('First mapping sample:', JSON.stringify(mappings[0], null, 2));
     }
 
+    // Filter out invalid mappings with document_type "all"
+    const validMappings = mappings.filter((m: any) => {
+      if (m.document_type === 'all') {
+        console.warn('Skipping invalid mapping with document_type "all":', JSON.stringify(m, null, 2));
+        return false;
+      }
+      return true;
+    });
+
+    if (validMappings.length < mappings.length) {
+      console.log(`Filtered out ${mappings.length - validMappings.length} invalid mappings`);
+    }
+
+    if (validMappings.length === 0) {
+      throw new Error('No valid mappings to save. Please select a specific document type.');
+    }
+
     // Batch upsert mappings - generate UUID for new records
-    const mappingsWithUser = mappings.map((m: any) => {
+    const mappingsWithUser = validMappings.map((m: any) => {
+      console.log(`Processing mapping - ID: ${m.id}, document_type: ${m.document_type}, source_field: ${m.source_field}`);
+      
       const { id, created_at, ...rest } = m;
       
       // For new records (no id or null id), generate a new UUID
