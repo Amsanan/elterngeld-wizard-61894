@@ -167,61 +167,58 @@ serve(async (req) => {
         console.log(`  Target PDF field: "${pdf_field_name}"`);
         console.log(`  Filter condition:`, filter_condition || 'none');
         
-        let value = extractedData[source_field];
-        console.log(`  Initial value from extractedData:`, value, `(type: ${typeof value})`);
+        // ALWAYS query database for this mapping
+        console.log(`  → STEP 1: Querying database for data...`);
+        let value;
         
-        // If there's a filter condition, we need to fetch filtered data from the table
-        if (filter_condition && Object.keys(filter_condition).length > 0) {
-          console.log(`  → STEP 1: Applying filter condition...`);
+        try {
+          let query = supabase
+            .from(source_table)
+            .select(source_field)
+            .eq('user_id', user.id);
           
-          try {
-            let query = supabase
-              .from(source_table)
-              .select(source_field)
-              .eq('user_id', user.id);
-            
-            // Apply each filter condition with case-insensitive comparison for person_type
+          // Apply filter condition if present
+          if (filter_condition && Object.keys(filter_condition).length > 0) {
+            console.log(`    → Applying filter conditions:`, filter_condition);
             for (const [filterField, filterValue] of Object.entries(filter_condition)) {
               if (filterField === 'person_type') {
                 // ENUM values are lowercase: 'mutter', 'vater'
-                // Normalize the filter value to lowercase before comparing with eq
                 const normalizedValue = String(filterValue).toLowerCase();
-                console.log(`    → Using normalized filter for person_type: ${normalizedValue}`);
+                console.log(`    → Filter: ${filterField} = ${normalizedValue} (normalized)`);
                 query = query.eq(filterField, normalizedValue);
               } else {
-                console.log(`    → Applying filter: ${filterField} = ${filterValue}`);
+                console.log(`    → Filter: ${filterField} = ${filterValue}`);
                 query = query.eq(filterField, filterValue);
               }
             }
-            
-            console.log(`    → Executing database query...`);
-            const { data: filteredData, error: filterError } = await query.maybeSingle();
-            
-            if (filterError) {
-              console.error(`    ✗ Error fetching filtered data:`, filterError);
-              failedFields.push({ field: pdf_field_name, reason: `Filter query failed: ${filterError.message}` });
-              console.log(`[Mapping ${i+1}/${filteredMappings.length}] FAILED - Filter error`);
-              continue;
-            }
-            
-            console.log(`    → Query result:`, filteredData ? 'Data found' : 'No data');
-            
-            if (filteredData && filteredData[source_field]) {
-              value = filteredData[source_field];
-              console.log(`    ✓ Fetched filtered value:`, value, `(type: ${typeof value})`);
-            } else {
-              console.log(`    ⊘ No filtered data found for ${source_field}`);
-              skippedFields.push(`${source_field} (filtered) -> ${pdf_field_name}`);
-              console.log(`[Mapping ${i+1}/${filteredMappings.length}] SKIPPED - No data after filter`);
-              continue;
-            }
-          } catch (error) {
-            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-            failedFields.push({ field: pdf_field_name, reason: `Filter error: ${errorMsg}` });
-            console.error(`    ✗ Filter error:`, error);
-            console.log(`[Mapping ${i+1}/${filteredMappings.length}] FAILED - Exception in filter`);
+          }
+          
+          console.log(`    → Executing database query...`);
+          const { data: queryResult, error: queryError } = await query.maybeSingle();
+          
+          if (queryError) {
+            console.error(`    ✗ Database query error:`, queryError);
+            failedFields.push({ field: pdf_field_name, reason: `Query failed: ${queryError.message}` });
+            console.log(`[Mapping ${i+1}/${filteredMappings.length}] FAILED - Query error`);
             continue;
           }
+          
+          if (!queryResult || !queryResult[source_field]) {
+            console.log(`    ⊘ No data found in database for ${source_table}.${source_field}`);
+            skippedFields.push(`${source_field} -> ${pdf_field_name}`);
+            console.log(`[Mapping ${i+1}/${filteredMappings.length}] SKIPPED - No data in database`);
+            continue;
+          }
+          
+          value = queryResult[source_field];
+          console.log(`    ✓ Data fetched from database:`, value, `(type: ${typeof value})`);
+          
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          failedFields.push({ field: pdf_field_name, reason: `Database error: ${errorMsg}` });
+          console.error(`    ✗ Database query exception:`, error);
+          console.log(`[Mapping ${i+1}/${filteredMappings.length}] FAILED - Exception in query`);
+          continue;
         }
         
         // Check if value is valid
