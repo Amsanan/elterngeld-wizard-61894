@@ -66,9 +66,22 @@ export default function ElterngeldantragAusfuellen() {
         });
       }
 
-      const { data, error } = await query.limit(1).single();
+      const { data, error } = await query.limit(1).maybeSingle();
 
-      if (error || !data) {
+      if (error) {
+        console.error(`Error fetching data for step ${currentStep}:`, error);
+        toast({
+          title: "Fehler",
+          description: `Fehler beim Laden der Daten: ${error.message}`,
+          variant: "destructive"
+        });
+        setHasData(false);
+        setStepData(null);
+        setEditedData({});
+        return;
+      }
+
+      if (!data) {
         console.log(`No data found for step ${currentStep}`);
         setHasData(false);
         setStepData(null);
