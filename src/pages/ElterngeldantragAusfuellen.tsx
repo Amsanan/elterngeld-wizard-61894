@@ -49,27 +49,40 @@ export default function ElterngeldantragAusfuellen() {
   }, [currentStep]);
 
   const loadStepData = async () => {
+    console.log(`🔍 [Step ${currentStep}/${WORKFLOW_STEPS.length}] === LOAD STEP DATA START ===`);
+    console.log(`📋 [Step ${currentStep}] Config:`, { 
+      title: currentConfig.title, 
+      tableName: currentConfig.tableName, 
+      filter: currentConfig.filter 
+    });
+    
     setIsLoading(true);
     try {
+      console.log(`🔐 [Step ${currentStep}] Getting authenticated user...`);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+      console.log(`✅ [Step ${currentStep}] User authenticated: ${user.id}`);
 
       // Load data from database
+      console.log(`🔎 [Step ${currentStep}] Building database query...`);
       let query = supabase
         .from(currentConfig.tableName as any)
         .select()
         .eq('user_id', user.id);
 
       if (currentConfig.filter) {
+        console.log(`🔧 [Step ${currentStep}] Applying filters:`, currentConfig.filter);
         Object.entries(currentConfig.filter).forEach(([key, value]) => {
           query = query.eq(key, value);
         });
       }
 
+      console.log(`🚀 [Step ${currentStep}] Executing query to ${currentConfig.tableName}...`);
       const { data, error } = await query.limit(1).maybeSingle();
+      console.log(`📦 [Step ${currentStep}] Query result:`, { hasData: !!data, error: error?.message });
 
       if (error) {
-        console.error(`Error fetching data for step ${currentStep}:`, error);
+        console.error(`❌ [Step ${currentStep}] Database query error:`, error);
         toast({
           title: "Fehler",
           description: `Fehler beim Laden der Daten: ${error.message}`,
@@ -82,22 +95,30 @@ export default function ElterngeldantragAusfuellen() {
       }
 
       if (!data) {
-        console.log(`No data found for step ${currentStep}`);
+        console.log(`⚠️ [Step ${currentStep}] No data found in database`);
+        console.log(`🔧 [Step ${currentStep}] Will still call fillPDF() for incremental PDF building`);
         setHasData(false);
         setStepData(null);
         setEditedData({});
+        
+        // CRITICAL FIX: Still call fillPDF even without data
+        // This allows the PDF to be built incrementally step by step
+        console.log(`📄 [Step ${currentStep}] Calling fillPDF with null data...`);
+        await fillPDF(null);
         return;
       }
 
+      console.log(`✅ [Step ${currentStep}] Data loaded:`, Object.keys(data));
       setHasData(true);
       setStepData(data);
       setEditedData(data);
 
       // Call edge function to fill PDF
+      console.log(`📄 [Step ${currentStep}] Calling fillPDF with data...`);
       await fillPDF(data);
 
     } catch (error) {
-      console.error("Error loading step data:", error);
+      console.error(`❌ [Step ${currentStep}] Unexpected error in loadStepData:`, error);
       toast({
         title: "Fehler",
         description: "Daten konnten nicht geladen werden",
@@ -105,11 +126,21 @@ export default function ElterngeldantragAusfuellen() {
       });
     } finally {
       setIsLoading(false);
+      console.log(`✅ [Step ${currentStep}] === LOAD STEP DATA END ===`);
     }
   };
 
   const fillPDF = async (data: any) => {
+    console.log(`📄 [Step ${currentStep}] === FILL PDF START ===`);
+    console.log(`📄 [Step ${currentStep}] Params:`, {
+      hasData: !!data,
+      tableName: currentConfig.tableName,
+      filter: currentConfig.filter,
+      previousPdfPath
+    });
+    
     try {
+      console.log(`🚀 [Step ${currentStep}] Invoking edge function: fill-elterngeld-form...`);
       const { data: result, error } = await supabase.functions.invoke('fill-elterngeld-form', {
         body: {
           step: currentStep,
@@ -119,10 +150,31 @@ export default function ElterngeldantragAusfuellen() {
           previousPdfPath: previousPdfPath
         }
       });
+      console.log(`📦 [Step ${currentStep}] Edge function response:`, { 
+        hasResult: !!result, 
+        error: error?.message,
+        pdfUrl: result?.pdfUrl 
+      });
 
-      if (error) throw error;
-      if (!result) throw new Error("No result returned from edge function");
-      if (!result.pdfUrl) throw new Error("No PDF URL returned");
+      if (error) {
+        console.error(`❌ [Step ${currentStep}] Edge function error:`, error);
+        throw error;
+      }
+      if (!result) {
+        console.error(`❌ [Step ${currentStep}] No result from edge function`);
+        throw new Error("No result returned from edge function");
+      }
+      if (!result.pdfUrl) {
+        console.error(`❌ [Step ${currentStep}] No PDF URL in result`);
+        throw new Error("No PDF URL returned");
+      }
+      
+      console.log(`✅ [Step ${currentStep}] PDF generated successfully`);
+      console.log(`📊 [Step ${currentStep}] Stats:`, {
+        filledFieldsCount: result.filledFieldsCount,
+        totalFieldsCount: result.totalFieldsCount,
+        completionPercentage: result.completionPercentage
+      });
       
       setPdfUrl(result.pdfUrl);
       setPreviousPdfPath(result.pdfPath);
@@ -133,13 +185,15 @@ export default function ElterngeldantragAusfuellen() {
       });
 
     } catch (error) {
-      console.error("Error filling PDF:", error);
+      console.error(`❌ [Step ${currentStep}] Error in fillPDF:`, error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: "Fehler beim Befüllen",
         description: errorMessage,
         variant: "destructive"
       });
+    } finally {
+      console.log(`✅ [Step ${currentStep}] === FILL PDF END ===`);
     }
   };
 
