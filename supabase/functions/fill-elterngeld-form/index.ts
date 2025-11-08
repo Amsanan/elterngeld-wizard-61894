@@ -154,136 +154,177 @@ serve(async (req) => {
 
     // Fill fields based on mapping with filter conditions
     console.log('\n=== STARTING FIELD FILLING LOOP ===');
+    console.log(`Total mappings to process: ${filteredMappings.length}`);
+    
     for (let i = 0; i < filteredMappings.length; i++) {
-      const mapping = filteredMappings[i];
-      const { source_table, source_field, pdf_field_name, filter_condition } = mapping;
-      
-      console.log(`\n[Mapping ${i+1}/${filteredMappings.length}]`);
-      console.log(`  Source: ${source_table}.${source_field}`);
-      console.log(`  Target PDF field: "${pdf_field_name}"`);
-      console.log(`  Filter condition:`, filter_condition || 'none');
-      
-      let value = extractedData[source_field];
-      console.log(`  Initial value from extractedData:`, value, `(type: ${typeof value})`);
-      
-      // If there's a filter condition, we need to fetch filtered data from the table
-      if (filter_condition && Object.keys(filter_condition).length > 0) {
-        console.log(`  → Applying filter condition...`);
-        
-        try {
-          let query = supabase
-            .from(source_table)
-            .select(source_field)
-            .eq('user_id', user.id);
-          
-          // Apply each filter condition with case-insensitive comparison for person_type
-          for (const [filterField, filterValue] of Object.entries(filter_condition)) {
-            if (filterField === 'person_type') {
-              // ENUM values are lowercase: 'mutter', 'vater'
-              // Normalize the filter value to lowercase before comparing with eq
-              const normalizedValue = String(filterValue).toLowerCase();
-              console.log(`  → Using normalized filter for person_type: ${normalizedValue}`);
-              query = query.eq(filterField, normalizedValue);
-            } else {
-              query = query.eq(filterField, filterValue);
-            }
-          }
-          
-          const { data: filteredData, error: filterError } = await query.maybeSingle();
-          
-          if (filterError) {
-            console.error(`  ✗ Error fetching filtered data:`, filterError);
-            failedFields.push({ field: pdf_field_name, reason: `Filter query failed: ${filterError.message}` });
-            continue;
-          }
-          
-          if (filteredData && filteredData[source_field]) {
-            value = filteredData[source_field];
-            console.log(`  ✓ Fetched filtered value:`, value);
-          } else {
-            console.log(`  ⊘ No filtered data found, skipping`);
-            skippedFields.push(`${source_field} (filtered) -> ${pdf_field_name}`);
-            continue;
-          }
-        } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-          failedFields.push({ field: pdf_field_name, reason: `Filter error: ${errorMsg}` });
-          console.error(`  ✗ Filter error:`, error);
-          continue;
-        }
-      }
-      
-      // Check if value is valid
-      const isValid = value !== null && value !== undefined && value !== '';
-      console.log(`  Value validation: ${isValid ? '✓ VALID' : '✗ INVALID (null/undefined/empty)'}`);
-      
-      if (!isValid) {
-        skippedFields.push(`${source_field} -> ${pdf_field_name}`);
-        console.log(`  → SKIPPED (no data)`);
-        continue;
-      }
-      
-      // Try to fill the PDF field
-      console.log(`  → Attempting to fill PDF field...`);
       try {
-        // Try to get the PDF field
-        let field;
-        try {
-          field = form.getField(pdf_field_name);
-          console.log(`  ✓ PDF field found in form`);
-        } catch (fieldError) {
-          const errorMsg = fieldError instanceof Error ? fieldError.message : 'Unknown error';
-          console.log(`  ✗ PDF field NOT FOUND: ${errorMsg}`);
-          failedFields.push({ field: pdf_field_name, reason: `Field not found in PDF: ${errorMsg}` });
+        const mapping = filteredMappings[i];
+        const { source_table, source_field, pdf_field_name, filter_condition } = mapping;
+        
+        console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+        console.log(`[Mapping ${i+1}/${filteredMappings.length}] STARTING`);
+        console.log(`  Source: ${source_table}.${source_field}`);
+        console.log(`  Target PDF field: "${pdf_field_name}"`);
+        console.log(`  Filter condition:`, filter_condition || 'none');
+        
+        let value = extractedData[source_field];
+        console.log(`  Initial value from extractedData:`, value, `(type: ${typeof value})`);
+        
+        // If there's a filter condition, we need to fetch filtered data from the table
+        if (filter_condition && Object.keys(filter_condition).length > 0) {
+          console.log(`  → STEP 1: Applying filter condition...`);
+          
+          try {
+            let query = supabase
+              .from(source_table)
+              .select(source_field)
+              .eq('user_id', user.id);
+            
+            // Apply each filter condition with case-insensitive comparison for person_type
+            for (const [filterField, filterValue] of Object.entries(filter_condition)) {
+              if (filterField === 'person_type') {
+                // ENUM values are lowercase: 'mutter', 'vater'
+                // Normalize the filter value to lowercase before comparing with eq
+                const normalizedValue = String(filterValue).toLowerCase();
+                console.log(`    → Using normalized filter for person_type: ${normalizedValue}`);
+                query = query.eq(filterField, normalizedValue);
+              } else {
+                console.log(`    → Applying filter: ${filterField} = ${filterValue}`);
+                query = query.eq(filterField, filterValue);
+              }
+            }
+            
+            console.log(`    → Executing database query...`);
+            const { data: filteredData, error: filterError } = await query.maybeSingle();
+            
+            if (filterError) {
+              console.error(`    ✗ Error fetching filtered data:`, filterError);
+              failedFields.push({ field: pdf_field_name, reason: `Filter query failed: ${filterError.message}` });
+              console.log(`[Mapping ${i+1}/${filteredMappings.length}] FAILED - Filter error`);
+              continue;
+            }
+            
+            console.log(`    → Query result:`, filteredData ? 'Data found' : 'No data');
+            
+            if (filteredData && filteredData[source_field]) {
+              value = filteredData[source_field];
+              console.log(`    ✓ Fetched filtered value:`, value, `(type: ${typeof value})`);
+            } else {
+              console.log(`    ⊘ No filtered data found for ${source_field}`);
+              skippedFields.push(`${source_field} (filtered) -> ${pdf_field_name}`);
+              console.log(`[Mapping ${i+1}/${filteredMappings.length}] SKIPPED - No data after filter`);
+              continue;
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            failedFields.push({ field: pdf_field_name, reason: `Filter error: ${errorMsg}` });
+            console.error(`    ✗ Filter error:`, error);
+            console.log(`[Mapping ${i+1}/${filteredMappings.length}] FAILED - Exception in filter`);
+            continue;
+          }
+        }
+        
+        // Check if value is valid
+        console.log(`  → STEP 2: Validating value...`);
+        const isValid = value !== null && value !== undefined && value !== '';
+        console.log(`    Value validation: ${isValid ? '✓ VALID' : '✗ INVALID (null/undefined/empty)'}`);
+        console.log(`    Value content:`, JSON.stringify(value));
+        
+        if (!isValid) {
+          skippedFields.push(`${source_field} -> ${pdf_field_name}`);
+          console.log(`    → SKIPPED (no valid data)`);
+          console.log(`[Mapping ${i+1}/${filteredMappings.length}] SKIPPED - Invalid value`);
           continue;
         }
         
-        const fieldType = field.constructor.name;
-        console.log(`  Field type: ${fieldType}`);
-
-        // Handle both full class names and shorthand types
-        if (fieldType === 'PDFTextField' || fieldType === 't') {
-          const textField = field as any;
-          
-          // Format dates if the source field appears to be a date field
-          let stringValue = String(value);
-          if (source_field.toLowerCase().includes('datum') || source_field.toLowerCase().includes('date')) {
-            stringValue = formatDateForPDF(value);
-            console.log(`  Date formatted: ${value} → ${stringValue}`);
+        // Try to fill the PDF field
+        console.log(`  → STEP 3: Attempting to fill PDF field "${pdf_field_name}"...`);
+        try {
+          // Try to get the PDF field
+          console.log(`    → Looking up PDF field in form...`);
+          let field;
+          try {
+            field = form.getField(pdf_field_name);
+            console.log(`    ✓ PDF field found in form`);
+          } catch (fieldError) {
+            const errorMsg = fieldError instanceof Error ? fieldError.message : 'Unknown error';
+            console.log(`    ✗ PDF field NOT FOUND: ${errorMsg}`);
+            failedFields.push({ field: pdf_field_name, reason: `Field not found in PDF: ${errorMsg}` });
+            console.log(`[Mapping ${i+1}/${filteredMappings.length}] FAILED - Field not found`);
+            continue;
           }
           
-          textField.setText(stringValue);
-          filledFieldsList.push(pdf_field_name);
-          filledFieldsCount++;
-          console.log(`  ✓ SUCCESS: Filled text field with "${stringValue}"`);
-          
-        } else if (fieldType === 'PDFCheckBox' || fieldType === 'c' || fieldType === 'ch') {
-          const checkbox = field as any;
-          if (value === true || value === 'true' || value === 'ja' || value === 'yes') {
-            checkbox.check();
+          const fieldType = field.constructor.name;
+          console.log(`    → Field type: ${fieldType}`);
+
+          // Handle both full class names and shorthand types
+          if (fieldType === 'PDFTextField' || fieldType === 't') {
+            console.log(`    → Processing as TEXT field...`);
+            const textField = field as any;
+            
+            // Format dates if the source field appears to be a date field
+            let stringValue = String(value);
+            if (source_field.toLowerCase().includes('datum') || source_field.toLowerCase().includes('date')) {
+              stringValue = formatDateForPDF(value);
+              console.log(`    → Date formatted: ${value} → ${stringValue}`);
+            }
+            
+            console.log(`    → Setting text value: "${stringValue}"`);
+            textField.setText(stringValue);
             filledFieldsList.push(pdf_field_name);
             filledFieldsCount++;
-            console.log(`  ✓ SUCCESS: Checked checkbox`);
+            console.log(`    ✓ SUCCESS: Filled text field with "${stringValue}"`);
+            console.log(`[Mapping ${i+1}/${filteredMappings.length}] ✓ COMPLETED SUCCESSFULLY`);
+            
+          } else if (fieldType === 'PDFCheckBox' || fieldType === 'c' || fieldType === 'ch') {
+            console.log(`    → Processing as CHECKBOX field...`);
+            const checkbox = field as any;
+            if (value === true || value === 'true' || value === 'ja' || value === 'yes') {
+              console.log(`    → Checking checkbox...`);
+              checkbox.check();
+              filledFieldsList.push(pdf_field_name);
+              filledFieldsCount++;
+              console.log(`    ✓ SUCCESS: Checked checkbox`);
+              console.log(`[Mapping ${i+1}/${filteredMappings.length}] ✓ COMPLETED SUCCESSFULLY`);
+            } else {
+              console.log(`    ⊘ Checkbox value not truthy (${value}), leaving unchecked`);
+              console.log(`[Mapping ${i+1}/${filteredMappings.length}] SKIPPED - Checkbox not checked`);
+            }
+            
+          } else if (fieldType === 'PDFDropdown' || fieldType === 'd') {
+            console.log(`    → Processing as DROPDOWN field...`);
+            const dropdown = field as any;
+            console.log(`    → Selecting value: "${value}"`);
+            dropdown.select(String(value));
+            filledFieldsList.push(pdf_field_name);
+            filledFieldsCount++;
+            console.log(`    ✓ SUCCESS: Selected dropdown value "${value}"`);
+            console.log(`[Mapping ${i+1}/${filteredMappings.length}] ✓ COMPLETED SUCCESSFULLY`);
+            
           } else {
-            console.log(`  ⊘ Checkbox value not truthy, leaving unchecked`);
+            console.log(`    ⚠ Unknown field type: ${fieldType}`);
+            failedFields.push({ field: pdf_field_name, reason: `Unknown field type: ${fieldType}` });
+            console.log(`[Mapping ${i+1}/${filteredMappings.length}] FAILED - Unknown field type`);
           }
           
-        } else if (fieldType === 'PDFDropdown' || fieldType === 'd') {
-          const dropdown = field as any;
-          dropdown.select(String(value));
-          filledFieldsList.push(pdf_field_name);
-          filledFieldsCount++;
-          console.log(`  ✓ SUCCESS: Selected dropdown value "${value}"`);
-          
-        } else {
-          console.log(`  ⚠ Unknown field type: ${fieldType}`);
-          failedFields.push({ field: pdf_field_name, reason: `Unknown field type: ${fieldType}` });
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          const errorStack = error instanceof Error ? error.stack : '';
+          failedFields.push({ field: pdf_field_name, reason: errorMsg });
+          console.log(`    ✗ FAILED to fill field: ${errorMsg}`);
+          console.log(`    Error stack:`, errorStack);
+          console.log(`[Mapping ${i+1}/${filteredMappings.length}] FAILED - Exception during fill`);
         }
         
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        failedFields.push({ field: pdf_field_name, reason: errorMsg });
-        console.log(`  ✗ FAILED to fill field: ${errorMsg}`);
+      } catch (outerError) {
+        const errorMsg = outerError instanceof Error ? outerError.message : 'Unknown error';
+        const errorStack = outerError instanceof Error ? outerError.stack : '';
+        console.error(`\n❌ CRITICAL ERROR processing mapping ${i+1}/${filteredMappings.length}:`);
+        console.error(`   Error: ${errorMsg}`);
+        console.error(`   Stack: ${errorStack}`);
+        console.log(`[Mapping ${i+1}/${filteredMappings.length}] FAILED - Outer exception`);
+        // Continue to next mapping even if this one fails catastrophically
+        continue;
       }
     }
     
