@@ -179,9 +179,11 @@ serve(async (req) => {
           // Apply each filter condition with case-insensitive comparison for person_type
           for (const [filterField, filterValue] of Object.entries(filter_condition)) {
             if (filterField === 'person_type') {
-              // Case-insensitive comparison for person_type (Vater/vater/VATER all match)
-              console.log(`  → Using case-insensitive filter for person_type: ${filterValue}`);
-              query = query.ilike(filterField, String(filterValue));
+              // ENUM values are lowercase: 'mutter', 'vater'
+              // Normalize the filter value to lowercase before comparing with eq
+              const normalizedValue = String(filterValue).toLowerCase();
+              console.log(`  → Using normalized filter for person_type: ${normalizedValue}`);
+              query = query.eq(filterField, normalizedValue);
             } else {
               query = query.eq(filterField, filterValue);
             }
