@@ -54,24 +54,20 @@ serve(async (req) => {
       console.log('First mapping sample:', JSON.stringify(mappings[0], null, 2));
     }
 
-    // Batch upsert mappings - remove id field for new records (let DB generate UUID)
+    // Batch upsert mappings - generate UUID for new records
     const mappingsWithUser = mappings.map((m: any) => {
       const { id, created_at, ...rest } = m;
       
-      // For new records (no id or null id), omit id entirely so DB generates it
-      // For existing records, include the id for upsert
-      const mapping: any = {
+      // For new records (no id or null id), generate a new UUID
+      // For existing records, keep the existing id
+      const finalId = (id && id !== null) ? id : crypto.randomUUID();
+      
+      return {
         ...rest,
+        id: finalId,
         created_by: user.id,
         updated_at: new Date().toISOString()
       };
-      
-      // Only include id if it has a real value (not null/undefined)
-      if (id && id !== null) {
-        mapping.id = id;
-      }
-      
-      return mapping;
     });
 
     console.log('Prepared mappings for upsert, count:', mappingsWithUser.length);
