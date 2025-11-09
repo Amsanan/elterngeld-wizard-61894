@@ -68,3 +68,6 @@ verify_jwt = true
 
 [functions.vision-map-fields]
 verify_jwt = true
+
+[functions.serve-pdf-inline]
+verify_jwt = true

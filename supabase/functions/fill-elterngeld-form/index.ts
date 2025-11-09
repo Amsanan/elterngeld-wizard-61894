@@ -459,20 +459,11 @@ serve(async (req) => {
 
     console.log('PDF uploaded successfully');
 
-    // Get signed URL with inline disposition for iframe rendering
-    console.log('Step 9: Creating signed URL for inline viewing...');
-    const { data: urlData, error: urlError } = await supabase.storage
-      .from('elterngeldantrag-drafts')
-      .createSignedUrl(fileName, 3600, {
-        download: false  // Forces Content-Disposition: inline
-      });
-
-    if (urlError) {
-      console.error('ERROR: Failed to create signed URL:', urlError);
-      throw new Error(`Failed to create signed URL: ${urlError.message}`);
-    }
+    // Create proxy URL for inline PDF viewing with correct headers
+    console.log('Step 9: Creating proxy URL for inline viewing...');
+    const proxyUrl = `${supabaseUrl}/functions/v1/serve-pdf-inline?path=${encodeURIComponent(fileName)}`;
     
-    console.log('Signed URL generated:', urlData.signedUrl);
+    console.log('Proxy URL generated:', proxyUrl);
 
     // Update progress in database
     console.log('Step 10: Updating progress in database...');
@@ -501,7 +492,7 @@ serve(async (req) => {
     console.log('=== SUCCESS ===');
     console.log('Response:', {
       pdfPath: fileName,
-      pdfUrl: urlData.signedUrl,
+      pdfUrl: proxyUrl,
       filledFieldsCount,
       totalFields: allFields.length,
       completionPercentage
@@ -511,7 +502,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         pdfPath: fileName,
-        pdfUrl: urlData.signedUrl,
+        pdfUrl: proxyUrl,
         filledFields: filledFieldsList,
         filledFieldsCount,
         totalFields: allFields.length,
