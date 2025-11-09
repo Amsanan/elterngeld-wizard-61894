@@ -95,8 +95,8 @@ serve(async (req) => {
     });
     console.log('=== END OF FIELD LIST ===');
     
-    // Fetch field mappings from database for this table
-    console.log(`Fetching ALL active mappings (ignoring document_type filter)`);
+    // Fetch ALL field mappings to apply data from ALL steps
+    console.log(`Fetching ALL active mappings to apply data from all completed steps`);
     const { data: mappingsData, error: mappingsError } = await supabase
       .from('pdf_field_mappings')
       .select('source_table, source_field, pdf_field_name, filter_condition')
@@ -107,28 +107,11 @@ serve(async (req) => {
       throw new Error(`Failed to fetch field mappings: ${mappingsError.message}`);
     }
     
-    // Filter mappings to only those matching the workflow step's filter
-    let filteredMappings = mappingsData || [];
-    if (filter && Object.keys(filter).length > 0) {
-      filteredMappings = filteredMappings.filter(mapping => {
-        // If mapping has no filter_condition, it applies to all (like geburtsurkunden)
-        if (!mapping.filter_condition || Object.keys(mapping.filter_condition).length === 0) {
-          return true;
-        }
-        
-        // ALL keys in mapping's filter_condition must match the workflow filter
-        // But workflow can have additional keys (like document_type)
-        return Object.entries(mapping.filter_condition).every(([key, value]) => {
-          // Case-insensitive comparison for person_type
-          if (key === 'person_type' && typeof value === 'string' && typeof filter[key] === 'string') {
-            return filter[key].toLowerCase() === value.toLowerCase();
-          }
-          return filter[key] === value;
-        });
-      });
-    }
+    // Use ALL mappings - each mapping will check if data exists in DB
+    // This ensures all previously entered data is applied to the PDF
+    const filteredMappings = mappingsData || [];
     
-    console.log(`Loaded ${filteredMappings.length} mappings (${mappingsData?.length || 0} total) for table: ${tableName} with filter:`, filter);
+    console.log(`Loaded ${filteredMappings.length} mappings - will apply ALL available data from database`);
     
     let filledFieldsCount = 0;
     const filledFieldsList: string[] = [];
