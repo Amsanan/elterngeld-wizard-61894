@@ -96,11 +96,10 @@ serve(async (req) => {
     console.log('=== END OF FIELD LIST ===');
     
     // Fetch field mappings from database for this table
-    console.log(`Fetching mappings for table: ${tableName} with filter:`, filter);
+    console.log(`Fetching ALL active mappings (ignoring document_type filter)`);
     const { data: mappingsData, error: mappingsError } = await supabase
       .from('pdf_field_mappings')
       .select('source_table, source_field, pdf_field_name, filter_condition')
-      .eq('document_type', tableName)
       .eq('is_active', true);
     
     if (mappingsError) {
