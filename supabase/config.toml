@@ -70,4 +70,4 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.serve-pdf-inline]
-verify_jwt = true
+verify_jwt = false
