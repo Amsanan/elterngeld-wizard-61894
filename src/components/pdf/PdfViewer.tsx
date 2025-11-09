@@ -10,23 +10,18 @@ interface PdfViewerProps {
   onLoadError?: (error: string) => void;
 }
 
-export const PdfViewer = ({ 
-  pdfUrl, 
-  downloadUrl,
-  onLoadSuccess, 
-  onLoadError 
-}: PdfViewerProps) => {
+export const PdfViewer = ({ pdfUrl, downloadUrl, onLoadSuccess, onLoadError }: PdfViewerProps) => {
   const [error, setError] = useState<string | null>(null);
 
   const handleDownload = () => {
     if (downloadUrl) {
       // Add download parameter to Supabase Storage URL
       const url = new URL(downloadUrl);
-      url.searchParams.set('download', 'elterngeldantrag.pdf');
-      
-      const link = document.createElement('a');
+      url.searchParams.set("download", "elterngeldantrag.pdf");
+
+      const link = document.createElement("a");
       link.href = url.toString();
-      link.download = 'elterngeldantrag.pdf';
+      link.download = "elterngeldantrag.pdf";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -35,7 +30,7 @@ export const PdfViewer = ({
 
   const handleOpenInNewTab = () => {
     if (downloadUrl) {
-      window.open(downloadUrl, '_blank');
+      window.open(downloadUrl, "_blank");
     }
   };
 
@@ -46,7 +41,7 @@ export const PdfViewer = ({
   };
 
   const handleError = () => {
-    const errorMsg = 'PDF konnte nicht geladen werden';
+    const errorMsg = "PDF konnte nicht geladen werden";
     setError(errorMsg);
     if (onLoadError) {
       onLoadError(errorMsg);
@@ -58,9 +53,7 @@ export const PdfViewer = ({
       <div className="w-full h-[600px] border rounded-lg bg-muted flex items-center justify-center">
         <div className="text-center space-y-4">
           <p className="text-muted-foreground">Keine PDF-Vorschau verfügbar</p>
-          <p className="text-sm text-muted-foreground">
-            Bitte füllen Sie die Felder aus und klicken Sie auf "Weiter"
-          </p>
+          <p className="text-sm text-muted-foreground">Bitte füllen Sie die Felder aus und klicken Sie auf "Weiter"</p>
         </div>
       </div>
     );
