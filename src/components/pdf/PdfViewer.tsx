@@ -1,9 +1,7 @@
-import { useState } from "react";
-import { usePdfRenderer } from "@/hooks/usePdfRenderer";
-import { PdfControls } from "./PdfControls";
 import { Button } from "@/components/ui/button";
 import { Download, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useState } from "react";
 
 interface PdfViewerProps {
   pdfUrl: string | null;
@@ -18,22 +16,7 @@ export const PdfViewer = ({
   onLoadSuccess, 
   onLoadError 
 }: PdfViewerProps) => {
-  const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.25);
-
-  const { canvasRef, numPages, loading, error } = usePdfRenderer({
-    pdfUrl,
-    scale,
-    pageNumber,
-  });
-
-  // Notify parent component of load success/error
-  if (!loading && !error && numPages > 0 && onLoadSuccess) {
-    onLoadSuccess();
-  }
-  if (error && onLoadError) {
-    onLoadError(error);
-  }
+  const [error, setError] = useState<string | null>(null);
 
   const handleDownload = () => {
     if (downloadUrl) {
@@ -53,6 +36,20 @@ export const PdfViewer = ({
   const handleOpenInNewTab = () => {
     if (downloadUrl) {
       window.open(downloadUrl, '_blank');
+    }
+  };
+
+  const handleLoad = () => {
+    if (onLoadSuccess) {
+      onLoadSuccess();
+    }
+  };
+
+  const handleError = () => {
+    const errorMsg = 'PDF konnte nicht geladen werden';
+    setError(errorMsg);
+    if (onLoadError) {
+      onLoadError(errorMsg);
     }
   };
 
@@ -93,36 +90,15 @@ export const PdfViewer = ({
 
   return (
     <div className="w-full space-y-4">
-      {numPages > 0 && (
-        <PdfControls
-          pageNumber={pageNumber}
-          numPages={numPages}
-          scale={scale}
-          onPageChange={setPageNumber}
-          onZoomChange={setScale}
-        />
-      )}
+      <iframe
+        src={`${pdfUrl}#view=FitH`}
+        className="w-full h-[900px] border rounded-lg shadow-lg"
+        title="Elterngeldantrag Vorschau"
+        onLoad={handleLoad}
+        onError={handleError}
+      />
 
-      <div className="relative w-full border rounded-lg bg-muted/30 overflow-auto max-h-[900px] scroll-smooth">
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-            <div className="text-center space-y-2">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-              <p className="text-sm text-muted-foreground">PDF wird geladen...</p>
-            </div>
-          </div>
-        )}
-
-        <div className="flex justify-center p-4">
-          <canvas
-            ref={canvasRef}
-            className="max-w-full h-auto shadow-lg"
-            style={{ imageRendering: 'crisp-edges' }}
-          />
-        </div>
-      </div>
-
-      {downloadUrl && numPages > 0 && (
+      {downloadUrl && (
         <div className="flex gap-2">
           <Button onClick={handleDownload} variant="outline" className="flex-1">
             <Download className="mr-2 h-4 w-4" />
