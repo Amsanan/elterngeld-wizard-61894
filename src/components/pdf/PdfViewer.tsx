@@ -1,7 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Download, ExternalLink } from "lucide-react";
+import { Download, ExternalLink, FileText } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface PdfViewerProps {
   pdfUrl: string | null;
@@ -14,6 +18,10 @@ export const PdfViewer = ({ pdfUrl, downloadUrl, onLoadSuccess, onLoadError }: P
   const [error, setError] = useState<string | null>(null);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [usePdfJs, setUsePdfJs] = useState(false);
+  const [pdfDocument, setPdfDocument] = useState<any>(null);
+  const [numPages, setNumPages] = useState(0);
+  const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
 
   useEffect(() => {
     let objectUrl: string | null = null;
@@ -21,6 +29,7 @@ export const PdfViewer = ({ pdfUrl, downloadUrl, onLoadSuccess, onLoadError }: P
     const fetchPdfBlob = async () => {
       if (!pdfUrl) {
         setBlobUrl(null);
+        setPdfDocument(null);
         return;
       }
 
@@ -38,6 +47,14 @@ export const PdfViewer = ({ pdfUrl, downloadUrl, onLoadSuccess, onLoadError }: P
         const blob = await response.blob();
         objectUrl = URL.createObjectURL(blob);
         setBlobUrl(objectUrl);
+        
+        // Load PDF with PDF.js for canvas rendering
+        if (usePdfJs) {
+          const arrayBuffer = await blob.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          setPdfDocument(pdf);
+          setNumPages(pdf.numPages);
+        }
         
         if (onLoadSuccess) {
           onLoadSuccess();
@@ -61,7 +78,32 @@ export const PdfViewer = ({ pdfUrl, downloadUrl, onLoadSuccess, onLoadError }: P
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [pdfUrl, onLoadSuccess, onLoadError]);
+  }, [pdfUrl, usePdfJs, onLoadSuccess, onLoadError]);
+
+  // Render PDF.js pages to canvas
+  useEffect(() => {
+    const renderPages = async () => {
+      if (!pdfDocument || !usePdfJs) return;
+
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        const page = await pdfDocument.getPage(pageNum);
+        const canvas = canvasRefs.current[pageNum - 1];
+        if (!canvas) continue;
+
+        const viewport = page.getViewport({ scale: 1.5 });
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport,
+        }).promise;
+      }
+    };
+
+    renderPages();
+  }, [pdfDocument, usePdfJs, numPages]);
 
   const handleDownload = () => {
     if (downloadUrl) {
@@ -144,25 +186,49 @@ export const PdfViewer = ({ pdfUrl, downloadUrl, onLoadSuccess, onLoadError }: P
 
   return (
     <div className="w-full space-y-4">
-      {blobUrl && (
+      <div className="flex gap-2 items-center justify-between">
+        <Button
+          onClick={() => setUsePdfJs(!usePdfJs)}
+          variant="outline"
+          size="sm"
+        >
+          <FileText className="mr-2 h-4 w-4" />
+          {usePdfJs ? "Native Rendering" : "PDF.js Rendering"}
+        </Button>
+
+        {downloadUrl && (
+          <div className="flex gap-2">
+            <Button onClick={handleDownload} variant="outline" size="sm">
+              <Download className="mr-2 h-4 w-4" />
+              Herunterladen
+            </Button>
+            <Button onClick={handleOpenInNewTab} variant="outline" size="sm">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Neuer Tab
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {blobUrl && !usePdfJs && (
         <iframe
           src={`${blobUrl}#view=FitH`}
           className="w-full h-[900px] border rounded-lg shadow-lg"
           title="Elterngeldantrag Vorschau"
           onLoad={handleLoad}
+          onError={handleError}
         />
       )}
 
-      {downloadUrl && (
-        <div className="flex gap-2">
-          <Button onClick={handleDownload} variant="outline" className="flex-1">
-            <Download className="mr-2 h-4 w-4" />
-            PDF herunterladen
-          </Button>
-          <Button onClick={handleOpenInNewTab} variant="outline" className="flex-1">
-            <ExternalLink className="mr-2 h-4 w-4" />
-            In neuem Tab öffnen
-          </Button>
+      {usePdfJs && pdfDocument && (
+        <div className="space-y-4">
+          {Array.from({ length: numPages }, (_, i) => (
+            <canvas
+              key={i}
+              ref={(el) => (canvasRefs.current[i] = el)}
+              className="w-full border rounded-lg shadow-lg"
+            />
+          ))}
         </div>
       )}
     </div>
