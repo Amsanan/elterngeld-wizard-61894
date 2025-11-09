@@ -95,62 +95,6 @@ serve(async (req) => {
     });
     console.log('=== END OF FIELD LIST ===');
     
-    // PERFORMANCE OPTIMIZATION: Batch fetch all data upfront
-    console.log('Step 6.5: Batch fetching all data from database...');
-    const batchStartTime = Date.now();
-    
-    const [geburtsurkunden, elternDokumente, einkommensteuerbescheide, gehaltsnachweise, 
-           bankverbindungen, arbeitgeberbescheinigungen, krankenversicherung, 
-           leistungsbescheide, meldebescheinigungen, mutterschaftsgeld, 
-           selbststaendigenNachweise, eheSorgerecht, adoptionsPflege] = await Promise.all([
-      supabase.from('geburtsurkunden').select('*').eq('user_id', user.id),
-      supabase.from('eltern_dokumente').select('*').eq('user_id', user.id),
-      supabase.from('einkommensteuerbescheide').select('*').eq('user_id', user.id),
-      supabase.from('gehaltsnachweise').select('*').eq('user_id', user.id),
-      supabase.from('bankverbindungen').select('*').eq('user_id', user.id),
-      supabase.from('arbeitgeberbescheinigungen').select('*').eq('user_id', user.id),
-      supabase.from('krankenversicherung_nachweise').select('*').eq('user_id', user.id),
-      supabase.from('leistungsbescheide').select('*').eq('user_id', user.id),
-      supabase.from('meldebescheinigungen').select('*').eq('user_id', user.id),
-      supabase.from('mutterschaftsgeld').select('*').eq('user_id', user.id),
-      supabase.from('selbststaendigen_nachweise').select('*').eq('user_id', user.id),
-      supabase.from('ehe_sorgerecht_nachweise').select('*').eq('user_id', user.id),
-      supabase.from('adoptions_pflege_dokumente').select('*').eq('user_id', user.id),
-    ]);
-    
-    const batchEndTime = Date.now();
-    console.log(`✓ Batch fetch completed in ${batchEndTime - batchStartTime}ms`);
-    console.log(`  - geburtsurkunden: ${geburtsurkunden.data?.length || 0} records`);
-    console.log(`  - eltern_dokumente: ${elternDokumente.data?.length || 0} records`);
-    console.log(`  - einkommensteuerbescheide: ${einkommensteuerbescheide.data?.length || 0} records`);
-    console.log(`  - gehaltsnachweise: ${gehaltsnachweise.data?.length || 0} records`);
-    console.log(`  - bankverbindungen: ${bankverbindungen.data?.length || 0} records`);
-    console.log(`  - arbeitgeberbescheinigungen: ${arbeitgeberbescheinigungen.data?.length || 0} records`);
-    console.log(`  - krankenversicherung_nachweise: ${krankenversicherung.data?.length || 0} records`);
-    console.log(`  - leistungsbescheide: ${leistungsbescheide.data?.length || 0} records`);
-    console.log(`  - meldebescheinigungen: ${meldebescheinigungen.data?.length || 0} records`);
-    console.log(`  - mutterschaftsgeld: ${mutterschaftsgeld.data?.length || 0} records`);
-    console.log(`  - selbststaendigen_nachweise: ${selbststaendigenNachweise.data?.length || 0} records`);
-    console.log(`  - ehe_sorgerecht_nachweise: ${eheSorgerecht.data?.length || 0} records`);
-    console.log(`  - adoptions_pflege_dokumente: ${adoptionsPflege.data?.length || 0} records`);
-    
-    // Store in memory for fast access
-    const cachedData: Record<string, any[]> = {
-      'geburtsurkunden': geburtsurkunden.data || [],
-      'eltern_dokumente': elternDokumente.data || [],
-      'einkommensteuerbescheide': einkommensteuerbescheide.data || [],
-      'gehaltsnachweise': gehaltsnachweise.data || [],
-      'bankverbindungen': bankverbindungen.data || [],
-      'arbeitgeberbescheinigungen': arbeitgeberbescheinigungen.data || [],
-      'krankenversicherung_nachweise': krankenversicherung.data || [],
-      'leistungsbescheide': leistungsbescheide.data || [],
-      'meldebescheinigungen': meldebescheinigungen.data || [],
-      'mutterschaftsgeld': mutterschaftsgeld.data || [],
-      'selbststaendigen_nachweise': selbststaendigenNachweise.data || [],
-      'ehe_sorgerecht_nachweise': eheSorgerecht.data || [],
-      'adoptions_pflege_dokumente': adoptionsPflege.data || [],
-    };
-    
     // Fetch field mappings from database for this table
     console.log(`Fetching ALL active mappings (ignoring document_type filter)`);
     const { data: mappingsData, error: mappingsError } = await supabase
@@ -244,60 +188,59 @@ serve(async (req) => {
         console.log(`   PDF Field Name: ${pdf_field_name}`);
         console.log('');
         
-        // 4. DATA LOOKUP (from cached data)
-        console.log('💾 DATA LOOKUP (from cache)');
+        // 4. DATABASE QUERY
+        console.log('💾 DATABASE QUERY');
         let value;
         
         try {
-          // Get data from cache
-          const tableData = cachedData[source_table] || [];
+          let query = supabase
+            .from(source_table)
+            .select(source_field)
+            .eq('user_id', user.id);
           
-          let queryString = `Looking up ${source_field} from cached ${source_table}`;
+          let queryString = `SELECT ${source_field} FROM ${source_table} WHERE user_id = '${user.id}'`;
           
-          if (tableData.length === 0) {
-            console.log(`   Source: Cached data (0 records)`);
+          // Apply filter condition if present
+          if (hasFilter) {
+            for (const [filterField, filterValue] of Object.entries(filter_condition)) {
+              if (filterField === 'person_type') {
+                const normalizedValue = String(filterValue).toLowerCase();
+                query = query.eq(filterField, normalizedValue);
+                queryString += ` AND ${filterField} = '${normalizedValue}'`;
+              } else {
+                query = query.eq(filterField, filterValue);
+                queryString += ` AND ${filterField} = '${filterValue}'`;
+              }
+            }
+          }
+          
+          console.log(`   Query: ${queryString}`);
+          
+          const { data: queryResult, error: queryError } = await query.maybeSingle();
+          
+          if (queryError) {
+            console.log(`   Result: ERROR - ${queryError.message}`);
+            console.log('');
+            console.log('✅ PARSING STATUS');
+            console.log(`   Status: FAILED`);
+            console.log(`   Error: Database query failed - ${queryError.message}`);
+            console.log('==========================================\n');
+            failedFields.push({ field: pdf_field_name, reason: `Query failed: ${queryError.message}` });
+            continue;
+          }
+          
+          if (!queryResult || !queryResult[source_field]) {
             console.log(`   Result: No data`);
             console.log('');
             console.log('✅ PARSING STATUS');
             console.log(`   Status: SKIPPED`);
-            console.log(`   Value Filled: (no data in cache)`);
+            console.log(`   Value Filled: (no data in database)`);
             console.log('==========================================\n');
             skippedFields.push(`${source_field} -> ${pdf_field_name}`);
             continue;
           }
           
-          // Filter by filter_condition
-          let matchingRecord = tableData[0]; // Default to first record
-          
-          if (hasFilter) {
-            queryString += ` WHERE ${JSON.stringify(filter_condition)}`;
-            matchingRecord = tableData.find(record => {
-              return Object.entries(filter_condition).every(([filterField, filterValue]) => {
-                if (filterField === 'person_type') {
-                  const normalizedRecordValue = String(record[filterField] || '').toLowerCase();
-                  const normalizedFilterValue = String(filterValue).toLowerCase();
-                  return normalizedRecordValue === normalizedFilterValue;
-                }
-                return record[filterField] === filterValue;
-              });
-            });
-          }
-          
-          console.log(`   Source: Cached data (${tableData.length} records)`);
-          console.log(`   Lookup: ${queryString}`);
-          
-          if (!matchingRecord || !matchingRecord[source_field]) {
-            console.log(`   Result: No matching data`);
-            console.log('');
-            console.log('✅ PARSING STATUS');
-            console.log(`   Status: SKIPPED`);
-            console.log(`   Value Filled: (no matching data in cache)`);
-            console.log('==========================================\n');
-            skippedFields.push(`${source_field} -> ${pdf_field_name}`);
-            continue;
-          }
-          
-          value = matchingRecord[source_field];
+          value = queryResult[source_field];
           console.log(`   Result: ${JSON.stringify(value)}`);
           console.log('');
           
@@ -309,7 +252,7 @@ serve(async (req) => {
           console.log(`   Status: FAILED`);
           console.log(`   Error: ${errorMsg}`);
           console.log('==========================================\n');
-          failedFields.push({ field: pdf_field_name, reason: `Lookup error: ${errorMsg}` });
+          failedFields.push({ field: pdf_field_name, reason: `Database error: ${errorMsg}` });
           continue;
         }
         
@@ -459,11 +402,13 @@ serve(async (req) => {
 
     console.log('PDF uploaded successfully');
 
-    // Create proxy URL for inline PDF viewing with correct headers
-    console.log('Step 9: Creating proxy URL for inline viewing...');
-    const proxyUrl = `${supabaseUrl}/functions/v1/serve-pdf-inline?path=${encodeURIComponent(fileName)}`;
+    // Get public URL
+    console.log('Step 9: Getting public URL...');
+    const { data: urlData } = supabase.storage
+      .from('elterngeldantrag-drafts')
+      .getPublicUrl(fileName);
     
-    console.log('Proxy URL generated:', proxyUrl);
+    console.log('Public URL generated:', urlData.publicUrl);
 
     // Update progress in database
     console.log('Step 10: Updating progress in database...');
@@ -492,7 +437,7 @@ serve(async (req) => {
     console.log('=== SUCCESS ===');
     console.log('Response:', {
       pdfPath: fileName,
-      pdfUrl: proxyUrl,
+      pdfUrl: urlData.publicUrl,
       filledFieldsCount,
       totalFields: allFields.length,
       completionPercentage
@@ -502,7 +447,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         pdfPath: fileName,
-        pdfUrl: proxyUrl,
+        pdfUrl: urlData.publicUrl,
         filledFields: filledFieldsList,
         filledFieldsCount,
         totalFields: allFields.length,
