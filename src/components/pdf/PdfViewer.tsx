@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Download, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface PdfViewerProps {
   pdfUrl: string | null;
@@ -29,13 +28,8 @@ export const PdfViewer = ({ pdfUrl, downloadUrl, onLoadSuccess, onLoadError }: P
       setError(null);
 
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        const response = await fetch(pdfUrl, {
-          headers: session?.access_token ? {
-            'Authorization': `Bearer ${session.access_token}`
-          } : {}
-        });
+        // Fetch PDF without auth header (function is public)
+        const response = await fetch(pdfUrl);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

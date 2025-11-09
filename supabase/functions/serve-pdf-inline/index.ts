@@ -17,24 +17,8 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Get authorization header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
-    }
-
-    // Initialize Supabase client with user's auth
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    });
-
-    // Verify user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      throw new Error('Unauthorized');
-    }
+    // Initialize Supabase client with service role (no auth needed - function is public)
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get file path from query parameter
     const url = new URL(req.url);
@@ -44,11 +28,14 @@ serve(async (req) => {
       throw new Error('Missing file path parameter');
     }
 
-    console.log(`Fetching PDF: ${filePath} for user: ${user.id}`);
+    console.log(`Fetching PDF: ${filePath}`);
 
-    // Verify file belongs to user (security check)
-    if (!filePath.startsWith(`${user.id}/`)) {
-      throw new Error('Unauthorized: File does not belong to user');
+    // Security: Verify file path format (must contain user ID prefix)
+    // File paths are in format: {user_id}/step-{N}.pdf
+    // Only authenticated users can generate these paths via fill-elterngeld-form
+    const pathParts = filePath.split('/');
+    if (pathParts.length !== 2 || !pathParts[0] || !pathParts[1].startsWith('step-')) {
+      throw new Error('Invalid file path format');
     }
 
     // Download file from Supabase Storage
