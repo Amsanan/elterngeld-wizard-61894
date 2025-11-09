@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Download, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PdfViewerProps {
   pdfUrl: string | null;
@@ -12,6 +13,61 @@ interface PdfViewerProps {
 
 export const PdfViewer = ({ pdfUrl, downloadUrl, onLoadSuccess, onLoadError }: PdfViewerProps) => {
   const [error, setError] = useState<string | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let objectUrl: string | null = null;
+
+    const fetchPdfBlob = async () => {
+      if (!pdfUrl) {
+        setBlobUrl(null);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        const response = await fetch(pdfUrl, {
+          headers: session?.access_token ? {
+            'Authorization': `Bearer ${session.access_token}`
+          } : {}
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        objectUrl = URL.createObjectURL(blob);
+        setBlobUrl(objectUrl);
+        
+        if (onLoadSuccess) {
+          onLoadSuccess();
+        }
+      } catch (err) {
+        console.error('Error fetching PDF:', err);
+        const errorMsg = "PDF konnte nicht geladen werden";
+        setError(errorMsg);
+        if (onLoadError) {
+          onLoadError(errorMsg);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPdfBlob();
+
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [pdfUrl, onLoadSuccess, onLoadError]);
 
   const handleDownload = () => {
     if (downloadUrl) {
@@ -59,6 +115,17 @@ export const PdfViewer = ({ pdfUrl, downloadUrl, onLoadSuccess, onLoadError }: P
     );
   }
 
+  if (loading) {
+    return (
+      <div className="w-full h-[600px] border rounded-lg bg-muted flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">PDF wird geladen...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="w-full space-y-4">
@@ -83,13 +150,14 @@ export const PdfViewer = ({ pdfUrl, downloadUrl, onLoadSuccess, onLoadError }: P
 
   return (
     <div className="w-full space-y-4">
-      <iframe
-        src={`${pdfUrl}#view=FitH`}
-        className="w-full h-[900px] border rounded-lg shadow-lg"
-        title="Elterngeldantrag Vorschau"
-        onLoad={handleLoad}
-        onError={handleError}
-      />
+      {blobUrl && (
+        <iframe
+          src={`${blobUrl}#view=FitH`}
+          className="w-full h-[900px] border rounded-lg shadow-lg"
+          title="Elterngeldantrag Vorschau"
+          onLoad={handleLoad}
+        />
+      )}
 
       {downloadUrl && (
         <div className="flex gap-2">
