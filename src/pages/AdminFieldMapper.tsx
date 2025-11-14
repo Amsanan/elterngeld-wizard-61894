@@ -360,6 +360,39 @@ export default function AdminFieldMapper() {
     toast.success('Mappings exported');
   };
 
+  const handleExportPdfFieldsJson = async () => {
+    try {
+      setLoading(true);
+      toast.loading('Generating comprehensive PDF fields JSON...');
+      
+      const { data, error } = await supabase.functions.invoke('export-pdf-fields-json', {
+        body: { pdf_template_path: 'elterngeldantrag_bis_Maerz25.pdf' }
+      });
+      
+      if (error) throw error;
+      
+      if (data.success && data.download_url) {
+        // Download the JSON file
+        const link = document.createElement('a');
+        link.href = data.download_url;
+        link.download = data.file_name;
+        link.click();
+        
+        toast.success(
+          `PDF fields exported! ${data.summary.total_fields} fields, ${data.summary.file_size}`,
+          { duration: 5000 }
+        );
+      } else {
+        throw new Error('Export failed');
+      }
+    } catch (error: any) {
+      console.error('Error exporting PDF fields:', error);
+      toast.error(`Failed to export PDF fields: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6">
@@ -378,6 +411,10 @@ export default function AdminFieldMapper() {
             <Button variant="outline" onClick={handleExportMappings}>
               <Download className="h-4 w-4 mr-2" />
               Export
+            </Button>
+            <Button variant="outline" onClick={handleExportPdfFieldsJson} disabled={loading}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export PDF Fields JSON
             </Button>
             <Button variant="outline" onClick={handleLoadPdfFields}>
               <FileText className="h-4 w-4 mr-2" />
