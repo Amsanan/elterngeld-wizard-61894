@@ -46,7 +46,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.cleanup-old-documents]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get-database-schema]
 verify_jwt = true
