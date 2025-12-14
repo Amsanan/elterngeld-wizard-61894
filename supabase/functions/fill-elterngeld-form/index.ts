@@ -176,56 +176,104 @@ serve(async (req) => {
         let value;
         
         try {
-          let query = supabase
-            .from(source_table)
-            .select(source_field)
-            .eq('user_id', user.id);
+          // Check if this is a COUNT query (source_field starts with "COUNT")
+          const isCountQuery = source_field.toUpperCase().startsWith('COUNT');
           
-          let queryString = `SELECT ${source_field} FROM ${source_table} WHERE user_id = '${user.id}'`;
-          
-          // Apply filter condition if present
-          if (hasFilter) {
-            for (const [filterField, filterValue] of Object.entries(filter_condition)) {
-              if (filterField === 'person_type') {
-                const normalizedValue = String(filterValue).toLowerCase();
-                query = query.eq(filterField, normalizedValue);
-                queryString += ` AND ${filterField} = '${normalizedValue}'`;
-              } else {
-                query = query.eq(filterField, filterValue);
-                queryString += ` AND ${filterField} = '${filterValue}'`;
+          if (isCountQuery) {
+            // Handle COUNT queries - count all records for user
+            let countQuery = supabase
+              .from(source_table)
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', user.id);
+            
+            let queryString = `SELECT COUNT(*) FROM ${source_table} WHERE user_id = '${user.id}'`;
+            
+            // Apply filter condition if present
+            if (hasFilter) {
+              for (const [filterField, filterValue] of Object.entries(filter_condition)) {
+                if (filterField === 'person_type') {
+                  const normalizedValue = String(filterValue).toLowerCase();
+                  countQuery = countQuery.eq(filterField, normalizedValue);
+                  queryString += ` AND ${filterField} = '${normalizedValue}'`;
+                } else {
+                  countQuery = countQuery.eq(filterField, filterValue);
+                  queryString += ` AND ${filterField} = '${filterValue}'`;
+                }
               }
             }
-          }
-          
-          console.log(`   Query: ${queryString}`);
-          
-          const { data: queryResult, error: queryError } = await query.maybeSingle();
-          
-          if (queryError) {
-            console.log(`   Result: ERROR - ${queryError.message}`);
+            
+            console.log(`   Query (COUNT): ${queryString}`);
+            
+            const { count, error: countError } = await countQuery;
+            
+            if (countError) {
+              console.log(`   Result: ERROR - ${countError.message}`);
+              console.log('');
+              console.log('✅ PARSING STATUS');
+              console.log(`   Status: FAILED`);
+              console.log(`   Error: Count query failed - ${countError.message}`);
+              console.log('==========================================\n');
+              failedFields.push({ field: pdf_field_name, reason: `Count query failed: ${countError.message}` });
+              continue;
+            }
+            
+            value = count ?? 0;
+            console.log(`   Result: COUNT = ${value}`);
             console.log('');
-            console.log('✅ PARSING STATUS');
-            console.log(`   Status: FAILED`);
-            console.log(`   Error: Database query failed - ${queryError.message}`);
-            console.log('==========================================\n');
-            failedFields.push({ field: pdf_field_name, reason: `Query failed: ${queryError.message}` });
-            continue;
-          }
-          
-          if (!queryResult || !queryResult[source_field]) {
-            console.log(`   Result: No data`);
+            
+          } else {
+            // Standard single-value query
+            let query = supabase
+              .from(source_table)
+              .select(source_field)
+              .eq('user_id', user.id);
+            
+            let queryString = `SELECT ${source_field} FROM ${source_table} WHERE user_id = '${user.id}'`;
+            
+            // Apply filter condition if present
+            if (hasFilter) {
+              for (const [filterField, filterValue] of Object.entries(filter_condition)) {
+                if (filterField === 'person_type') {
+                  const normalizedValue = String(filterValue).toLowerCase();
+                  query = query.eq(filterField, normalizedValue);
+                  queryString += ` AND ${filterField} = '${normalizedValue}'`;
+                } else {
+                  query = query.eq(filterField, filterValue);
+                  queryString += ` AND ${filterField} = '${filterValue}'`;
+                }
+              }
+            }
+            
+            console.log(`   Query: ${queryString}`);
+            
+            const { data: queryResult, error: queryError } = await query.maybeSingle();
+            
+            if (queryError) {
+              console.log(`   Result: ERROR - ${queryError.message}`);
+              console.log('');
+              console.log('✅ PARSING STATUS');
+              console.log(`   Status: FAILED`);
+              console.log(`   Error: Database query failed - ${queryError.message}`);
+              console.log('==========================================\n');
+              failedFields.push({ field: pdf_field_name, reason: `Query failed: ${queryError.message}` });
+              continue;
+            }
+            
+            if (!queryResult || !queryResult[source_field]) {
+              console.log(`   Result: No data`);
+              console.log('');
+              console.log('✅ PARSING STATUS');
+              console.log(`   Status: SKIPPED`);
+              console.log(`   Value Filled: (no data in database)`);
+              console.log('==========================================\n');
+              skippedFields.push(`${source_field} -> ${pdf_field_name}`);
+              continue;
+            }
+            
+            value = queryResult[source_field];
+            console.log(`   Result: ${JSON.stringify(value)}`);
             console.log('');
-            console.log('✅ PARSING STATUS');
-            console.log(`   Status: SKIPPED`);
-            console.log(`   Value Filled: (no data in database)`);
-            console.log('==========================================\n');
-            skippedFields.push(`${source_field} -> ${pdf_field_name}`);
-            continue;
           }
-          
-          value = queryResult[source_field];
-          console.log(`   Result: ${JSON.stringify(value)}`);
-          console.log('');
           
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : 'Unknown error';
