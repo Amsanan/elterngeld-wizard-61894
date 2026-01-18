@@ -1,11 +1,12 @@
 {
-  "version": "2.0",
+  "version": "2.1",
   "created": "2026-01-18",
   "total_pages": 24,
   "total_fields": 657,
+  "total_nachweise": 85,
   "source": "elterngeld_mapping_complete.xlsx",
-  "completed_pages": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
-  "pending_pages": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+  "completed_pages": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+  "pending_pages": [],
   "files": {
     "page_01.json": {"section": "1. Angaben zum Kind", "field_count": 10},
     "page_02.json": {"section": "2. Angaben zu den Elternteilen", "field_count": 27},
@@ -20,11 +21,22 @@
     "page_11.json": {"section": "7.D Änderungen (Nicht-Selbstständige)", "field_count": 14},
     "page_12.json": {"section": "7.D Corona-Regelungen", "field_count": 28},
     "page_13.json": {"section": "7.E Änderungen (Selbstständige)", "field_count": 12},
-    "page_14.json": {"section": "7.E Corona Selbstständige", "field_count": 18}
+    "page_14.json": {"section": "7.E Corona Selbstständige", "field_count": 18},
+    "page_15.json": {"section": "8.A-8.C Einkommen im Bemessungszeitraum", "field_count": 26},
+    "page_16.json": {"section": "9. Mutterschaftsgeld", "field_count": 20},
+    "page_17.json": {"section": "3.A Alleinerziehende", "field_count": 3},
+    "page_18.json": {"section": "11. Planung der Elterngeld-Monate", "field_count": 164},
+    "page_19.json": {"section": "12-13.A Nach der Geburt: Einkommen", "field_count": 24},
+    "page_20.json": {"section": "13.A-13.B Nicht-selbstständige Arbeit/Urlaub", "field_count": 30},
+    "page_21.json": {"section": "14.A-14.B Gewinneinkünfte", "field_count": 22},
+    "page_22.json": {"section": "14.C-15 Tagespflege/Einkommensersatzleistungen", "field_count": 30},
+    "page_23.json": {"section": "16.A-16.C Bankverbindung/Kontakt", "field_count": 21},
+    "page_24.json": {"section": "16.D Unterschriften/Gesetzliche Vertretung", "field_count": 16},
+    "nachweise_katalog.json": {"section": "Nachweise-Katalog", "nachweis_count": 85}
   },
   "notes": [
-    "Seiten 1-14 vollständig erstellt",
-    "Seiten 15-24 noch zu erstellen (inkl. Seite 18 mit 164 Feldern)",
-    "Nachweise-Katalog separat zu erstellen"
+    "Alle 24 Seiten vollständig erstellt",
+    "Seite 18 enthält 164 Felder für Monatsplanung (LM 1-32)",
+    "Nachweise-Katalog mit 85 Definitionen erstellt"
   ]
 }

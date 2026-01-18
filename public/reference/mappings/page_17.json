@@ -1,0 +1,10 @@
+{
+  "page": 17,
+  "section": "3.A Alleinerziehende",
+  "fields": [
+    {"lfd_nr": 311, "label_de": "Alleinerziehend: Entlastungsbetrag Steuerklasse II", "pdf_field": "cb.allein2a", "field_type": "Checkbox", "format": "Boolean", "target_field": "alleinerziehend_entlastungsbetrag", "validation": "Alternative A; triggert Nachweis", "hint": "—"},
+    {"lfd_nr": 312, "label_de": "Alleinerziehend: anderer Elternteil kann nicht betreuen", "pdf_field": "cb.nichtbetreuung2a", "field_type": "Checkbox", "format": "Boolean", "target_field": "alleinerziehend_nichtbetreuung", "validation": "Alternative B; triggert Nachweis", "hint": "—"},
+    {"lfd_nr": 313, "label_de": "Alleinerziehend: Kindeswohlgefährdung (Jugendamt)", "pdf_field": "cb.kindeswohl2a", "field_type": "Checkbox", "format": "Boolean", "target_field": "alleinerziehend_kindeswohl", "validation": "Alternative C; triggert Nachweis", "hint": "—"}
+  ],
+  "notes": ["Seite 17 enthält keine interaktiven Formularfelder gemäß PDF-Analyse", "Die 3 Alleinerziehend-Optionen stammen aus Seite 3/4"]
+}

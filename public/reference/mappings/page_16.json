@@ -1,0 +1,26 @@
+{
+  "page": 16,
+  "section": "9. Mutterschaftsgeld",
+  "fields": [
+    {"lfd_nr": 291, "label_de": "Mutterschaftsgeld GKV: Anspruch", "pdf_field": "cb.AnspruchMG", "field_type": "Checkbox", "format": "Boolean", "target_field": "antragsteller_mutterschaft_mg_gkv_anspruch", "validation": "true/false", "hint": "—"},
+    {"lfd_nr": 292, "label_de": "Mutterschaftsgeld GKV: elektronischer Abruf Einwilligung", "pdf_field": "cb.MG_Abruf", "field_type": "Checkbox", "format": "Boolean", "target_field": "antragsteller_mutterschaft_mg_gkv_abruf_einwilligung", "validation": "Alternative zu Bescheinigung", "hint": "—"},
+    {"lfd_nr": 293, "label_de": "Krankentagegeld PKV: Anspruch", "pdf_field": "cb.AnspruchKTG", "field_type": "Checkbox", "format": "Boolean", "target_field": "antragsteller_mutterschaft_ktg_pkv_anspruch", "validation": "true/false", "hint": "Triggert PKV-Bescheinigung"},
+    {"lfd_nr": 294, "label_de": "Zuschuss Beamtin/Soldatin: Anspruch", "pdf_field": "cb.zuschussBeamt", "field_type": "Checkbox", "format": "Boolean", "target_field": "antragsteller_mutterschaft_zuschuss_beamt_sold_anspruch", "validation": "true/false", "hint": "Triggert Bezugsmitteilungen"},
+    {"lfd_nr": 295, "label_de": "Arbeitgeberzuschuss: Anspruch", "pdf_field": "cb.zuschussMG", "field_type": "Checkbox", "format": "Boolean", "target_field": "antragsteller_mutterschaft_ag_zuschuss_anspruch", "validation": "true/false", "hint": "Triggert AG-Nachweis"},
+    {"lfd_nr": 296, "label_de": "Dienst-/Anwärterbezüge Beamtin/Soldatin: Anspruch", "pdf_field": "cb.beamtSold", "field_type": "Checkbox", "format": "Boolean", "target_field": "antragsteller_mutterschaft_dienst_anwaerterbezuege_anspruch", "validation": "true/false", "hint": "Triggert Bezugsmitteilungen"},
+    {"lfd_nr": 297, "label_de": "Vergleichbare Mutterschaftsleistung Ausland: Anspruch", "pdf_field": "cb.vergleichML", "field_type": "Checkbox", "format": "Boolean", "target_field": "antragsteller_mutterschaft_ausland_anspruch", "validation": "true/false", "hint": "Triggert Auslandsbescheinigung"},
+    {"lfd_nr": 298, "label_de": "Mutterschaftsgeld: Leistungsbeginn", "pdf_field": "txt.mg_beginn", "field_type": "Text", "format": "Datum TT.MM.JJJJ", "target_field": "mutterschaft_leistungsbeginn", "validation": "Datum parsebar", "hint": "—"},
+    {"lfd_nr": 299, "label_de": "Mutterschaftsgeld: Leistungsende", "pdf_field": "txt.mg_ende", "field_type": "Text", "format": "Datum TT.MM.JJJJ", "target_field": "mutterschaft_leistungsende", "validation": "Datum parsebar; beginn<=ende", "hint": "—"},
+    {"lfd_nr": 300, "label_de": "Mutterschaftsgeld: Tagessatz (€)", "pdf_field": "txt.mg_tagessatz", "field_type": "Text", "format": "Dezimal", "target_field": "mutterschaft_tagessatz", "validation": "Dezimal; positiv", "hint": "—"},
+    {"lfd_nr": 301, "label_de": "Arbeitgeberzuschuss: Zeitraum von", "pdf_field": "txt.ag_zuschuss_von", "field_type": "Text", "format": "Datum flexibel", "target_field": "mutterschaft_ag_zuschuss_von", "validation": "Datum parsebar", "hint": "—"},
+    {"lfd_nr": 302, "label_de": "Arbeitgeberzuschuss: Zeitraum bis", "pdf_field": "txt.ag_zuschuss_bis", "field_type": "Text", "format": "Datum flexibel", "target_field": "mutterschaft_ag_zuschuss_bis", "validation": "Datum parsebar; von<=bis", "hint": "—"},
+    {"lfd_nr": 303, "label_de": "Arbeitgeberzuschuss: Betrag pro Tag (€)", "pdf_field": "txt.ag_zuschuss_betrag", "field_type": "Text", "format": "Dezimal", "target_field": "mutterschaft_ag_zuschuss_betrag", "validation": "Dezimal; positiv", "hint": "—"},
+    {"lfd_nr": 304, "label_de": "Keine Mutterschaftsleistungen", "pdf_field": "cb.keine_ml", "field_type": "Checkbox", "format": "Boolean", "target_field": "mutterschaft_keine_leistungen", "validation": "Exklusiv zu allen anderen", "hint": "—"},
+    {"lfd_nr": 305, "label_de": "Mutterschaftsgeld: Krankenkasse Name", "pdf_field": "txt.mg_kk_name", "field_type": "Text", "format": "Freitext", "target_field": "mutterschaft_krankenkasse_name", "validation": "Pflicht wenn GKV-Anspruch", "hint": "—"},
+    {"lfd_nr": 306, "label_de": "Mutterschaftsgeld: Versichertennummer", "pdf_field": "txt.mg_versichertennr", "field_type": "Text", "format": "Freitext", "target_field": "mutterschaft_versichertennummer", "validation": "Pflicht wenn GKV-Anspruch", "hint": "—"},
+    {"lfd_nr": 307, "label_de": "Bescheinigung liegt bei", "pdf_field": "cb.mg_bescheinigung_bei", "field_type": "Checkbox", "format": "Boolean", "target_field": "mutterschaft_bescheinigung_beigefuegt", "validation": "Alternative zu Abruf", "hint": "—"},
+    {"lfd_nr": 308, "label_de": "Mutterschutzfrist Beginn", "pdf_field": "txt.mutterschutz_beginn", "field_type": "Text", "format": "Datum TT.MM.JJJJ", "target_field": "mutterschutzfrist_beginn", "validation": "Datum parsebar", "hint": "—"},
+    {"lfd_nr": 309, "label_de": "Mutterschutzfrist Ende", "pdf_field": "txt.mutterschutz_ende", "field_type": "Text", "format": "Datum TT.MM.JJJJ", "target_field": "mutterschutzfrist_ende", "validation": "Datum parsebar", "hint": "—"},
+    {"lfd_nr": 310, "label_de": "PKV Krankentagegeld: Betrag pro Tag", "pdf_field": "txt.ktg_pkv_betrag", "field_type": "Text", "format": "Dezimal", "target_field": "mutterschaft_ktg_pkv_betrag", "validation": "Dezimal; positiv", "hint": "—"}
+  ]
+}
