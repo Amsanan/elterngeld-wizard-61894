@@ -41,6 +41,9 @@ import EheSorgerechtList from "./pages/EheSorgerechtList";
 import UploadAdoptionsPflege from "./pages/UploadAdoptionsPflege";
 import AdoptionsPflegeResult from "./pages/AdoptionsPflegeResult";
 import AdoptionsPflegeList from "./pages/AdoptionsPflegeList";
+import UploadSonstigeNachweise from "./pages/UploadSonstigeNachweise";
+import SonstigeNachweiseResult from "./pages/SonstigeNachweiseResult";
+import SonstigeNachweiseList from "./pages/SonstigeNachweiseList";
 import ElterngeldantragAusfuellen from "./pages/ElterngeldantragAusfuellen";
 import AdminSetup from "./pages/AdminSetup";
 import AutoCleanupSettings from "./pages/AutoCleanupSettings";
@@ -94,6 +97,9 @@ function App() {
         <Route path="/upload-adoptions-pflege" element={<UploadAdoptionsPflege />} />
         <Route path="/adoptions-pflege-result" element={<AdoptionsPflegeResult />} />
         <Route path="/adoptions-pflege-list" element={<AdoptionsPflegeList />} />
+        <Route path="/upload-sonstige-nachweise" element={<UploadSonstigeNachweise />} />
+        <Route path="/sonstige-nachweise-result" element={<SonstigeNachweiseResult />} />
+        <Route path="/sonstige-nachweise-list" element={<SonstigeNachweiseList />} />
         <Route path="/elterngeldantrag-ausfuellen" element={<ElterngeldantragAusfuellen />} />
         <Route path="/admin-setup" element={<AdminSetup />} />
         <Route path="/auto-cleanup-settings" element={<AutoCleanupSettings />} />
