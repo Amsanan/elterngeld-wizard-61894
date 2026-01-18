@@ -68,3 +68,9 @@ verify_jwt = true
 
 [functions.vision-map-fields]
 verify_jwt = true
+
+[functions.export-pdf-fields-json]
+verify_jwt = true
+
+[functions.import-field-mappings]
+verify_jwt = false
