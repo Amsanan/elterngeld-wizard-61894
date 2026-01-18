@@ -49,6 +49,7 @@ import AdminSetup from "./pages/AdminSetup";
 import AutoCleanupSettings from "./pages/AutoCleanupSettings";
 import AdminFieldMapper from "./pages/AdminFieldMapper";
 import FieldDiagnostics from "./pages/FieldDiagnostics";
+import ImportMappings from "./pages/ImportMappings";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -105,6 +106,7 @@ function App() {
         <Route path="/auto-cleanup-settings" element={<AutoCleanupSettings />} />
         <Route path="/admin/field-mapper" element={<AdminFieldMapper />} />
         <Route path="/admin/field-diagnostics" element={<FieldDiagnostics />} />
+        <Route path="/admin/import-mappings" element={<ImportMappings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
