@@ -133,6 +133,47 @@ export type Database = {
           },
         ]
       }
+      antrag_progress: {
+        Row: {
+          antrag_id: string
+          completed_steps: number[] | null
+          created_at: string | null
+          current_step: number | null
+          field_mappings: Json | null
+          partial_pdf_path: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          antrag_id: string
+          completed_steps?: number[] | null
+          created_at?: string | null
+          current_step?: number | null
+          field_mappings?: Json | null
+          partial_pdf_path?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          antrag_id?: string
+          completed_steps?: number[] | null
+          created_at?: string | null
+          current_step?: number | null
+          field_mappings?: Json | null
+          partial_pdf_path?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_progress_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antraege"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       arbeitgeberbescheinigungen: {
         Row: {
           antrag_id: string | null
