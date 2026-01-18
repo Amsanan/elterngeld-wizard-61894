@@ -1,14 +1,21 @@
 {
-  "version": "2.1",
+  "version": "2.2",
   "created": "2026-01-18",
   "total_pages": 24,
   "total_fields": 657,
-  "total_nachweise": 85,
+  "total_nachweise": 134,
   "source": "elterngeld_mapping_complete.xlsx",
   "completed_pages": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
   "pending_pages": [],
+  "pruefsummen": {
+    "felder_gesamt": 657,
+    "felder_im_mapping": 656,
+    "felder_adresse_elterngeldstelle": 1,
+    "nachweise_gesamt": 134,
+    "lfd_nr_bereich": "2-657 (lfd 1 separat)"
+  },
   "files": {
-    "page_01.json": {"section": "1. Angaben zum Kind", "field_count": 10},
+    "page_01.json": {"section": "1. Angaben zum Kind", "field_count": 11},
     "page_02.json": {"section": "2. Angaben zu den Elternteilen", "field_count": 27},
     "page_03.json": {"section": "2.C Wohnsitz/Aufenthalt", "field_count": 37},
     "page_04.json": {"section": "2.C-2.F Wohnsitz/Staatsangehörigkeit", "field_count": 35},
@@ -24,7 +31,7 @@
     "page_14.json": {"section": "7.E Corona Selbstständige", "field_count": 18},
     "page_15.json": {"section": "8.A-8.C Einkommen im Bemessungszeitraum", "field_count": 26},
     "page_16.json": {"section": "9. Mutterschaftsgeld", "field_count": 20},
-    "page_17.json": {"section": "3.A Alleinerziehende", "field_count": 3},
+    "page_17.json": {"section": "3.A Alleinerziehende", "field_count": 0},
     "page_18.json": {"section": "11. Planung der Elterngeld-Monate", "field_count": 164},
     "page_19.json": {"section": "12-13.A Nach der Geburt: Einkommen", "field_count": 24},
     "page_20.json": {"section": "13.A-13.B Nicht-selbstständige Arbeit/Urlaub", "field_count": 30},
@@ -32,11 +39,13 @@
     "page_22.json": {"section": "14.C-15 Tagespflege/Einkommensersatzleistungen", "field_count": 30},
     "page_23.json": {"section": "16.A-16.C Bankverbindung/Kontakt", "field_count": 21},
     "page_24.json": {"section": "16.D Unterschriften/Gesetzliche Vertretung", "field_count": 16},
-    "nachweise_katalog.json": {"section": "Nachweise-Katalog", "nachweis_count": 85}
+    "nachweise_katalog.json": {"section": "Nachweise-Katalog", "nachweis_count": 134}
   },
   "notes": [
     "Alle 24 Seiten vollständig erstellt",
+    "Seite 17 hat 0 Felder (nur Nachweisanforderungen)",
     "Seite 18 enthält 164 Felder für Monatsplanung (LM 1-32)",
-    "Nachweise-Katalog mit 85 Definitionen erstellt"
+    "Nachweise-Katalog mit 134 Definitionen erstellt (korrigiert von 40)",
+    "Prüfsummen gemäß Excel: 657 Formularfelder, 134 Nachweise"
   ]
 }
