@@ -481,6 +481,31 @@ const Dashboard = () => {
                 </div>
               </Card>
             )}
+
+            {/* Sonstige Nachweise Card */}
+            <Card className="p-8 hover:shadow-lg transition-shadow border-2 border-dashed border-accent/30">
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
+                  <FileText className="h-8 w-8 text-accent" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Sonstige Nachweise</h3>
+                  <p className="text-muted-foreground">
+                    Atteste, Bescheide, Verträge und weitere Dokumente
+                  </p>
+                </div>
+                <div className="flex gap-2 mt-4 w-full">
+                  <Button onClick={() => navigate("/upload-sonstige-nachweise")} className="flex-1">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Hochladen
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate("/sonstige-nachweise-list")} className="flex-1">
+                    <List className="h-4 w-4 mr-2" />
+                    Meine Dokumente
+                  </Button>
+                </div>
+              </div>
+            </Card>
           </div>
 
           {/* Info Card */}

@@ -1601,6 +1601,71 @@ export type Database = {
           },
         ]
       }
+      sonstige_nachweise: {
+        Row: {
+          antrag_id: string | null
+          ausstelldatum: string | null
+          aussteller: string | null
+          beschreibung: string | null
+          betrag: number | null
+          confidence_scores: Json | null
+          created_at: string
+          dokument_typ: string
+          extracted_data: Json | null
+          file_path: string | null
+          gueltig_bis: string | null
+          gueltig_von: string | null
+          id: string
+          person_type: Database["public"]["Enums"]["person_type_enum"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          antrag_id?: string | null
+          ausstelldatum?: string | null
+          aussteller?: string | null
+          beschreibung?: string | null
+          betrag?: number | null
+          confidence_scores?: Json | null
+          created_at?: string
+          dokument_typ: string
+          extracted_data?: Json | null
+          file_path?: string | null
+          gueltig_bis?: string | null
+          gueltig_von?: string | null
+          id?: string
+          person_type?: Database["public"]["Enums"]["person_type_enum"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          antrag_id?: string | null
+          ausstelldatum?: string | null
+          aussteller?: string | null
+          beschreibung?: string | null
+          betrag?: number | null
+          confidence_scores?: Json | null
+          created_at?: string
+          dokument_typ?: string
+          extracted_data?: Json | null
+          file_path?: string | null
+          gueltig_bis?: string | null
+          gueltig_von?: string | null
+          id?: string
+          person_type?: Database["public"]["Enums"]["person_type_enum"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sonstige_nachweise_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: false
+            referencedRelation: "antraege"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
