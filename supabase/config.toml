@@ -46,7 +46,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.cleanup-old-documents]
-verify_jwt = true
+verify_jwt = false
 
 [functions.get-database-schema]
 verify_jwt = true
@@ -68,9 +68,3 @@ verify_jwt = true
 
 [functions.vision-map-fields]
 verify_jwt = true
-
-[functions.export-pdf-fields-json]
-verify_jwt = true
-
-[functions.import-field-mappings]
-verify_jwt = false

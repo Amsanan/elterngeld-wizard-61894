@@ -54,6 +54,7 @@ export default function ElterngeldantragAusfuellen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Load data from database
       let query = supabase
         .from(currentConfig.tableName as any)
         .select()
@@ -65,34 +66,25 @@ export default function ElterngeldantragAusfuellen() {
         });
       }
 
-      const { data, error } = await query.limit(1).maybeSingle();
+      const { data, error } = await query.limit(1).single();
 
-      if (error) {
-        toast({
-          title: "Fehler",
-          description: `Fehler beim Laden der Daten: ${error.message}`,
-          variant: "destructive"
-        });
+      if (error || !data) {
+        console.log(`No data found for step ${currentStep}`);
         setHasData(false);
         setStepData(null);
         setEditedData({});
-        return;
-      }
-
-      if (!data) {
-        setHasData(false);
-        setStepData(null);
-        setEditedData({});
-        await fillPDF(null);
         return;
       }
 
       setHasData(true);
       setStepData(data);
       setEditedData(data);
+
+      // Call edge function to fill PDF
       await fillPDF(data);
 
     } catch (error) {
+      console.error("Error loading step data:", error);
       toast({
         title: "Fehler",
         description: "Daten konnten nicht geladen werden",
@@ -119,9 +111,7 @@ export default function ElterngeldantragAusfuellen() {
       if (!result) throw new Error("No result returned from edge function");
       if (!result.pdfUrl) throw new Error("No PDF URL returned");
       
-      // Add cache-busting timestamp to force PDF refresh
-      const urlWithCacheBust = `${result.pdfUrl}?t=${Date.now()}`;
-      setPdfUrl(urlWithCacheBust);
+      setPdfUrl(result.pdfUrl);
       setPreviousPdfPath(result.pdfPath);
 
       toast({
@@ -130,6 +120,7 @@ export default function ElterngeldantragAusfuellen() {
       });
 
     } catch (error) {
+      console.error("Error filling PDF:", error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: "Fehler beim Befüllen",

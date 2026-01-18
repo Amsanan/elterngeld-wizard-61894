@@ -4,14 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Download, Upload, Sparkles, FileText, Eye, Scan, FileUp } from "lucide-react";
+import { ArrowLeft, Save, Download, Upload, Sparkles, FileText, Eye, Scan } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatabaseFieldsList } from "@/components/field-mapper/DatabaseFieldsList";
 import { PdfFieldsList } from "@/components/field-mapper/PdfFieldsList";
 import { MappingsList } from "@/components/field-mapper/MappingsList";
 import { MappingStats } from "@/components/field-mapper/MappingStats";
 import { AutoMapDialog } from "@/components/field-mapper/AutoMapDialog";
-import { ImportDialog } from "@/components/field-mapper/ImportDialog";
+
 export default function AdminFieldMapper() {
   const navigate = useNavigate();
   const [documentType, setDocumentType] = useState("");
@@ -20,7 +20,6 @@ export default function AdminFieldMapper() {
   const [mappings, setMappings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [autoMapDialogOpen, setAutoMapDialogOpen] = useState(false);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [fieldCoordinates, setFieldCoordinates] = useState<any[]>([]);
 
   useEffect(() => {
@@ -264,12 +263,6 @@ export default function AdminFieldMapper() {
   };
 
   const handleCreateMapping = (source: { table: string; field: string }, pdfField: string) => {
-    // Prevent creating mappings when "All Document Types" is selected
-    if (documentType === 'all') {
-      toast.error('Please select a specific document type before creating mappings');
-      return;
-    }
-
     // Check if mapping already exists
     const exists = mappings.some(
       m => m.source_table === source.table && 
@@ -361,39 +354,6 @@ export default function AdminFieldMapper() {
     toast.success('Mappings exported');
   };
 
-  const handleExportPdfFieldsJson = async () => {
-    try {
-      setLoading(true);
-      toast.loading('Generating comprehensive PDF fields JSON...');
-      
-      const { data, error } = await supabase.functions.invoke('export-pdf-fields-json', {
-        body: { pdf_template_path: 'elterngeldantrag_bis_Maerz25.pdf' }
-      });
-      
-      if (error) throw error;
-      
-      if (data.success && data.download_url) {
-        // Download the JSON file
-        const link = document.createElement('a');
-        link.href = data.download_url;
-        link.download = data.file_name;
-        link.click();
-        
-        toast.success(
-          `PDF fields exported! ${data.summary.total_fields} fields, ${data.summary.file_size}`,
-          { duration: 5000 }
-        );
-      } else {
-        throw new Error('Export failed');
-      }
-    } catch (error: any) {
-      console.error('Error exporting PDF fields:', error);
-      toast.error(`Failed to export PDF fields: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6">
@@ -408,18 +368,10 @@ export default function AdminFieldMapper() {
               <p className="text-muted-foreground">Map database fields to PDF AcroForm fields</p>
             </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="default" onClick={() => setImportDialogOpen(true)}>
-              <FileUp className="h-4 w-4 mr-2" />
-              Excel Import
-            </Button>
+          <div className="flex gap-2">
             <Button variant="outline" onClick={handleExportMappings}>
               <Download className="h-4 w-4 mr-2" />
               Export
-            </Button>
-            <Button variant="outline" onClick={handleExportPdfFieldsJson} disabled={loading}>
-              <FileText className="h-4 w-4 mr-2" />
-              Export PDF Fields JSON
             </Button>
             <Button variant="outline" onClick={handleLoadPdfFields}>
               <FileText className="h-4 w-4 mr-2" />
@@ -536,16 +488,6 @@ export default function AdminFieldMapper() {
           setMappings(newMappings);
           setPdfFields(allPdfFields || []);
         }}
-      />
-
-      <ImportDialog
-        open={importDialogOpen}
-        onOpenChange={setImportDialogOpen}
-        onImportComplete={() => {
-          loadMappings();
-          setImportDialogOpen(false);
-        }}
-        documentType={documentType || 'elterngeldantrag'}
       />
     </div>
   );
