@@ -182,7 +182,7 @@ serve(async (req) => {
       );
     }
 
-    // Check admin role
+    // Check admin role (or allow if no admins exist yet for initial setup)
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
@@ -191,11 +191,25 @@ serve(async (req) => {
       .eq('role', 'admin')
       .single();
 
-    if (!roleData) {
+    // If no admins exist at all, allow the first authenticated user
+    const { count: adminCount } = await supabaseAdmin
+      .from('user_roles')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'admin');
+
+    const noAdminsExist = (adminCount === null || adminCount === 0);
+    
+    if (!roleData && !noAdminsExist) {
       return new Response(
         JSON.stringify({ error: 'Admin access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+    
+    // If first user, auto-promote to admin
+    if (noAdminsExist && !roleData) {
+      await supabaseAdmin.from('user_roles').insert({ user_id: user.id, role: 'admin' });
+      console.log(`Auto-promoted user ${user.id} to admin (first user)`);
     }
 
     // Parse request
