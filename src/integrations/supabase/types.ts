@@ -607,6 +607,329 @@ export type Database = {
         }
         Relationships: []
       }
+      elterngeldantrag_data: {
+        Row: {
+          antrag_id: string | null
+          created_at: string | null
+          eltern_alleinerziehend: boolean | null
+          eltern_alleinerziehend_kindeswohl: boolean | null
+          eltern_alleinerziehend_nichtbetreuung: boolean | null
+          eltern1_adresse_hausnr: string | null
+          eltern1_adresse_ort: string | null
+          eltern1_adresse_plz: string | null
+          eltern1_adresse_strasse: string | null
+          eltern1_aufenthalt_drittstaat: boolean | null
+          eltern1_aufenthalt_eu_efta: boolean | null
+          eltern1_einkommen_nichtselbststaendig: number | null
+          eltern1_einkommen_selbststaendig: number | null
+          eltern1_einkommen_sonstige: number | null
+          eltern1_email: string | null
+          eltern1_erwerbstaetig_ja: boolean | null
+          eltern1_erwerbstaetig_nein: boolean | null
+          eltern1_geburtsdatum: string | null
+          eltern1_geschlecht_divers: boolean | null
+          eltern1_geschlecht_maennlich: boolean | null
+          eltern1_geschlecht_ohne_angabe: boolean | null
+          eltern1_geschlecht_weiblich: boolean | null
+          eltern1_nachname: string | null
+          eltern1_selbststaendig_ja: boolean | null
+          eltern1_selbststaendig_nein: boolean | null
+          eltern1_staatsangehoerigkeit: string | null
+          eltern1_steuer_id: string | null
+          eltern1_telefon: string | null
+          eltern1_vorname: string | null
+          eltern1_wohnsitz_de_ja: boolean | null
+          eltern1_wohnsitz_de_nein: boolean | null
+          eltern2_adresse_hausnr: string | null
+          eltern2_adresse_ort: string | null
+          eltern2_adresse_plz: string | null
+          eltern2_adresse_strasse: string | null
+          eltern2_aufenthalt_drittstaat: boolean | null
+          eltern2_aufenthalt_eu_efta: boolean | null
+          eltern2_einkommen_nichtselbststaendig: number | null
+          eltern2_einkommen_selbststaendig: number | null
+          eltern2_einkommen_sonstige: number | null
+          eltern2_email: string | null
+          eltern2_erwerbstaetig_ja: boolean | null
+          eltern2_erwerbstaetig_nein: boolean | null
+          eltern2_geburtsdatum: string | null
+          eltern2_geschlecht_divers: boolean | null
+          eltern2_geschlecht_maennlich: boolean | null
+          eltern2_geschlecht_ohne_angabe: boolean | null
+          eltern2_geschlecht_weiblich: boolean | null
+          eltern2_nachname: string | null
+          eltern2_selbststaendig_ja: boolean | null
+          eltern2_selbststaendig_nein: boolean | null
+          eltern2_staatsangehoerigkeit: string | null
+          eltern2_steuer_id: string | null
+          eltern2_telefon: string | null
+          eltern2_vorname: string | null
+          eltern2_wohnsitz_de_ja: boolean | null
+          eltern2_wohnsitz_de_nein: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_adoptiv: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_andere: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_leiblich: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_partnerkind: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_adoptiv: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_andere: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_leiblich: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_partnerkind: boolean | null
+          geschwisterbonus_kind1_gdb_flag: boolean | null
+          geschwisterbonus_kind1_geburtsdatum: string | null
+          geschwisterbonus_kind1_nachname: string | null
+          geschwisterbonus_kind1_vorname: string | null
+          geschwisterbonus_kind2_beziehung_eltern1_adoptiv: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_andere: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_leiblich: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_partnerkind: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_adoptiv: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_andere: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_leiblich: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_partnerkind: boolean | null
+          geschwisterbonus_kind2_gdb_flag: boolean | null
+          geschwisterbonus_kind2_geburtsdatum: string | null
+          geschwisterbonus_kind2_nachname: string | null
+          geschwisterbonus_kind2_vorname: string | null
+          geschwisterbonus_kind3_beziehung_eltern1_adoptiv: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_andere: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_leiblich: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_partnerkind: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_adoptiv: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_andere: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_leiblich: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_partnerkind: boolean | null
+          geschwisterbonus_kind3_gdb_flag: boolean | null
+          geschwisterbonus_kind3_geburtsdatum: string | null
+          geschwisterbonus_kind3_nachname: string | null
+          geschwisterbonus_kind3_vorname: string | null
+          haushalt_weitere_kinder_anzahl: number | null
+          haushalt_weitere_kinder_keine: boolean | null
+          haushalt_weitere_kinder_vorhanden: boolean | null
+          id: string
+          kind_behinderung: boolean | null
+          kind_errechneter_termin: string | null
+          kind_fruehgeburt: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          antrag_id?: string | null
+          created_at?: string | null
+          eltern_alleinerziehend?: boolean | null
+          eltern_alleinerziehend_kindeswohl?: boolean | null
+          eltern_alleinerziehend_nichtbetreuung?: boolean | null
+          eltern1_adresse_hausnr?: string | null
+          eltern1_adresse_ort?: string | null
+          eltern1_adresse_plz?: string | null
+          eltern1_adresse_strasse?: string | null
+          eltern1_aufenthalt_drittstaat?: boolean | null
+          eltern1_aufenthalt_eu_efta?: boolean | null
+          eltern1_einkommen_nichtselbststaendig?: number | null
+          eltern1_einkommen_selbststaendig?: number | null
+          eltern1_einkommen_sonstige?: number | null
+          eltern1_email?: string | null
+          eltern1_erwerbstaetig_ja?: boolean | null
+          eltern1_erwerbstaetig_nein?: boolean | null
+          eltern1_geburtsdatum?: string | null
+          eltern1_geschlecht_divers?: boolean | null
+          eltern1_geschlecht_maennlich?: boolean | null
+          eltern1_geschlecht_ohne_angabe?: boolean | null
+          eltern1_geschlecht_weiblich?: boolean | null
+          eltern1_nachname?: string | null
+          eltern1_selbststaendig_ja?: boolean | null
+          eltern1_selbststaendig_nein?: boolean | null
+          eltern1_staatsangehoerigkeit?: string | null
+          eltern1_steuer_id?: string | null
+          eltern1_telefon?: string | null
+          eltern1_vorname?: string | null
+          eltern1_wohnsitz_de_ja?: boolean | null
+          eltern1_wohnsitz_de_nein?: boolean | null
+          eltern2_adresse_hausnr?: string | null
+          eltern2_adresse_ort?: string | null
+          eltern2_adresse_plz?: string | null
+          eltern2_adresse_strasse?: string | null
+          eltern2_aufenthalt_drittstaat?: boolean | null
+          eltern2_aufenthalt_eu_efta?: boolean | null
+          eltern2_einkommen_nichtselbststaendig?: number | null
+          eltern2_einkommen_selbststaendig?: number | null
+          eltern2_einkommen_sonstige?: number | null
+          eltern2_email?: string | null
+          eltern2_erwerbstaetig_ja?: boolean | null
+          eltern2_erwerbstaetig_nein?: boolean | null
+          eltern2_geburtsdatum?: string | null
+          eltern2_geschlecht_divers?: boolean | null
+          eltern2_geschlecht_maennlich?: boolean | null
+          eltern2_geschlecht_ohne_angabe?: boolean | null
+          eltern2_geschlecht_weiblich?: boolean | null
+          eltern2_nachname?: string | null
+          eltern2_selbststaendig_ja?: boolean | null
+          eltern2_selbststaendig_nein?: boolean | null
+          eltern2_staatsangehoerigkeit?: string | null
+          eltern2_steuer_id?: string | null
+          eltern2_telefon?: string | null
+          eltern2_vorname?: string | null
+          eltern2_wohnsitz_de_ja?: boolean | null
+          eltern2_wohnsitz_de_nein?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_adoptiv?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_andere?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_leiblich?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_partnerkind?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_adoptiv?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_andere?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_leiblich?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_partnerkind?: boolean | null
+          geschwisterbonus_kind1_gdb_flag?: boolean | null
+          geschwisterbonus_kind1_geburtsdatum?: string | null
+          geschwisterbonus_kind1_nachname?: string | null
+          geschwisterbonus_kind1_vorname?: string | null
+          geschwisterbonus_kind2_beziehung_eltern1_adoptiv?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_andere?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_leiblich?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_partnerkind?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_adoptiv?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_andere?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_leiblich?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_partnerkind?: boolean | null
+          geschwisterbonus_kind2_gdb_flag?: boolean | null
+          geschwisterbonus_kind2_geburtsdatum?: string | null
+          geschwisterbonus_kind2_nachname?: string | null
+          geschwisterbonus_kind2_vorname?: string | null
+          geschwisterbonus_kind3_beziehung_eltern1_adoptiv?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_andere?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_leiblich?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_partnerkind?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_adoptiv?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_andere?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_leiblich?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_partnerkind?: boolean | null
+          geschwisterbonus_kind3_gdb_flag?: boolean | null
+          geschwisterbonus_kind3_geburtsdatum?: string | null
+          geschwisterbonus_kind3_nachname?: string | null
+          geschwisterbonus_kind3_vorname?: string | null
+          haushalt_weitere_kinder_anzahl?: number | null
+          haushalt_weitere_kinder_keine?: boolean | null
+          haushalt_weitere_kinder_vorhanden?: boolean | null
+          id?: string
+          kind_behinderung?: boolean | null
+          kind_errechneter_termin?: string | null
+          kind_fruehgeburt?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          antrag_id?: string | null
+          created_at?: string | null
+          eltern_alleinerziehend?: boolean | null
+          eltern_alleinerziehend_kindeswohl?: boolean | null
+          eltern_alleinerziehend_nichtbetreuung?: boolean | null
+          eltern1_adresse_hausnr?: string | null
+          eltern1_adresse_ort?: string | null
+          eltern1_adresse_plz?: string | null
+          eltern1_adresse_strasse?: string | null
+          eltern1_aufenthalt_drittstaat?: boolean | null
+          eltern1_aufenthalt_eu_efta?: boolean | null
+          eltern1_einkommen_nichtselbststaendig?: number | null
+          eltern1_einkommen_selbststaendig?: number | null
+          eltern1_einkommen_sonstige?: number | null
+          eltern1_email?: string | null
+          eltern1_erwerbstaetig_ja?: boolean | null
+          eltern1_erwerbstaetig_nein?: boolean | null
+          eltern1_geburtsdatum?: string | null
+          eltern1_geschlecht_divers?: boolean | null
+          eltern1_geschlecht_maennlich?: boolean | null
+          eltern1_geschlecht_ohne_angabe?: boolean | null
+          eltern1_geschlecht_weiblich?: boolean | null
+          eltern1_nachname?: string | null
+          eltern1_selbststaendig_ja?: boolean | null
+          eltern1_selbststaendig_nein?: boolean | null
+          eltern1_staatsangehoerigkeit?: string | null
+          eltern1_steuer_id?: string | null
+          eltern1_telefon?: string | null
+          eltern1_vorname?: string | null
+          eltern1_wohnsitz_de_ja?: boolean | null
+          eltern1_wohnsitz_de_nein?: boolean | null
+          eltern2_adresse_hausnr?: string | null
+          eltern2_adresse_ort?: string | null
+          eltern2_adresse_plz?: string | null
+          eltern2_adresse_strasse?: string | null
+          eltern2_aufenthalt_drittstaat?: boolean | null
+          eltern2_aufenthalt_eu_efta?: boolean | null
+          eltern2_einkommen_nichtselbststaendig?: number | null
+          eltern2_einkommen_selbststaendig?: number | null
+          eltern2_einkommen_sonstige?: number | null
+          eltern2_email?: string | null
+          eltern2_erwerbstaetig_ja?: boolean | null
+          eltern2_erwerbstaetig_nein?: boolean | null
+          eltern2_geburtsdatum?: string | null
+          eltern2_geschlecht_divers?: boolean | null
+          eltern2_geschlecht_maennlich?: boolean | null
+          eltern2_geschlecht_ohne_angabe?: boolean | null
+          eltern2_geschlecht_weiblich?: boolean | null
+          eltern2_nachname?: string | null
+          eltern2_selbststaendig_ja?: boolean | null
+          eltern2_selbststaendig_nein?: boolean | null
+          eltern2_staatsangehoerigkeit?: string | null
+          eltern2_steuer_id?: string | null
+          eltern2_telefon?: string | null
+          eltern2_vorname?: string | null
+          eltern2_wohnsitz_de_ja?: boolean | null
+          eltern2_wohnsitz_de_nein?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_adoptiv?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_andere?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_leiblich?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_partnerkind?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_adoptiv?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_andere?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_leiblich?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_partnerkind?: boolean | null
+          geschwisterbonus_kind1_gdb_flag?: boolean | null
+          geschwisterbonus_kind1_geburtsdatum?: string | null
+          geschwisterbonus_kind1_nachname?: string | null
+          geschwisterbonus_kind1_vorname?: string | null
+          geschwisterbonus_kind2_beziehung_eltern1_adoptiv?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_andere?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_leiblich?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_partnerkind?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_adoptiv?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_andere?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_leiblich?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_partnerkind?: boolean | null
+          geschwisterbonus_kind2_gdb_flag?: boolean | null
+          geschwisterbonus_kind2_geburtsdatum?: string | null
+          geschwisterbonus_kind2_nachname?: string | null
+          geschwisterbonus_kind2_vorname?: string | null
+          geschwisterbonus_kind3_beziehung_eltern1_adoptiv?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_andere?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_leiblich?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_partnerkind?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_adoptiv?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_andere?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_leiblich?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_partnerkind?: boolean | null
+          geschwisterbonus_kind3_gdb_flag?: boolean | null
+          geschwisterbonus_kind3_geburtsdatum?: string | null
+          geschwisterbonus_kind3_nachname?: string | null
+          geschwisterbonus_kind3_vorname?: string | null
+          haushalt_weitere_kinder_anzahl?: number | null
+          haushalt_weitere_kinder_keine?: boolean | null
+          haushalt_weitere_kinder_vorhanden?: boolean | null
+          id?: string
+          kind_behinderung?: boolean | null
+          kind_errechneter_termin?: string | null
+          kind_fruehgeburt?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elterngeldantrag_data_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: false
+            referencedRelation: "antraege"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       elterngeldantrag_progress: {
         Row: {
           completed_steps: number[] | null
@@ -1049,48 +1372,84 @@ export type Database = {
       pdf_field_mappings: {
         Row: {
           confidence_score: number | null
+          coord_x: number | null
+          coord_y: number | null
           created_at: string | null
           created_by: string | null
           document_type: string
+          field_label_de: string | null
+          field_type: string | null
           filter_condition: Json | null
+          format_hint: string | null
+          height: number | null
+          hint_de: string | null
           id: string
           is_active: boolean | null
           mapping_status: string | null
           notes: string | null
+          page_number: number | null
           pdf_field_name: string
+          reading_order: number | null
+          section_visual: string | null
           source_field: string
           source_table: string
           updated_at: string | null
+          validation_rule_de: string | null
+          width: number | null
         }
         Insert: {
           confidence_score?: number | null
+          coord_x?: number | null
+          coord_y?: number | null
           created_at?: string | null
           created_by?: string | null
           document_type: string
+          field_label_de?: string | null
+          field_type?: string | null
           filter_condition?: Json | null
+          format_hint?: string | null
+          height?: number | null
+          hint_de?: string | null
           id?: string
           is_active?: boolean | null
           mapping_status?: string | null
           notes?: string | null
+          page_number?: number | null
           pdf_field_name: string
+          reading_order?: number | null
+          section_visual?: string | null
           source_field: string
           source_table: string
           updated_at?: string | null
+          validation_rule_de?: string | null
+          width?: number | null
         }
         Update: {
           confidence_score?: number | null
+          coord_x?: number | null
+          coord_y?: number | null
           created_at?: string | null
           created_by?: string | null
           document_type?: string
+          field_label_de?: string | null
+          field_type?: string | null
           filter_condition?: Json | null
+          format_hint?: string | null
+          height?: number | null
+          hint_de?: string | null
           id?: string
           is_active?: boolean | null
           mapping_status?: string | null
           notes?: string | null
+          page_number?: number | null
           pdf_field_name?: string
+          reading_order?: number | null
+          section_visual?: string | null
           source_field?: string
           source_table?: string
           updated_at?: string | null
+          validation_rule_de?: string | null
+          width?: number | null
         }
         Relationships: []
       }

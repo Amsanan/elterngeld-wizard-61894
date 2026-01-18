@@ -4,14 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Download, Upload, Sparkles, FileText, Eye, Scan } from "lucide-react";
+import { ArrowLeft, Save, Download, Upload, Sparkles, FileText, Eye, Scan, FileUp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatabaseFieldsList } from "@/components/field-mapper/DatabaseFieldsList";
 import { PdfFieldsList } from "@/components/field-mapper/PdfFieldsList";
 import { MappingsList } from "@/components/field-mapper/MappingsList";
 import { MappingStats } from "@/components/field-mapper/MappingStats";
 import { AutoMapDialog } from "@/components/field-mapper/AutoMapDialog";
-
+import { ImportDialog } from "@/components/field-mapper/ImportDialog";
 export default function AdminFieldMapper() {
   const navigate = useNavigate();
   const [documentType, setDocumentType] = useState("");
@@ -20,6 +20,7 @@ export default function AdminFieldMapper() {
   const [mappings, setMappings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [autoMapDialogOpen, setAutoMapDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [fieldCoordinates, setFieldCoordinates] = useState<any[]>([]);
 
   useEffect(() => {
@@ -407,7 +408,11 @@ export default function AdminFieldMapper() {
               <p className="text-muted-foreground">Map database fields to PDF AcroForm fields</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="default" onClick={() => setImportDialogOpen(true)}>
+              <FileUp className="h-4 w-4 mr-2" />
+              Excel Import
+            </Button>
             <Button variant="outline" onClick={handleExportMappings}>
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -531,6 +536,16 @@ export default function AdminFieldMapper() {
           setMappings(newMappings);
           setPdfFields(allPdfFields || []);
         }}
+      />
+
+      <ImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImportComplete={() => {
+          loadMappings();
+          setImportDialogOpen(false);
+        }}
+        documentType={documentType || 'elterngeldantrag'}
       />
     </div>
   );
