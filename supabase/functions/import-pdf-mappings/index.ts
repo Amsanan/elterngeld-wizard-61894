@@ -222,7 +222,7 @@ Deno.serve(async (req) => {
             confidence_score: 1.0,
             created_by: user.id
           }, {
-            onConflict: 'pdf_field_name',
+            onConflict: 'document_type,pdf_field_name',
             ignoreDuplicates: false
           })
           .select()
