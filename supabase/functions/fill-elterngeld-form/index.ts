@@ -441,25 +441,61 @@ serve(async (req) => {
     
     console.log('Public URL generated:', urlData.publicUrl);
 
-    // Update progress in database
+    // Update progress in database - use new antrag_progress table
     console.log('Step 10: Updating progress in database...');
-    const { error: progressError } = await supabase
-      .from('elterngeldantrag_progress')
-      .upsert({
-        user_id: user.id,
-        current_step: step,
-        completed_steps: Array.from({ length: step }, (_, i) => i + 1),
-        partial_pdf_path: fileName,
-        field_mappings: extractedData,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id'
-      });
-
-    if (progressError) {
-      console.error('Warning: Error updating progress:', progressError);
+    
+    // First, get or create an antrag for this user
+    let antragId: string;
+    const { data: existingAntrag, error: antragQueryError } = await supabase
+      .from('antraege')
+      .select('id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (antragQueryError) {
+      console.error('Warning: Error querying antrag:', antragQueryError);
+    }
+    
+    if (existingAntrag) {
+      antragId = existingAntrag.id;
     } else {
-      console.log('Progress updated successfully');
+      // Create a new antrag
+      const { data: newAntrag, error: createAntragError } = await supabase
+        .from('antraege')
+        .insert({ user_id: user.id })
+        .select('id')
+        .single();
+      
+      if (createAntragError || !newAntrag) {
+        console.error('Warning: Error creating antrag:', createAntragError);
+      } else {
+        antragId = newAntrag.id;
+      }
+    }
+    
+    // Update progress in antrag_progress table
+    if (antragId!) {
+      const { error: progressError } = await supabase
+        .from('antrag_progress')
+        .upsert({
+          antrag_id: antragId,
+          user_id: user.id,
+          current_step: step,
+          completed_steps: Array.from({ length: step }, (_, i) => i + 1),
+          partial_pdf_path: fileName,
+          field_mappings: extractedData,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'antrag_id'
+        });
+
+      if (progressError) {
+        console.error('Warning: Error updating progress:', progressError);
+      } else {
+        console.log('Progress updated successfully for antrag:', antragId);
+      }
     }
 
     const allFields = form.getFields();

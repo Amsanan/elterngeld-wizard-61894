@@ -24,12 +24,14 @@ const Dashboard = () => {
       } else {
         setUser(session.user);
         
-        // Load Elterngeldantrag progress
+        // Load Elterngeldantrag progress from new antrag_progress table
         const { data: progressData } = await supabase
-          .from('elterngeldantrag_progress')
-          .select()
+          .from('antrag_progress')
+          .select('*, antraege(*)')
           .eq('user_id', session.user.id)
-          .single();
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
         
         if (progressData) {
           setProgress(progressData);
