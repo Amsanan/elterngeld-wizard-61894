@@ -1,11 +1,11 @@
 {
-  "version": "1.0",
+  "version": "2.0",
   "created": "2026-01-18",
   "total_pages": 24,
   "total_fields": 657,
   "source": "elterngeld_mapping_complete.xlsx",
-  "completed_pages": [1, 2, 3, 4, 5, 6, 7],
-  "pending_pages": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+  "completed_pages": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+  "pending_pages": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
   "files": {
     "page_01.json": {"section": "1. Angaben zum Kind", "field_count": 10},
     "page_02.json": {"section": "2. Angaben zu den Elternteilen", "field_count": 27},
@@ -13,10 +13,18 @@
     "page_04.json": {"section": "2.C-2.F Wohnsitz/Staatsangehörigkeit", "field_count": 35},
     "page_05.json": {"section": "2.F-3.B Staatsangehörigkeit/Beziehung", "field_count": 26},
     "page_06.json": {"section": "3.B-4 Beziehung/Weitere Kinder", "field_count": 13},
-    "page_07.json": {"section": "4. Weitere Kinder im Haushalt", "field_count": 22}
+    "page_07.json": {"section": "4. Weitere Kinder im Haushalt", "field_count": 22},
+    "page_08.json": {"section": "5. Krankenversicherung", "field_count": 38},
+    "page_09.json": {"section": "6-7.A Einkommen/Erwerbstätigkeit", "field_count": 17},
+    "page_10.json": {"section": "7.C Wechsel des Bemessungszeitraums", "field_count": 6},
+    "page_11.json": {"section": "7.D Änderungen (Nicht-Selbstständige)", "field_count": 14},
+    "page_12.json": {"section": "7.D Corona-Regelungen", "field_count": 28},
+    "page_13.json": {"section": "7.E Änderungen (Selbstständige)", "field_count": 12},
+    "page_14.json": {"section": "7.E Corona Selbstständige", "field_count": 18}
   },
   "notes": [
-    "Seite 18 hat die meisten Felder (164) - Monatsplanung",
-    "Nachweise-Definitionen sind separat zu erstellen"
+    "Seiten 1-14 vollständig erstellt",
+    "Seiten 15-24 noch zu erstellen (inkl. Seite 18 mit 164 Feldern)",
+    "Nachweise-Katalog separat zu erstellen"
   ]
 }
