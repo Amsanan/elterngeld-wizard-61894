@@ -14,6 +14,7 @@ interface MappingsListProps {
 export function MappingsList({ mappings, onUpdate, pdfFields }: MappingsListProps) {
   const [personTypeFilter, setPersonTypeFilter] = useState<string>("all");
   const [documentTypeFilter, setDocumentTypeFilter] = useState<string>("all");
+  const [kindFilter, setKindFilter] = useState<string>("all");
 
   const handleUpdateMapping = (index: number, updates: any) => {
     const newMappings = [...mappings];
@@ -53,6 +54,32 @@ export function MappingsList({ mappings, onUpdate, pdfFields }: MappingsListProp
       }
     }
     
+    // Filter by kind (child) filters
+    if (kindFilter !== "all") {
+      if (!mapping.filter_condition) return false;
+      
+      const filterCondition = mapping.filter_condition;
+      if (typeof filterCondition === 'object' && filterCondition !== null) {
+        if (kindFilter === "has_kind") {
+          // Show only mappings that have any kind filter
+          const hasKind = 'kind_ordnungszahl' in filterCondition || 
+                          'kind_typ' in filterCondition || 
+                          'mehrling_nummer' in filterCondition;
+          if (!hasKind) return false;
+        } else if (kindFilter.startsWith('ord_')) {
+          // Filter by specific kind_ordnungszahl
+          const ordValue = parseInt(kindFilter.replace('ord_', ''), 10);
+          if (filterCondition['kind_ordnungszahl'] !== ordValue) return false;
+        } else if (kindFilter.startsWith('typ_')) {
+          // Filter by kind_typ
+          const typValue = kindFilter.replace('typ_', '');
+          if (filterCondition['kind_typ'] !== typValue) return false;
+        }
+      } else {
+        return false;
+      }
+    }
+    
     return true;
   });
 
@@ -74,13 +101,29 @@ export function MappingsList({ mappings, onUpdate, pdfFields }: MappingsListProp
             </SelectContent>
           </Select>
           <Select value={documentTypeFilter} onValueChange={setDocumentTypeFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[150px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Document Types</SelectItem>
-              <SelectItem value="Personalausweis">🪪 Personalausweis</SelectItem>
-              <SelectItem value="Reisepass">📘 Reisepass</SelectItem>
+              <SelectItem value="all">All Doc Types</SelectItem>
+              <SelectItem value="personalausweis">🪪 Personalausweis</SelectItem>
+              <SelectItem value="reisepass">📘 Reisepass</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={kindFilter} onValueChange={setKindFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Kind Filters</SelectItem>
+              <SelectItem value="has_kind">🔍 Has Kind Filter</SelectItem>
+              <SelectItem value="ord_0">👶 Antragskind (0)</SelectItem>
+              <SelectItem value="ord_1">👧 1. Geschwister</SelectItem>
+              <SelectItem value="ord_2">👦 2. Geschwister</SelectItem>
+              <SelectItem value="ord_3">🧒 3. Geschwister</SelectItem>
+              <SelectItem value="typ_primaer">🎯 Typ: Primär</SelectItem>
+              <SelectItem value="typ_mehrling">👯 Typ: Mehrling</SelectItem>
+              <SelectItem value="typ_geschwister">👨‍👩‍👧 Typ: Geschwister</SelectItem>
             </SelectContent>
           </Select>
           <span className="text-sm text-muted-foreground">
