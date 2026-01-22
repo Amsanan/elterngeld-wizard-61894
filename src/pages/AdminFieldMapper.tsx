@@ -326,24 +326,36 @@ export default function AdminFieldMapper() {
   };
 
   const handleClearAllMappings = async () => {
-    if (!confirm(`Are you sure you want to clear all mappings for ${documentType}? This action cannot be undone.`)) {
+    const isAll = documentType === 'all';
+    const confirmMessage = isAll 
+      ? 'Are you sure you want to delete ALL mappings across ALL document types? This action cannot be undone!'
+      : `Are you sure you want to clear all mappings for ${documentType}? This action cannot be undone.`;
+    
+    if (!confirm(confirmMessage)) {
       return;
     }
     
     try {
       setLoading(true);
-      // Delete all mappings for this document type
-      const { error } = await supabase
-        .from('pdf_field_mappings')
-        .delete()
-        .eq('document_type', documentType);
+      
+      let query = supabase.from('pdf_field_mappings').delete();
+      
+      if (isAll) {
+        // Delete ALL mappings - need to match all rows, use gte on id
+        query = query.gte('id', '00000000-0000-0000-0000-000000000000');
+      } else {
+        // Delete only mappings for this document type
+        query = query.eq('document_type', documentType);
+      }
+      
+      const { error } = await query;
       
       if (error) throw error;
       setMappings([]);
-      toast.success('All mappings cleared');
+      toast.success(isAll ? 'All mappings cleared across all document types' : 'All mappings cleared');
     } catch (error: any) {
       console.error('Error clearing mappings:', error);
-      toast.error('Failed to clear mappings');
+      toast.error('Failed to clear mappings: ' + error.message);
     } finally {
       setLoading(false);
     }
