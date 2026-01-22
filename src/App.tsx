@@ -41,6 +41,15 @@ import EheSorgerechtList from "./pages/EheSorgerechtList";
 import UploadAdoptionsPflege from "./pages/UploadAdoptionsPflege";
 import AdoptionsPflegeResult from "./pages/AdoptionsPflegeResult";
 import AdoptionsPflegeList from "./pages/AdoptionsPflegeList";
+import UploadVaterschaftsanerkennung from "./pages/UploadVaterschaftsanerkennung";
+import VaterschaftsanerkennungResult from "./pages/VaterschaftsanerkennungResult";
+import VaterschaftsanerkennungenList from "./pages/VaterschaftsanerkennungenList";
+import UploadKindergeldBescheid from "./pages/UploadKindergeldBescheid";
+import KindergeldBescheidResult from "./pages/KindergeldBescheidResult";
+import KindergeldBescheideList from "./pages/KindergeldBescheideList";
+import UploadAerztlichesZeugnis from "./pages/UploadAerztlichesZeugnis";
+import AerztlichesZeugnisResult from "./pages/AerztlichesZeugnisResult";
+import AerztlicheZeugnisseList from "./pages/AerztlicheZeugnisseList";
 import ElterngeldantragAusfuellen from "./pages/ElterngeldantragAusfuellen";
 import AdminSetup from "./pages/AdminSetup";
 import AutoCleanupSettings from "./pages/AutoCleanupSettings";
@@ -94,6 +103,15 @@ function App() {
         <Route path="/upload-adoptions-pflege" element={<UploadAdoptionsPflege />} />
         <Route path="/adoptions-pflege-result" element={<AdoptionsPflegeResult />} />
         <Route path="/adoptions-pflege-list" element={<AdoptionsPflegeList />} />
+        <Route path="/upload-vaterschaftsanerkennung" element={<UploadVaterschaftsanerkennung />} />
+        <Route path="/vaterschaftsanerkennung-result" element={<VaterschaftsanerkennungResult />} />
+        <Route path="/vaterschaftsanerkennungen-list" element={<VaterschaftsanerkennungenList />} />
+        <Route path="/upload-kindergeld-bescheid" element={<UploadKindergeldBescheid />} />
+        <Route path="/kindergeld-bescheid-result" element={<KindergeldBescheidResult />} />
+        <Route path="/kindergeld-bescheide-list" element={<KindergeldBescheideList />} />
+        <Route path="/upload-aerztliches-zeugnis" element={<UploadAerztlichesZeugnis />} />
+        <Route path="/aerztliches-zeugnis-result" element={<AerztlichesZeugnisResult />} />
+        <Route path="/aerztliche-zeugnisse-list" element={<AerztlicheZeugnisseList />} />
         <Route path="/elterngeldantrag-ausfuellen" element={<ElterngeldantragAusfuellen />} />
         <Route path="/admin-setup" element={<AdminSetup />} />
         <Route path="/auto-cleanup-settings" element={<AutoCleanupSettings />} />
