@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { validateFile, createSecureFilePath } from "@/lib/file-validation";
 
 const UploadGeburtsurkunde = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -16,7 +17,22 @@ const UploadGeburtsurkunde = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      
+      // Client-side validation
+      const validation = validateFile(selectedFile);
+      if (!validation.valid) {
+        toast({
+          title: "Ungültige Datei",
+          description: validation.error,
+          variant: "destructive",
+        });
+        // Reset the input
+        e.target.value = "";
+        return;
+      }
+      
+      setFile(selectedFile);
     }
   };
 
@@ -36,8 +52,9 @@ const UploadGeburtsurkunde = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Nicht angemeldet");
 
-      // Upload to storage
-      const fileName = `${user.id}/${Date.now()}_${file.name}`;
+      // Create secure file path with sanitized filename
+      const fileName = createSecureFilePath(user.id, file.name);
+      
       const { error: uploadError } = await supabase.storage
         .from("application-documents")
         .upload(fileName, file);

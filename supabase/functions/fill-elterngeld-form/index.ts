@@ -433,13 +433,18 @@ serve(async (req) => {
 
     console.log('PDF uploaded successfully');
 
-    // Get public URL
-    console.log('Step 9: Getting public URL...');
-    const { data: urlData } = supabase.storage
+    // Get signed URL (bucket is private for security)
+    console.log('Step 9: Creating signed URL...');
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
       .from('elterngeldantrag-drafts')
-      .getPublicUrl(fileName);
+      .createSignedUrl(fileName, 3600); // 1 hour expiry
     
-    console.log('Public URL generated:', urlData.publicUrl);
+    if (signedUrlError || !signedUrlData) {
+      console.error('ERROR: Failed to create signed URL:', signedUrlError);
+      throw new Error(`Failed to create signed URL: ${signedUrlError?.message || 'Unknown error'}`);
+    }
+    
+    console.log('Signed URL created successfully');
 
     // Update progress in database
     console.log('Step 10: Updating progress in database...');
@@ -468,7 +473,7 @@ serve(async (req) => {
     console.log('=== SUCCESS ===');
     console.log('Response:', {
       pdfPath: fileName,
-      pdfUrl: urlData.publicUrl,
+      pdfUrl: signedUrlData.signedUrl,
       filledFieldsCount,
       totalFields: allFields.length,
       completionPercentage
@@ -478,7 +483,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         pdfPath: fileName,
-        pdfUrl: urlData.publicUrl,
+        pdfUrl: signedUrlData.signedUrl,
         filledFields: filledFieldsList,
         filledFieldsCount,
         totalFields: allFields.length,
