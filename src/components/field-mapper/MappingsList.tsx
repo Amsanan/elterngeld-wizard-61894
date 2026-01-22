@@ -8,10 +8,11 @@ import { useState } from "react";
 interface MappingsListProps {
   mappings: any[];
   onUpdate: (mappings: any[]) => void;
+  onDelete?: (mapping: any) => void;
   pdfFields: Array<{ name: string; page: number; x: number; y: number; type: string }>;
 }
 
-export function MappingsList({ mappings, onUpdate, pdfFields }: MappingsListProps) {
+export function MappingsList({ mappings, onUpdate, onDelete, pdfFields }: MappingsListProps) {
   const [personTypeFilter, setPersonTypeFilter] = useState<string>("all");
   const [documentTypeFilter, setDocumentTypeFilter] = useState<string>("all");
   const [kindFilter, setKindFilter] = useState<string>("all");
@@ -23,6 +24,11 @@ export function MappingsList({ mappings, onUpdate, pdfFields }: MappingsListProp
   };
 
   const handleDeleteMapping = (index: number) => {
+    const mappingToDelete = mappings[index];
+    // Track deletion if mapping has an ID (exists in database)
+    if (mappingToDelete?.id && onDelete) {
+      onDelete(mappingToDelete);
+    }
     const newMappings = mappings.filter((_, i) => i !== index);
     onUpdate(newMappings);
   };

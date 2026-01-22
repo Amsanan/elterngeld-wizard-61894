@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,8 @@ export default function AdminFieldMapper() {
   const [loading, setLoading] = useState(false);
   const [autoMapDialogOpen, setAutoMapDialogOpen] = useState(false);
   const [fieldCoordinates, setFieldCoordinates] = useState<any[]>([]);
+  // Track deleted mapping IDs for deletion on save
+  const deletedMappingIds = useRef<string[]>([]);
 
   useEffect(() => {
     checkAuth();
@@ -293,6 +295,12 @@ export default function AdminFieldMapper() {
     toast.success(`Mapped ${source.table}.${source.field} → ${pdfField}`);
   };
 
+  const handleDeleteMapping = (mapping: any) => {
+    if (mapping.id) {
+      deletedMappingIds.current.push(mapping.id);
+    }
+  };
+
   const handleSaveMappings = async () => {
     // Validate mappings before saving
     const pdfFieldNames = pdfFields.map(f => f.name);
@@ -308,6 +316,23 @@ export default function AdminFieldMapper() {
 
     try {
       setLoading(true);
+      
+      // First, delete any mappings that were removed locally
+      if (deletedMappingIds.current.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('pdf_field_mappings')
+          .delete()
+          .in('id', deletedMappingIds.current);
+        
+        if (deleteError) {
+          console.error('Error deleting mappings:', deleteError);
+          throw deleteError;
+        }
+        console.log(`Deleted ${deletedMappingIds.current.length} mappings from database`);
+        deletedMappingIds.current = []; // Clear the deleted IDs
+      }
+      
+      // Then upsert remaining mappings
       const { error } = await supabase.functions.invoke('save-field-mappings', {
         body: { mappings }
       });
@@ -527,6 +552,7 @@ export default function AdminFieldMapper() {
         <MappingsList 
           mappings={mappings}
           onUpdate={setMappings}
+          onDelete={handleDeleteMapping}
           pdfFields={pdfFields}
         />
       </div>
