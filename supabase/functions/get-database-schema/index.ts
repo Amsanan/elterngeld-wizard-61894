@@ -31,7 +31,10 @@ serve(async (req) => {
       'selbststaendigen_nachweise',
       'einkommensteuerbescheide',
       'ehe_sorgerecht_nachweise',
-      'adoptions_pflege_dokumente'
+      'adoptions_pflege_dokumente',
+      'aerztliche_zeugnisse',
+      'vaterschaftsanerkennungen',
+      'kindergeld_bescheide'
     ];
 
     relevantTables.sort();
