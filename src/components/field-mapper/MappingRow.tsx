@@ -75,18 +75,18 @@ export function MappingRow({ mapping, onUpdate, onDelete, pdfFields }: MappingRo
   return (
     <>
       <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors">
-        <div className="flex-1 grid grid-cols-3 gap-4">
-          <div className="flex flex-col">
+        <div className="flex-1 grid grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto] gap-4">
+          <div className="flex flex-col min-w-0">
             <span className="text-xs text-muted-foreground">Source</span>
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium truncate" title={`${mapping.source_table}.${mapping.source_field}`}>
               {mapping.source_table}.{mapping.source_field}
             </span>
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <span className="text-xs text-muted-foreground">PDF Field</span>
-            <span className="text-sm font-mono">{mapping.pdf_field_name}</span>
+            <span className="text-sm font-mono truncate" title={mapping.pdf_field_name}>{mapping.pdf_field_name}</span>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
             {getFilterBadge()}
             {getStatusBadge()}
             {mapping.confidence_score !== undefined && (
