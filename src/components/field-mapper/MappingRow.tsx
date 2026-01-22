@@ -31,45 +31,101 @@ export function MappingRow({ mapping, onUpdate, onDelete, pdfFields }: MappingRo
     return <Badge variant="secondary">Auto</Badge>;
   };
 
-  const getFilterBadge = () => {
+  const getFilterBadges = () => {
     if (!mapping.filter_condition) return null;
     
     const entries = Object.entries(mapping.filter_condition);
     if (entries.length === 0) return null;
     
-    const [filterField, filterValue] = entries[0];
-    const filterFieldStr = String(filterField);
-    const filterValueStr = String(filterValue);
+    const badges: JSX.Element[] = [];
     
-    if (filterFieldStr === 'person_type') {
-      const icon = filterValueStr === 'mutter' ? '👩' : '👨';
-      const label = filterValueStr === 'mutter' ? 'Mother' : 'Father';
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="outline" className="gap-1 cursor-help">
-                <Filter className="h-3 w-3" />
-                {icon} {label}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="font-medium">Filter: person_type='{filterValueStr}'</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Fetches data from row where person_type='{filterValueStr}'
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
+    entries.forEach(([filterField, filterValue], idx) => {
+      const filterFieldStr = String(filterField);
+      const filterValueStr = String(filterValue);
+      
+      if (filterFieldStr === 'person_type') {
+        const icon = filterValueStr === 'mutter' ? '👩' : '👨';
+        const label = filterValueStr === 'mutter' ? 'Mother' : 'Father';
+        badges.push(
+          <TooltipProvider key={`person-${idx}`}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="gap-1 cursor-help">
+                  <Filter className="h-3 w-3" />
+                  {icon} {label}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="font-medium">Filter: person_type='{filterValueStr}'</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Fetches data from row where person_type='{filterValueStr}'
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      } else if (filterFieldStr === 'kind_ordnungszahl') {
+        const labels: Record<string, string> = {
+          '0': '👶 Antragskind',
+          '1': '👧 1. Geschwister',
+          '2': '👦 2. Geschwister',
+          '3': '🧒 3. Geschwister'
+        };
+        badges.push(
+          <TooltipProvider key={`kind-ord-${idx}`}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="gap-1 cursor-help bg-blue-500/10 text-blue-700 dark:text-blue-400">
+                  {labels[filterValueStr] || `Kind #${filterValueStr}`}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="font-medium">Kind-Ordnungszahl: {filterValueStr}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  0 = Antragskind, 1+ = Geschwister nach Alter
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      } else if (filterFieldStr === 'kind_typ') {
+        const labels: Record<string, string> = {
+          'primaer': '👶 Primär',
+          'mehrling': '👯 Mehrling',
+          'geschwister': '👨‍👩‍👧 Geschwister'
+        };
+        badges.push(
+          <Badge key={`kind-typ-${idx}`} variant="outline" className="gap-1 bg-purple-500/10 text-purple-700 dark:text-purple-400">
+            {labels[filterValueStr] || filterValueStr}
+          </Badge>
+        );
+      } else if (filterFieldStr === 'mehrling_nummer') {
+        badges.push(
+          <Badge key={`mehrling-${idx}`} variant="outline" className="gap-1 bg-pink-500/10 text-pink-700 dark:text-pink-400">
+            👯 Mehrling #{filterValueStr}
+          </Badge>
+        );
+      } else if (filterFieldStr === 'document_type') {
+        const icons: Record<string, string> = {
+          'personalausweis': '🪪',
+          'reisepass': '📘'
+        };
+        badges.push(
+          <Badge key={`doc-${idx}`} variant="outline" className="gap-1">
+            {icons[filterValueStr.toLowerCase()] || '📄'} {filterValueStr}
+          </Badge>
+        );
+      } else {
+        badges.push(
+          <Badge key={`other-${idx}`} variant="outline" className="gap-1">
+            <Filter className="h-3 w-3" />
+            {filterFieldStr}={filterValueStr}
+          </Badge>
+        );
+      }
+    });
     
-    return (
-      <Badge variant="outline" className="gap-1">
-        <Filter className="h-3 w-3" />
-        {filterFieldStr}={filterValueStr}
-      </Badge>
-    );
+    return badges.length > 0 ? <>{badges}</> : null;
   };
 
   return (
@@ -87,7 +143,7 @@ export function MappingRow({ mapping, onUpdate, onDelete, pdfFields }: MappingRo
             <span className="text-sm font-mono truncate" title={mapping.pdf_field_name}>{mapping.pdf_field_name}</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
-            {getFilterBadge()}
+            {getFilterBadges()}
             {getStatusBadge()}
             {mapping.confidence_score !== undefined && (
               <Badge className={getConfidenceColor(mapping.confidence_score)}>
