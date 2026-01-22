@@ -1,0 +1,366 @@
+{
+  "version": "1.0",
+  "description": "Database fields with available filter options for PDF field mapping",
+  "generated": "2026-01-22",
+  "filter_options": {
+    "person_type": {
+      "description": "Unterscheidet zwischen Mutter und Vater",
+      "values": ["mutter", "vater"],
+      "applicable_tables": [
+        "eltern_dokumente",
+        "meldebescheinigungen",
+        "arbeitgeberbescheinigungen",
+        "gehaltsnachweise",
+        "einkommensteuerbescheide",
+        "krankenversicherung_nachweise",
+        "leistungsbescheide",
+        "selbststaendigen_nachweise"
+      ]
+    },
+    "kind_ordnungszahl": {
+      "description": "Index des Kindes für Geschwisterbonus und Mehrlinge",
+      "values": [0, 1, 2, 3],
+      "value_meanings": {
+        "0": "Antragskind (das Kind für das Elterngeld beantragt wird)",
+        "1": "Jüngstes Geschwisterkind",
+        "2": "Zweitjüngstes Geschwisterkind",
+        "3": "Drittjüngstes Geschwisterkind"
+      },
+      "applicable_tables": ["geburtsurkunden", "kindergeld_bescheide"]
+    },
+    "kind_typ": {
+      "description": "Art des Kindes",
+      "values": ["primaer", "mehrling", "geschwister"],
+      "value_meanings": {
+        "primaer": "Primäres Antragskind",
+        "mehrling": "Mehrlingskind (Zwilling, Drilling, etc.)",
+        "geschwister": "Geschwisterkind für Geschwisterbonus"
+      },
+      "applicable_tables": ["geburtsurkunden"]
+    },
+    "mehrling_nummer": {
+      "description": "Nummer des Mehrlings bei Mehrlingsgeburten",
+      "values": [1, 2, 3],
+      "value_meanings": {
+        "1": "Erster Mehrling",
+        "2": "Zweiter Mehrling",
+        "3": "Dritter Mehrling"
+      },
+      "applicable_tables": ["geburtsurkunden"]
+    },
+    "document_type": {
+      "description": "Art des Dokuments (bei eltern_dokumente)",
+      "values": ["personalausweis", "reisepass"],
+      "applicable_tables": ["eltern_dokumente"]
+    },
+    "leistungsart": {
+      "description": "Art der Sozialleistung",
+      "values": ["ALG1", "buergergeld", "krankengeld", "rente", "wohngeld"],
+      "applicable_tables": ["leistungsbescheide"]
+    },
+    "dokument_typ": {
+      "description": "Art des Adoptions-/Pflegedokuments",
+      "values": ["adoption", "pflege", "vormund"],
+      "applicable_tables": ["adoptions_pflege_dokumente"]
+    },
+    "zeugnis_typ": {
+      "description": "Art des ärztlichen Zeugnisses",
+      "values": ["schwangerschaft", "beschaeftigungsverbot", "mutterschutz"],
+      "applicable_tables": ["aerztliche_zeugnisse"]
+    }
+  },
+  "tables": {
+    "geburtsurkunden": {
+      "description": "Geburtsurkunden der Kinder",
+      "available_filters": ["kind_ordnungszahl", "kind_typ", "mehrling_nummer"],
+      "fields": [
+        {"name": "kind_vorname", "type": "text", "description": "Vorname des Kindes"},
+        {"name": "kind_nachname", "type": "text", "description": "Nachname des Kindes"},
+        {"name": "kind_geburtsdatum", "type": "date", "description": "Geburtsdatum des Kindes"},
+        {"name": "kind_geburtsort", "type": "text", "description": "Geburtsort des Kindes"},
+        {"name": "kind_geschlecht", "type": "text", "description": "Geschlecht des Kindes"},
+        {"name": "mutter_vorname", "type": "text", "description": "Vorname der Mutter"},
+        {"name": "mutter_nachname", "type": "text", "description": "Nachname der Mutter"},
+        {"name": "vater_vorname", "type": "text", "description": "Vorname des Vaters"},
+        {"name": "vater_nachname", "type": "text", "description": "Nachname des Vaters"},
+        {"name": "standesamt", "type": "text", "description": "Name des Standesamts"},
+        {"name": "urkundennummer", "type": "text", "description": "Urkundennummer"},
+        {"name": "ausstelldatum", "type": "date", "description": "Ausstellungsdatum"},
+        {"name": "kind_typ", "type": "text", "description": "primaer/mehrling/geschwister"},
+        {"name": "kind_ordnungszahl", "type": "integer", "description": "0=Antragskind, 1-3=Geschwister"},
+        {"name": "mehrling_nummer", "type": "integer", "description": "Nummer bei Mehrlingen"},
+        {"name": "ist_mehrling", "type": "boolean", "description": "Ist Mehrlingskind"}
+      ]
+    },
+    "eltern_dokumente": {
+      "description": "Personalausweise/Reisepässe der Eltern",
+      "available_filters": ["person_type", "document_type"],
+      "fields": [
+        {"name": "vorname", "type": "text", "description": "Vorname"},
+        {"name": "nachname", "type": "text", "description": "Nachname"},
+        {"name": "geburtsdatum", "type": "date", "description": "Geburtsdatum"},
+        {"name": "geburtsort", "type": "text", "description": "Geburtsort"},
+        {"name": "geburtsname", "type": "text", "description": "Geburtsname"},
+        {"name": "staatsangehoerigkeit", "type": "text", "description": "Staatsangehörigkeit"},
+        {"name": "ausweisnummer", "type": "text", "description": "Ausweis-/Passnummer"},
+        {"name": "gueltig_bis", "type": "date", "description": "Gültig bis"},
+        {"name": "ausstellungsbehoerde", "type": "text", "description": "Ausstellungsbehörde"},
+        {"name": "steuer_id", "type": "text", "description": "Steuer-ID"}
+      ]
+    },
+    "meldebescheinigungen": {
+      "description": "Meldebescheinigungen der Eltern",
+      "available_filters": ["person_type"],
+      "fields": [
+        {"name": "vorname", "type": "text", "description": "Vorname"},
+        {"name": "nachname", "type": "text", "description": "Nachname"},
+        {"name": "geburtsdatum", "type": "date", "description": "Geburtsdatum"},
+        {"name": "strasse", "type": "text", "description": "Straße"},
+        {"name": "hausnummer", "type": "text", "description": "Hausnummer"},
+        {"name": "plz", "type": "text", "description": "Postleitzahl"},
+        {"name": "wohnort", "type": "text", "description": "Wohnort"},
+        {"name": "meldedatum", "type": "date", "description": "Anmeldedatum"},
+        {"name": "behoerde", "type": "text", "description": "Ausstellende Behörde"}
+      ]
+    },
+    "arbeitgeberbescheinigungen": {
+      "description": "Arbeitgeberbescheinigungen",
+      "available_filters": ["person_type"],
+      "fields": [
+        {"name": "arbeitgeber_name", "type": "text", "description": "Name des Arbeitgebers"},
+        {"name": "arbeitgeber_adresse", "type": "text", "description": "Adresse des Arbeitgebers"},
+        {"name": "beschaeftigungsbeginn", "type": "date", "description": "Beschäftigungsbeginn"},
+        {"name": "beschaeftigungsende", "type": "date", "description": "Beschäftigungsende"},
+        {"name": "wochenstunden", "type": "numeric", "description": "Wochenarbeitsstunden"},
+        {"name": "bruttogehalt", "type": "numeric", "description": "Bruttogehalt"},
+        {"name": "ausstelldatum", "type": "date", "description": "Ausstellungsdatum"},
+        {"name": "elternzeit_1_von", "type": "date", "description": "Elternzeit 1 von"},
+        {"name": "elternzeit_1_bis", "type": "date", "description": "Elternzeit 1 bis"},
+        {"name": "elternzeit_2_von", "type": "date", "description": "Elternzeit 2 von"},
+        {"name": "elternzeit_2_bis", "type": "date", "description": "Elternzeit 2 bis"},
+        {"name": "mutterschutz_beginn", "type": "date", "description": "Mutterschutz Beginn"},
+        {"name": "mutterschutz_ende", "type": "date", "description": "Mutterschutz Ende"},
+        {"name": "ag_zuschuss_mutterschaftsgeld", "type": "numeric", "description": "AG-Zuschuss zum Mutterschaftsgeld"},
+        {"name": "ag_zuschuss_tagessatz", "type": "numeric", "description": "AG-Zuschuss Tagessatz"},
+        {"name": "teilzeit_brutto", "type": "numeric", "description": "Teilzeit Bruttoeinkommen"},
+        {"name": "teilzeit_netto", "type": "numeric", "description": "Teilzeit Nettoeinkommen"},
+        {"name": "teilzeit_stunden", "type": "numeric", "description": "Teilzeit Wochenstunden"},
+        {"name": "urlaubstage_anspruch", "type": "integer", "description": "Urlaubsanspruch in Tagen"},
+        {"name": "urlaubstage_genommen", "type": "integer", "description": "Genommene Urlaubstage"},
+        {"name": "minijob", "type": "boolean", "description": "Ist Minijob"},
+        {"name": "midijob", "type": "boolean", "description": "Ist Midijob"}
+      ]
+    },
+    "gehaltsnachweise": {
+      "description": "Gehaltsnachweise/Lohnabrechnungen",
+      "available_filters": ["person_type"],
+      "fields": [
+        {"name": "arbeitgeber_name", "type": "text", "description": "Name des Arbeitgebers"},
+        {"name": "abrechnungsmonat", "type": "date", "description": "Abrechnungsmonat"},
+        {"name": "bruttogehalt", "type": "numeric", "description": "Bruttogehalt"},
+        {"name": "nettogehalt", "type": "numeric", "description": "Nettogehalt"},
+        {"name": "steuerklasse", "type": "text", "description": "Steuerklasse"},
+        {"name": "lohnsteuer", "type": "numeric", "description": "Lohnsteuer"},
+        {"name": "sozialversicherung", "type": "numeric", "description": "Sozialversicherungsbeiträge"},
+        {"name": "kirchensteuer", "type": "numeric", "description": "Kirchensteuer"},
+        {"name": "solidaritaetszuschlag", "type": "numeric", "description": "Solidaritätszuschlag"}
+      ]
+    },
+    "einkommensteuerbescheide": {
+      "description": "Einkommensteuerbescheide",
+      "available_filters": ["person_type"],
+      "fields": [
+        {"name": "steuerjahr", "type": "integer", "description": "Steuerjahr"},
+        {"name": "zu_versteuerndes_einkommen", "type": "numeric", "description": "Zu versteuerndes Einkommen"},
+        {"name": "festgesetzte_steuer", "type": "numeric", "description": "Festgesetzte Einkommensteuer"},
+        {"name": "einkuenfte_nichtselbststaendig", "type": "numeric", "description": "Einkünfte aus nichtselbständiger Arbeit"},
+        {"name": "einkuenfte_selbststaendig", "type": "numeric", "description": "Einkünfte aus selbständiger Arbeit"},
+        {"name": "einkuenfte_gewerbebetrieb", "type": "numeric", "description": "Einkünfte aus Gewerbebetrieb"},
+        {"name": "finanzamt", "type": "text", "description": "Finanzamt"},
+        {"name": "steuernummer", "type": "text", "description": "Steuernummer"},
+        {"name": "bescheiddatum", "type": "date", "description": "Bescheiddatum"}
+      ]
+    },
+    "krankenversicherung_nachweise": {
+      "description": "Krankenversicherungsnachweise",
+      "available_filters": ["person_type"],
+      "fields": [
+        {"name": "krankenkasse_name", "type": "text", "description": "Name der Krankenkasse"},
+        {"name": "versichertennummer", "type": "text", "description": "Versichertennummer"},
+        {"name": "versicherungsart", "type": "text", "description": "gesetzlich/privat"},
+        {"name": "versicherungsbeginn", "type": "date", "description": "Versicherungsbeginn"},
+        {"name": "beitragssatz", "type": "numeric", "description": "Beitragssatz"}
+      ]
+    },
+    "bankverbindungen": {
+      "description": "Bankverbindungen für Elterngeldzahlung",
+      "available_filters": [],
+      "fields": [
+        {"name": "kontoinhaber", "type": "text", "description": "Kontoinhaber"},
+        {"name": "iban", "type": "text", "description": "IBAN"},
+        {"name": "bic", "type": "text", "description": "BIC"},
+        {"name": "bank_name", "type": "text", "description": "Name der Bank"}
+      ]
+    },
+    "mutterschaftsgeld": {
+      "description": "Mutterschaftsgeldbescheide",
+      "available_filters": [],
+      "fields": [
+        {"name": "krankenkasse_name", "type": "text", "description": "Name der Krankenkasse"},
+        {"name": "versichertennummer", "type": "text", "description": "Versichertennummer"},
+        {"name": "bescheiddatum", "type": "date", "description": "Bescheiddatum"},
+        {"name": "leistungsbeginn", "type": "date", "description": "Leistungsbeginn"},
+        {"name": "leistungsende", "type": "date", "description": "Leistungsende"},
+        {"name": "tagessatz", "type": "numeric", "description": "Tagessatz"},
+        {"name": "gesamtbetrag", "type": "numeric", "description": "Gesamtbetrag"}
+      ]
+    },
+    "leistungsbescheide": {
+      "description": "Sozialleistungsbescheide (ALG1, Bürgergeld, etc.)",
+      "available_filters": ["person_type", "leistungsart"],
+      "fields": [
+        {"name": "leistungsart", "type": "text", "description": "ALG1/buergergeld/krankengeld/rente/wohngeld"},
+        {"name": "leistungsbeginn", "type": "date", "description": "Leistungsbeginn"},
+        {"name": "leistungsende", "type": "date", "description": "Leistungsende"},
+        {"name": "monatsbetrag", "type": "numeric", "description": "Monatlicher Leistungsbetrag"},
+        {"name": "tagessatz", "type": "numeric", "description": "Tagessatz (bei Krankengeld)"},
+        {"name": "bemessungsentgelt", "type": "numeric", "description": "Bemessungsentgelt (bei ALG1)"},
+        {"name": "regelsatz", "type": "numeric", "description": "Regelsatz (bei Bürgergeld)"},
+        {"name": "bewilligungsstelle", "type": "text", "description": "Bewilligende Stelle"},
+        {"name": "bescheiddatum", "type": "date", "description": "Bescheiddatum"},
+        {"name": "aktenzeichen", "type": "text", "description": "Aktenzeichen"}
+      ]
+    },
+    "kindergeld_bescheide": {
+      "description": "Kindergeldbescheide für Geschwisterbonus",
+      "available_filters": ["kind_ordnungszahl"],
+      "fields": [
+        {"name": "familienkasse", "type": "text", "description": "Familienkasse"},
+        {"name": "kindergeld_nummer", "type": "text", "description": "Kindergeldnummer"},
+        {"name": "kind_vorname", "type": "text", "description": "Vorname des Kindes"},
+        {"name": "kind_nachname", "type": "text", "description": "Nachname des Kindes"},
+        {"name": "kind_geburtsdatum", "type": "date", "description": "Geburtsdatum des Kindes"},
+        {"name": "betrag_monatlich", "type": "numeric", "description": "Monatlicher Betrag"},
+        {"name": "bewilligungsdatum", "type": "date", "description": "Bewilligungsdatum"},
+        {"name": "kind_ordnungszahl", "type": "integer", "description": "Position des Kindes"}
+      ]
+    },
+    "ehe_sorgerecht_dokumente": {
+      "description": "Ehe- und Sorgerechtsurkunden",
+      "available_filters": [],
+      "fields": [
+        {"name": "dokument_typ", "type": "text", "description": "eheurkunde/sorgerechtserklaerung"},
+        {"name": "eheschliessungsdatum", "type": "date", "description": "Eheschließungsdatum"},
+        {"name": "eheschliessungsort", "type": "text", "description": "Eheschließungsort"},
+        {"name": "standesamt", "type": "text", "description": "Standesamt"},
+        {"name": "urkundennummer", "type": "text", "description": "Urkundennummer"},
+        {"name": "partner1_vorname", "type": "text", "description": "Vorname Partner 1"},
+        {"name": "partner1_nachname", "type": "text", "description": "Nachname Partner 1"},
+        {"name": "partner2_vorname", "type": "text", "description": "Vorname Partner 2"},
+        {"name": "partner2_nachname", "type": "text", "description": "Nachname Partner 2"},
+        {"name": "gemeinsames_sorgerecht", "type": "boolean", "description": "Gemeinsames Sorgerecht"}
+      ]
+    },
+    "adoptions_pflege_dokumente": {
+      "description": "Adoptions- und Pflegedokumente",
+      "available_filters": ["dokument_typ"],
+      "fields": [
+        {"name": "dokument_typ", "type": "text", "description": "adoption/pflege/vormund"},
+        {"name": "kind_vorname", "type": "text", "description": "Vorname des Kindes"},
+        {"name": "kind_nachname", "type": "text", "description": "Nachname des Kindes"},
+        {"name": "kind_geburtsdatum", "type": "date", "description": "Geburtsdatum des Kindes"},
+        {"name": "aufnahmedatum", "type": "date", "description": "Aufnahmedatum"},
+        {"name": "pflegestelle_name", "type": "text", "description": "Name der Pflegestelle"},
+        {"name": "jugendamt", "type": "text", "description": "Zuständiges Jugendamt"},
+        {"name": "beschlussdatum", "type": "date", "description": "Beschlussdatum"}
+      ]
+    },
+    "vaterschaftsanerkennungen": {
+      "description": "Vaterschaftsanerkennungen",
+      "available_filters": [],
+      "fields": [
+        {"name": "kind_vorname", "type": "text", "description": "Vorname des Kindes"},
+        {"name": "kind_nachname", "type": "text", "description": "Nachname des Kindes"},
+        {"name": "kind_geburtsdatum", "type": "date", "description": "Geburtsdatum des Kindes"},
+        {"name": "vater_vorname", "type": "text", "description": "Vorname des Vaters"},
+        {"name": "vater_nachname", "type": "text", "description": "Nachname des Vaters"},
+        {"name": "vater_geburtsdatum", "type": "date", "description": "Geburtsdatum des Vaters"},
+        {"name": "mutter_vorname", "type": "text", "description": "Vorname der Mutter"},
+        {"name": "mutter_nachname", "type": "text", "description": "Nachname der Mutter"},
+        {"name": "anerkennungsdatum", "type": "date", "description": "Anerkennungsdatum"},
+        {"name": "beurkundungsstelle", "type": "text", "description": "Beurkundungsstelle"},
+        {"name": "urkundennummer", "type": "text", "description": "Urkundennummer"}
+      ]
+    },
+    "aerztliche_zeugnisse": {
+      "description": "Ärztliche Zeugnisse",
+      "available_filters": ["zeugnis_typ"],
+      "fields": [
+        {"name": "zeugnis_typ", "type": "text", "description": "schwangerschaft/beschaeftigungsverbot/mutterschutz"},
+        {"name": "arzt_name", "type": "text", "description": "Name des Arztes"},
+        {"name": "arzt_praxis", "type": "text", "description": "Praxisname"},
+        {"name": "ausstelldatum", "type": "date", "description": "Ausstellungsdatum"},
+        {"name": "errechneter_geburtstermin", "type": "date", "description": "Errechneter Geburtstermin"},
+        {"name": "verbot_beginn", "type": "date", "description": "Beschäftigungsverbot Beginn"},
+        {"name": "verbot_ende", "type": "date", "description": "Beschäftigungsverbot Ende"},
+        {"name": "verbot_grund", "type": "text", "description": "Grund des Verbots"},
+        {"name": "verbot_art", "type": "text", "description": "Art des Verbots"}
+      ]
+    },
+    "selbststaendigen_nachweise": {
+      "description": "Selbstständigen-Nachweise",
+      "available_filters": ["person_type"],
+      "fields": [
+        {"name": "gewerbeart", "type": "text", "description": "Art des Gewerbes"},
+        {"name": "steuernummer", "type": "text", "description": "Steuernummer"},
+        {"name": "gewerbeanmeldung_datum", "type": "date", "description": "Gewerbeanmeldedatum"},
+        {"name": "nachweiszeitraum_von", "type": "date", "description": "Nachweiszeitraum von"},
+        {"name": "nachweiszeitraum_bis", "type": "date", "description": "Nachweiszeitraum bis"},
+        {"name": "jahreseinkommen", "type": "numeric", "description": "Jahreseinkommen"}
+      ]
+    },
+    "elterngeldantrag_data": {
+      "description": "Manuelle Antragsdaten (nicht aus Dokumenten extrahiert)",
+      "available_filters": [],
+      "fields": [
+        {"name": "familienstand", "type": "text", "description": "verheiratet/ledig/geschieden/verwitwet/lebenspartnerschaft"},
+        {"name": "eltern1_staatsangehoerigkeit_deutsch", "type": "boolean", "description": "Deutsche Staatsangehörigkeit Elternteil 1"},
+        {"name": "eltern1_staatsangehoerigkeit_eu", "type": "boolean", "description": "EU-Staatsangehörigkeit Elternteil 1"},
+        {"name": "eltern2_staatsangehoerigkeit_deutsch", "type": "boolean", "description": "Deutsche Staatsangehörigkeit Elternteil 2"},
+        {"name": "eltern2_staatsangehoerigkeit_eu", "type": "boolean", "description": "EU-Staatsangehörigkeit Elternteil 2"},
+        {"name": "antragskind_beziehung_leiblich", "type": "boolean", "description": "Leibliches Kind"},
+        {"name": "antragskind_beziehung_adoptiert", "type": "boolean", "description": "Adoptiertes Kind"},
+        {"name": "antragskind_beziehung_pflege", "type": "boolean", "description": "Pflegekind"},
+        {"name": "geschwisterbonus_beantragt", "type": "boolean", "description": "Geschwisterbonus beantragt"},
+        {"name": "mehrlingsbonus_beantragt", "type": "boolean", "description": "Mehrlingsbonus beantragt"},
+        {"name": "basiselterngeld", "type": "boolean", "description": "Basiselterngeld gewählt"},
+        {"name": "elterngeld_plus", "type": "boolean", "description": "ElterngeldPlus gewählt"},
+        {"name": "partnerschaftsbonus", "type": "boolean", "description": "Partnerschaftsbonus gewählt"}
+      ]
+    }
+  },
+  "special_mappings": {
+    "COUNT": {
+      "description": "Zählt die Anzahl der Datensätze in einer Tabelle",
+      "example": {
+        "source_table": "geburtsurkunden",
+        "source_field": "COUNT",
+        "filter_condition": {"kind_typ": "geschwister"},
+        "description": "Zählt alle Geschwisterkinder"
+      }
+    }
+  },
+  "pdf_field_naming_conventions": {
+    "parent_1_father": {
+      "suffix": "",
+      "example": "txt.vorname2b"
+    },
+    "parent_2_mother": {
+      "suffix": " 1",
+      "example": "txt.vorname2b 1"
+    },
+    "checkbox_prefix": "cb.",
+    "textfield_prefix": "txt.",
+    "notes": "Parent 1 = Father (no suffix), Parent 2 = Mother (' 1' suffix)"
+  }
+}
