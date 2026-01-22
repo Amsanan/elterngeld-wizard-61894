@@ -263,11 +263,8 @@ export default function AdminFieldMapper() {
   };
 
   const handleCreateMapping = (source: { table: string; field: string }, pdfField: string) => {
-    // Prevent creating mappings when "All Document Types" is selected
-    if (documentType === 'all') {
-      toast.error('Please select a specific document type before creating mappings');
-      return;
-    }
+    // Use source table as document_type when "all" is selected
+    const effectiveDocumentType = documentType === 'all' ? source.table : documentType;
 
     // Check if mapping already exists
     const exists = mappings.some(
@@ -282,7 +279,7 @@ export default function AdminFieldMapper() {
     }
 
     const newMapping = {
-      document_type: documentType,
+      document_type: effectiveDocumentType,
       source_table: source.table,
       source_field: source.field,
       pdf_field_name: pdfField,
@@ -293,7 +290,7 @@ export default function AdminFieldMapper() {
     };
     
     setMappings([...mappings, newMapping]);
-    toast.success(`Mapped ${source.field} → ${pdfField}`);
+    toast.success(`Mapped ${source.table}.${source.field} → ${pdfField}`);
   };
 
   const handleSaveMappings = async () => {
