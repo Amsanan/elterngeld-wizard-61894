@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Database } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Database, Search } from "lucide-react";
 
 interface DatabaseFieldsListProps {
   schema: any[];
@@ -10,6 +12,8 @@ interface DatabaseFieldsListProps {
 }
 
 export function DatabaseFieldsList({ schema, mappings, selectedDocumentType }: DatabaseFieldsListProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+
   const getMappedCount = (tableName: string) => {
     return mappings.filter(m => m.source_table === tableName).length;
   };
@@ -23,15 +27,45 @@ export function DatabaseFieldsList({ schema, mappings, selectedDocumentType }: D
     return 0;
   });
 
+  // Filter schema based on search term
+  const filteredSchema = sortedSchema.map(table => {
+    if (!searchTerm) return table;
+    
+    const lowerSearch = searchTerm.toLowerCase();
+    const tableMatches = table.table_name.toLowerCase().includes(lowerSearch);
+    const filteredColumns = table.columns.filter((col: any) => 
+      col.name.toLowerCase().includes(lowerSearch) || 
+      col.type.toLowerCase().includes(lowerSearch)
+    );
+
+    // If table name matches, show all columns; otherwise show only matching columns
+    if (tableMatches) return table;
+    if (filteredColumns.length > 0) {
+      return { ...table, columns: filteredColumns };
+    }
+    return null;
+  }).filter(Boolean);
+
   return (
     <Card className="p-4">
       <div className="flex items-center gap-2 mb-4">
         <Database className="h-5 w-5 text-primary" />
         <h2 className="text-xl font-semibold">Database Fields (Source)</h2>
       </div>
-      <ScrollArea className="h-[600px]">
+      
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Tabelle oder Feld suchen..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      <ScrollArea className="h-[550px]">
         <div className="space-y-4">
-          {sortedSchema.map(table => {
+          {filteredSchema.map((table: any) => {
             const isSelected = selectedDocumentType === table.table_name;
             return (
               <div 
