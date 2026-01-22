@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { mapWithLLM } from './mapWithLLM.ts';
+import { validateFilePath, validateFileSize, MAX_FILE_SIZE } from '../_shared/file-validation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,15 +29,30 @@ serve(async (req) => {
 
     const { filePath, useLLM = true } = await req.json();
     
-    if (!filePath) throw new Error('No file path provided');
+    // Server-side file path validation
+    const pathValidation = validateFilePath(filePath);
+    if (!pathValidation.valid) {
+      throw new Error(pathValidation.error || 'Invalid file path');
+    }
+    
+    // Verify file path belongs to authenticated user
+    if (!filePath.startsWith(user.id + '/')) {
+      throw new Error('Unauthorized - file does not belong to user');
+    }
 
-    console.log('Processing file:', filePath, 'with LLM:', useLLM);
+    console.log('Processing validated file:', filePath, 'with LLM:', useLLM);
 
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('application-documents')
       .download(filePath);
 
     if (downloadError || !fileData) throw new Error('Failed to download file');
+    
+    // Server-side file size validation
+    const sizeValidation = validateFileSize(fileData);
+    if (!sizeValidation.valid) {
+      throw new Error(sizeValidation.error || 'File size validation failed');
+    }
 
     const ocrSpaceApiKey = Deno.env.get('OCR_SPACE_API_KEY2');
     if (!ocrSpaceApiKey) throw new Error('OCR_SPACE_API_KEY not configured');
