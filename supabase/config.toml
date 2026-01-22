@@ -68,3 +68,12 @@ verify_jwt = true
 
 [functions.vision-map-fields]
 verify_jwt = true
+
+[functions.extract-vaterschaftsanerkennung]
+verify_jwt = true
+
+[functions.extract-kindergeld-bescheid]
+verify_jwt = true
+
+[functions.extract-aerztliches-zeugnis]
+verify_jwt = true

@@ -22,10 +22,43 @@ const TABLE_SCHEMA = {
     { name: "wochenstunden", type: "decimal", description: "Weekly working hours as decimal" },
     { name: "bruttogehalt", type: "decimal", description: "Gross monthly salary as decimal" },
     { name: "ausstelldatum", type: "date", format: "YYYY-MM-DD", description: "Date of issue" },
+    // Elternzeit periods
+    { name: "elternzeit_1_von", type: "date", format: "YYYY-MM-DD", description: "Elternzeit period 1 start" },
+    { name: "elternzeit_1_bis", type: "date", format: "YYYY-MM-DD", description: "Elternzeit period 1 end" },
+    { name: "elternzeit_2_von", type: "date", format: "YYYY-MM-DD", description: "Elternzeit period 2 start" },
+    { name: "elternzeit_2_bis", type: "date", format: "YYYY-MM-DD", description: "Elternzeit period 2 end" },
+    { name: "elternzeit_3_von", type: "date", format: "YYYY-MM-DD", description: "Elternzeit period 3 start" },
+    { name: "elternzeit_3_bis", type: "date", format: "YYYY-MM-DD", description: "Elternzeit period 3 end" },
+    // Mutterschutz
+    { name: "mutterschutz_beginn", type: "date", format: "YYYY-MM-DD", description: "Maternity protection start (6 weeks before ET)" },
+    { name: "mutterschutz_ende", type: "date", format: "YYYY-MM-DD", description: "Maternity protection end (8 weeks after birth)" },
+    // Urlaub
+    { name: "urlaub_1_von", type: "date", format: "YYYY-MM-DD", description: "Vacation period 1 start" },
+    { name: "urlaub_1_bis", type: "date", format: "YYYY-MM-DD", description: "Vacation period 1 end" },
+    { name: "urlaub_2_von", type: "date", format: "YYYY-MM-DD", description: "Vacation period 2 start" },
+    { name: "urlaub_2_bis", type: "date", format: "YYYY-MM-DD", description: "Vacation period 2 end" },
+    { name: "resturlaub_tage", type: "integer", description: "Remaining vacation days" },
+    // AG-Zuschuss zum Mutterschaftsgeld
+    { name: "ag_zuschuss_mutterschaftsgeld", type: "decimal", description: "Employer supplement to maternity pay (total or monthly)" },
+    { name: "ag_zuschuss_beginn", type: "date", format: "YYYY-MM-DD", description: "AG-Zuschuss start date" },
+    { name: "ag_zuschuss_ende", type: "date", format: "YYYY-MM-DD", description: "AG-Zuschuss end date" },
+    { name: "ag_zuschuss_tagessatz", type: "decimal", description: "AG-Zuschuss daily rate" },
+    // Sachbezüge
+    { name: "sachbezuege_ja", type: "boolean", description: "Whether Sachbezüge (benefits in kind) were provided" },
+    { name: "sachbezuege_von", type: "date", format: "YYYY-MM-DD", description: "Sachbezüge period start" },
+    { name: "sachbezuege_bis", type: "date", format: "YYYY-MM-DD", description: "Sachbezüge period end" },
+    { name: "sachbezuege_tagessatz", type: "decimal", description: "Sachbezüge daily value" },
+    // Teilzeit während Elternzeit
+    { name: "teilzeit_elternzeit_ja", type: "boolean", description: "Whether part-time work during Elternzeit" },
+    { name: "teilzeit_von", type: "date", format: "YYYY-MM-DD", description: "Part-time period start" },
+    { name: "teilzeit_bis", type: "date", format: "YYYY-MM-DD", description: "Part-time period end" },
+    { name: "teilzeit_stunden", type: "decimal", description: "Part-time weekly hours" },
+    { name: "teilzeit_brutto", type: "decimal", description: "Part-time gross salary" },
+    { name: "teilzeit_netto", type: "decimal", description: "Part-time net salary" },
   ],
 };
 
-const SYSTEM_PROMPT = `You are a specialized German employer certificate (Arbeitgeberbescheinigung) data extractor. Extract data from employer certification OCR text.
+const SYSTEM_PROMPT = `You are a specialized German employer certificate (Arbeitgeberbescheinigung) data extractor for Elterngeld applications.
 
 CRITICAL RULES:
 1. Extract ONLY information explicitly present in the document
@@ -35,6 +68,14 @@ CRITICAL RULES:
 5. Return ONLY valid JSON matching the schema
 6. For monetary amounts and hours, preserve precision
 7. beschaeftigungsende is only filled if employment has ended
+
+ELTERNGELD-SPECIFIC FIELDS:
+- Look for "Elternzeit" periods (up to 3 periods with von/bis dates)
+- Look for "Mutterschutz" / "Mutterschutzfrist" dates
+- Look for "Arbeitgeberzuschuss zum Mutterschaftsgeld" or "AG-Zuschuss"
+- Look for "Sachbezüge" / "geldwerte Vorteile" with amounts
+- Look for "Teilzeit während Elternzeit" or "Teilzeitarbeit"
+- Look for "Resturlaub" or "Urlaubsanspruch"
 
 Output format:
 {

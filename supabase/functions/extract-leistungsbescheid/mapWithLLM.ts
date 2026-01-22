@@ -15,22 +15,54 @@ interface MapWithLLMParams {
 const TABLE_SCHEMA = {
   table: "leistungsbescheide",
   columns: [
-    { name: "leistungsart", type: "string", description: "Type of benefit (e.g., ALG I, ALG II, Wohngeld)" },
-    { name: "bewilligungsstelle", type: "string", description: "Granting authority" },
+    { name: "leistungsart", type: "string", description: "Type of benefit: 'ALG I', 'Bürgergeld', 'Krankengeld', 'Wohngeld'" },
+    { name: "bewilligungsstelle", type: "string", description: "Granting authority (Agentur für Arbeit, Jobcenter, Krankenkasse)" },
     { name: "bescheiddatum", type: "date", format: "YYYY-MM-DD", description: "Decision date" },
     { name: "leistungsbeginn", type: "date", format: "YYYY-MM-DD", description: "Benefit start date" },
     { name: "leistungsende", type: "date", format: "YYYY-MM-DD", description: "Benefit end date" },
     { name: "monatsbetrag", type: "decimal", description: "Monthly amount as decimal" },
+    // ALG I specific
+    { name: "bemessungsentgelt", type: "decimal", description: "ALG I: Daily assessment basis (Bemessungsentgelt)" },
+    { name: "leistungssatz_prozent", type: "decimal", description: "ALG I: Benefit rate (60% or 67%)" },
+    { name: "qualifizierungszeit_von", type: "date", format: "YYYY-MM-DD", description: "ALG I: Qualification period start" },
+    { name: "qualifizierungszeit_bis", type: "date", format: "YYYY-MM-DD", description: "ALG I: Qualification period end" },
+    // Bürgergeld specific
+    { name: "regelsatz", type: "decimal", description: "Bürgergeld: Standard rate (Regelbedarf)" },
+    { name: "kosten_unterkunft", type: "decimal", description: "Bürgergeld: Housing costs (KdU)" },
+    { name: "heizkosten", type: "decimal", description: "Bürgergeld: Heating costs" },
+    { name: "mehrbedarf", type: "decimal", description: "Bürgergeld: Additional needs (Mehrbedarf)" },
+    { name: "bedarfsgemeinschaft_groesse", type: "integer", description: "Bürgergeld: Household size (Bedarfsgemeinschaft)" },
+    // Krankengeld specific
+    { name: "arbeitgeber", type: "string", description: "Krankengeld: Employer name" },
+    { name: "arbeitsunfaehig_seit", type: "date", format: "YYYY-MM-DD", description: "Krankengeld: Incapacity start date" },
+    { name: "krankenkasse", type: "string", description: "Krankengeld: Health insurance name" },
+    { name: "versichertennummer", type: "string", description: "Krankengeld: Insurance number" },
+    { name: "bruttolohn_bemessung", type: "decimal", description: "Krankengeld: Gross salary for calculation" },
+    { name: "tagessatz", type: "decimal", description: "Krankengeld: Daily rate" },
+    // Common
+    { name: "kundennummer", type: "string", description: "Customer/file number" },
+    { name: "aktenzeichen", type: "string", description: "Reference number (Aktenzeichen)" },
   ],
 };
 
-const SYSTEM_PROMPT = `You are a specialized German benefit decision (Leistungsbescheid) data extractor.
+const SYSTEM_PROMPT = `You are a specialized German benefit decision (Leistungsbescheid) data extractor for Elterngeld applications.
+
+BENEFIT TYPES TO IDENTIFY:
+1. ALG I (Arbeitslosengeld I): From Agentur für Arbeit, has Bemessungsentgelt, 60%/67% rate
+2. Bürgergeld (formerly ALG II/Hartz IV): From Jobcenter, has Regelsatz, KdU, Mehrbedarf
+3. Krankengeld: From Krankenkasse, has Tagessatz, arbeitsunfähig seit
+4. Wohngeld: Housing benefit, has monthly amount
 
 CRITICAL RULES:
 1. Extract ONLY explicitly present information
 2. German dates: "DD.MM.YYYY" → "YYYY-MM-DD"
 3. German numbers: "1.234,56" → "1234.56"
-4. Return ONLY valid JSON
+4. Set "leistungsart" based on document content (ALG I, Bürgergeld, Krankengeld, Wohngeld)
+5. Return ONLY valid JSON
+
+ALG I INDICATORS: "Arbeitslosengeld", "Bemessungsentgelt", "Leistungssatz 60%/67%", "Anspruchsdauer"
+BÜRGERGELD INDICATORS: "Bürgergeld", "Jobcenter", "Regelbedarf", "Kosten der Unterkunft", "Bedarfsgemeinschaft"
+KRANKENGELD INDICATORS: "Krankengeld", "Arbeitsunfähigkeit", "Kalendertägliches Krankengeld"
 
 Output format:
 {
