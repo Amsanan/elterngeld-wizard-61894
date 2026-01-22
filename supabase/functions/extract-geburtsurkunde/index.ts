@@ -27,7 +27,7 @@ serve(async (req) => {
     
     if (userError || !user) throw new Error('Unauthorized');
 
-    const { filePath, useLLM = true } = await req.json();
+    const { filePath, useLLM = true, kindTyp = 'primaer', kindOrdnungszahl = 0 } = await req.json();
     
     // Server-side file path validation
     const pathValidation = validateFilePath(filePath);
@@ -134,13 +134,15 @@ serve(async (req) => {
       extractedData.confidence_scores = confidenceScores;
     }
 
-    // Insert into database
-    console.log('Inserting into database...');
+    // Insert into database with kind_typ and kind_ordnungszahl
+    console.log('Inserting into database with kind_typ:', kindTyp, 'kind_ordnungszahl:', kindOrdnungszahl);
     const { data: insertedData, error: insertError } = await supabase
       .from('geburtsurkunden')
       .insert({
         user_id: user.id,
         file_path: filePath,
+        kind_typ: kindTyp,
+        kind_ordnungszahl: kindOrdnungszahl,
         ...extractedData,
       })
       .select()

@@ -8,10 +8,22 @@ import { Label } from "@/components/ui/label";
 import { Upload, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { validateFile, createSecureFilePath } from "@/lib/file-validation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+type KindTyp = "primaer" | "geschwister";
+type KindOrdnung = 0 | 1 | 2 | 3;
 
 const UploadGeburtsurkunde = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [kindTyp, setKindTyp] = useState<KindTyp>("primaer");
+  const [kindOrdnung, setKindOrdnung] = useState<KindOrdnung>(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -70,7 +82,11 @@ const UploadGeburtsurkunde = () => {
       const { data: extractData, error: extractError } = await supabase.functions.invoke(
         'extract-geburtsurkunde',
         {
-          body: { filePath: fileName }
+          body: { 
+            filePath: fileName,
+            kindTyp: kindTyp,
+            kindOrdnungszahl: kindOrdnung
+          }
         }
       );
 
@@ -131,6 +147,53 @@ const UploadGeburtsurkunde = () => {
         <div className="max-w-2xl mx-auto">
           <Card className="p-8">
             <div className="space-y-6">
+              {/* Kind-Typ Auswahl */}
+              <div>
+                <Label htmlFor="kind-typ">Für welches Kind ist diese Urkunde?</Label>
+                <Select
+                  value={kindTyp}
+                  onValueChange={(value: KindTyp) => {
+                    setKindTyp(value);
+                    if (value === "primaer") {
+                      setKindOrdnung(0);
+                    } else {
+                      setKindOrdnung(1);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Kind-Typ auswählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="primaer">Antragskind (Kind für das Elterngeld beantragt wird)</SelectItem>
+                    <SelectItem value="geschwister">Geschwisterkind (für Geschwisterbonus)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Geschwister-Ordnung falls Geschwisterkind gewählt */}
+              {kindTyp === "geschwister" && (
+                <div>
+                  <Label htmlFor="kind-ordnung">Welches Geschwisterkind?</Label>
+                  <Select
+                    value={String(kindOrdnung)}
+                    onValueChange={(value) => setKindOrdnung(Number(value) as KindOrdnung)}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Geschwister-Position auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Jüngstes Geschwisterkind (Kind 1)</SelectItem>
+                      <SelectItem value="2">Zweitjüngstes Geschwisterkind (Kind 2)</SelectItem>
+                      <SelectItem value="3">Drittjüngstes Geschwisterkind (Kind 3)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Wählen Sie die Position des Geschwisterkindes nach Alter (jüngstes zuerst).
+                  </p>
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="file-input">Geburtsurkunde (PDF)</Label>
                 <Input
