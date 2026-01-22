@@ -76,6 +76,71 @@ export type Database = {
           },
         ]
       }
+      aerztliche_zeugnisse: {
+        Row: {
+          antrag_id: string | null
+          arzt_name: string | null
+          arzt_praxis: string | null
+          ausstelldatum: string | null
+          confidence_scores: Json | null
+          created_at: string | null
+          errechneter_geburtstermin: string | null
+          file_path: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+          verbot_art: string | null
+          verbot_beginn: string | null
+          verbot_ende: string | null
+          verbot_grund: string | null
+          zeugnis_typ: string
+        }
+        Insert: {
+          antrag_id?: string | null
+          arzt_name?: string | null
+          arzt_praxis?: string | null
+          ausstelldatum?: string | null
+          confidence_scores?: Json | null
+          created_at?: string | null
+          errechneter_geburtstermin?: string | null
+          file_path?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+          verbot_art?: string | null
+          verbot_beginn?: string | null
+          verbot_ende?: string | null
+          verbot_grund?: string | null
+          zeugnis_typ: string
+        }
+        Update: {
+          antrag_id?: string | null
+          arzt_name?: string | null
+          arzt_praxis?: string | null
+          ausstelldatum?: string | null
+          confidence_scores?: Json | null
+          created_at?: string | null
+          errechneter_geburtstermin?: string | null
+          file_path?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+          verbot_art?: string | null
+          verbot_beginn?: string | null
+          verbot_ende?: string | null
+          verbot_grund?: string | null
+          zeugnis_typ?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aerztliche_zeugnisse_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: false
+            referencedRelation: "antraege"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       antraege: {
         Row: {
           created_at: string
@@ -133,8 +198,53 @@ export type Database = {
           },
         ]
       }
+      antrag_progress: {
+        Row: {
+          antrag_id: string
+          completed_steps: number[] | null
+          created_at: string | null
+          current_step: number | null
+          field_mappings: Json | null
+          partial_pdf_path: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          antrag_id: string
+          completed_steps?: number[] | null
+          created_at?: string | null
+          current_step?: number | null
+          field_mappings?: Json | null
+          partial_pdf_path?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          antrag_id?: string
+          completed_steps?: number[] | null
+          created_at?: string | null
+          current_step?: number | null
+          field_mappings?: Json | null
+          partial_pdf_path?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antrag_progress_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: true
+            referencedRelation: "antraege"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       arbeitgeberbescheinigungen: {
         Row: {
+          ag_zuschuss_beginn: string | null
+          ag_zuschuss_ende: string | null
+          ag_zuschuss_mutterschaftsgeld: number | null
+          ag_zuschuss_tagessatz: number | null
           antrag_id: string | null
           arbeitgeber_adresse: string | null
           arbeitgeber_name: string | null
@@ -144,14 +254,41 @@ export type Database = {
           bruttogehalt: number | null
           confidence_scores: Json | null
           created_at: string
+          elternzeit_1_bis: string | null
+          elternzeit_1_von: string | null
+          elternzeit_2_bis: string | null
+          elternzeit_2_von: string | null
+          elternzeit_3_bis: string | null
+          elternzeit_3_von: string | null
           file_path: string | null
           id: string
+          mutterschutz_beginn: string | null
+          mutterschutz_ende: string | null
           person_type: Database["public"]["Enums"]["person_type_enum"]
+          resturlaub_tage: number | null
+          sachbezuege_bis: string | null
+          sachbezuege_ja: boolean | null
+          sachbezuege_tagessatz: number | null
+          sachbezuege_von: string | null
+          teilzeit_bis: string | null
+          teilzeit_brutto: number | null
+          teilzeit_elternzeit_ja: boolean | null
+          teilzeit_netto: number | null
+          teilzeit_stunden: number | null
+          teilzeit_von: string | null
           updated_at: string
+          urlaub_1_bis: string | null
+          urlaub_1_von: string | null
+          urlaub_2_bis: string | null
+          urlaub_2_von: string | null
           user_id: string
           wochenstunden: number | null
         }
         Insert: {
+          ag_zuschuss_beginn?: string | null
+          ag_zuschuss_ende?: string | null
+          ag_zuschuss_mutterschaftsgeld?: number | null
+          ag_zuschuss_tagessatz?: number | null
           antrag_id?: string | null
           arbeitgeber_adresse?: string | null
           arbeitgeber_name?: string | null
@@ -161,14 +298,41 @@ export type Database = {
           bruttogehalt?: number | null
           confidence_scores?: Json | null
           created_at?: string
+          elternzeit_1_bis?: string | null
+          elternzeit_1_von?: string | null
+          elternzeit_2_bis?: string | null
+          elternzeit_2_von?: string | null
+          elternzeit_3_bis?: string | null
+          elternzeit_3_von?: string | null
           file_path?: string | null
           id?: string
+          mutterschutz_beginn?: string | null
+          mutterschutz_ende?: string | null
           person_type: Database["public"]["Enums"]["person_type_enum"]
+          resturlaub_tage?: number | null
+          sachbezuege_bis?: string | null
+          sachbezuege_ja?: boolean | null
+          sachbezuege_tagessatz?: number | null
+          sachbezuege_von?: string | null
+          teilzeit_bis?: string | null
+          teilzeit_brutto?: number | null
+          teilzeit_elternzeit_ja?: boolean | null
+          teilzeit_netto?: number | null
+          teilzeit_stunden?: number | null
+          teilzeit_von?: string | null
           updated_at?: string
+          urlaub_1_bis?: string | null
+          urlaub_1_von?: string | null
+          urlaub_2_bis?: string | null
+          urlaub_2_von?: string | null
           user_id: string
           wochenstunden?: number | null
         }
         Update: {
+          ag_zuschuss_beginn?: string | null
+          ag_zuschuss_ende?: string | null
+          ag_zuschuss_mutterschaftsgeld?: number | null
+          ag_zuschuss_tagessatz?: number | null
           antrag_id?: string | null
           arbeitgeber_adresse?: string | null
           arbeitgeber_name?: string | null
@@ -178,10 +342,33 @@ export type Database = {
           bruttogehalt?: number | null
           confidence_scores?: Json | null
           created_at?: string
+          elternzeit_1_bis?: string | null
+          elternzeit_1_von?: string | null
+          elternzeit_2_bis?: string | null
+          elternzeit_2_von?: string | null
+          elternzeit_3_bis?: string | null
+          elternzeit_3_von?: string | null
           file_path?: string | null
           id?: string
+          mutterschutz_beginn?: string | null
+          mutterschutz_ende?: string | null
           person_type?: Database["public"]["Enums"]["person_type_enum"]
+          resturlaub_tage?: number | null
+          sachbezuege_bis?: string | null
+          sachbezuege_ja?: boolean | null
+          sachbezuege_tagessatz?: number | null
+          sachbezuege_von?: string | null
+          teilzeit_bis?: string | null
+          teilzeit_brutto?: number | null
+          teilzeit_elternzeit_ja?: boolean | null
+          teilzeit_netto?: number | null
+          teilzeit_stunden?: number | null
+          teilzeit_von?: string | null
           updated_at?: string
+          urlaub_1_bis?: string | null
+          urlaub_1_von?: string | null
+          urlaub_2_bis?: string | null
+          urlaub_2_von?: string | null
           user_id?: string
           wochenstunden?: number | null
         }
@@ -607,6 +794,329 @@ export type Database = {
         }
         Relationships: []
       }
+      elterngeldantrag_data: {
+        Row: {
+          antrag_id: string | null
+          created_at: string | null
+          eltern_alleinerziehend: boolean | null
+          eltern_alleinerziehend_kindeswohl: boolean | null
+          eltern_alleinerziehend_nichtbetreuung: boolean | null
+          eltern1_adresse_hausnr: string | null
+          eltern1_adresse_ort: string | null
+          eltern1_adresse_plz: string | null
+          eltern1_adresse_strasse: string | null
+          eltern1_aufenthalt_drittstaat: boolean | null
+          eltern1_aufenthalt_eu_efta: boolean | null
+          eltern1_einkommen_nichtselbststaendig: number | null
+          eltern1_einkommen_selbststaendig: number | null
+          eltern1_einkommen_sonstige: number | null
+          eltern1_email: string | null
+          eltern1_erwerbstaetig_ja: boolean | null
+          eltern1_erwerbstaetig_nein: boolean | null
+          eltern1_geburtsdatum: string | null
+          eltern1_geschlecht_divers: boolean | null
+          eltern1_geschlecht_maennlich: boolean | null
+          eltern1_geschlecht_ohne_angabe: boolean | null
+          eltern1_geschlecht_weiblich: boolean | null
+          eltern1_nachname: string | null
+          eltern1_selbststaendig_ja: boolean | null
+          eltern1_selbststaendig_nein: boolean | null
+          eltern1_staatsangehoerigkeit: string | null
+          eltern1_steuer_id: string | null
+          eltern1_telefon: string | null
+          eltern1_vorname: string | null
+          eltern1_wohnsitz_de_ja: boolean | null
+          eltern1_wohnsitz_de_nein: boolean | null
+          eltern2_adresse_hausnr: string | null
+          eltern2_adresse_ort: string | null
+          eltern2_adresse_plz: string | null
+          eltern2_adresse_strasse: string | null
+          eltern2_aufenthalt_drittstaat: boolean | null
+          eltern2_aufenthalt_eu_efta: boolean | null
+          eltern2_einkommen_nichtselbststaendig: number | null
+          eltern2_einkommen_selbststaendig: number | null
+          eltern2_einkommen_sonstige: number | null
+          eltern2_email: string | null
+          eltern2_erwerbstaetig_ja: boolean | null
+          eltern2_erwerbstaetig_nein: boolean | null
+          eltern2_geburtsdatum: string | null
+          eltern2_geschlecht_divers: boolean | null
+          eltern2_geschlecht_maennlich: boolean | null
+          eltern2_geschlecht_ohne_angabe: boolean | null
+          eltern2_geschlecht_weiblich: boolean | null
+          eltern2_nachname: string | null
+          eltern2_selbststaendig_ja: boolean | null
+          eltern2_selbststaendig_nein: boolean | null
+          eltern2_staatsangehoerigkeit: string | null
+          eltern2_steuer_id: string | null
+          eltern2_telefon: string | null
+          eltern2_vorname: string | null
+          eltern2_wohnsitz_de_ja: boolean | null
+          eltern2_wohnsitz_de_nein: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_adoptiv: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_andere: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_leiblich: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_partnerkind: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_adoptiv: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_andere: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_leiblich: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_partnerkind: boolean | null
+          geschwisterbonus_kind1_gdb_flag: boolean | null
+          geschwisterbonus_kind1_geburtsdatum: string | null
+          geschwisterbonus_kind1_nachname: string | null
+          geschwisterbonus_kind1_vorname: string | null
+          geschwisterbonus_kind2_beziehung_eltern1_adoptiv: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_andere: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_leiblich: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_partnerkind: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_adoptiv: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_andere: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_leiblich: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_partnerkind: boolean | null
+          geschwisterbonus_kind2_gdb_flag: boolean | null
+          geschwisterbonus_kind2_geburtsdatum: string | null
+          geschwisterbonus_kind2_nachname: string | null
+          geschwisterbonus_kind2_vorname: string | null
+          geschwisterbonus_kind3_beziehung_eltern1_adoptiv: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_andere: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_leiblich: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_partnerkind: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_adoptiv: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_andere: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_leiblich: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_partnerkind: boolean | null
+          geschwisterbonus_kind3_gdb_flag: boolean | null
+          geschwisterbonus_kind3_geburtsdatum: string | null
+          geschwisterbonus_kind3_nachname: string | null
+          geschwisterbonus_kind3_vorname: string | null
+          haushalt_weitere_kinder_anzahl: number | null
+          haushalt_weitere_kinder_keine: boolean | null
+          haushalt_weitere_kinder_vorhanden: boolean | null
+          id: string
+          kind_behinderung: boolean | null
+          kind_errechneter_termin: string | null
+          kind_fruehgeburt: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          antrag_id?: string | null
+          created_at?: string | null
+          eltern_alleinerziehend?: boolean | null
+          eltern_alleinerziehend_kindeswohl?: boolean | null
+          eltern_alleinerziehend_nichtbetreuung?: boolean | null
+          eltern1_adresse_hausnr?: string | null
+          eltern1_adresse_ort?: string | null
+          eltern1_adresse_plz?: string | null
+          eltern1_adresse_strasse?: string | null
+          eltern1_aufenthalt_drittstaat?: boolean | null
+          eltern1_aufenthalt_eu_efta?: boolean | null
+          eltern1_einkommen_nichtselbststaendig?: number | null
+          eltern1_einkommen_selbststaendig?: number | null
+          eltern1_einkommen_sonstige?: number | null
+          eltern1_email?: string | null
+          eltern1_erwerbstaetig_ja?: boolean | null
+          eltern1_erwerbstaetig_nein?: boolean | null
+          eltern1_geburtsdatum?: string | null
+          eltern1_geschlecht_divers?: boolean | null
+          eltern1_geschlecht_maennlich?: boolean | null
+          eltern1_geschlecht_ohne_angabe?: boolean | null
+          eltern1_geschlecht_weiblich?: boolean | null
+          eltern1_nachname?: string | null
+          eltern1_selbststaendig_ja?: boolean | null
+          eltern1_selbststaendig_nein?: boolean | null
+          eltern1_staatsangehoerigkeit?: string | null
+          eltern1_steuer_id?: string | null
+          eltern1_telefon?: string | null
+          eltern1_vorname?: string | null
+          eltern1_wohnsitz_de_ja?: boolean | null
+          eltern1_wohnsitz_de_nein?: boolean | null
+          eltern2_adresse_hausnr?: string | null
+          eltern2_adresse_ort?: string | null
+          eltern2_adresse_plz?: string | null
+          eltern2_adresse_strasse?: string | null
+          eltern2_aufenthalt_drittstaat?: boolean | null
+          eltern2_aufenthalt_eu_efta?: boolean | null
+          eltern2_einkommen_nichtselbststaendig?: number | null
+          eltern2_einkommen_selbststaendig?: number | null
+          eltern2_einkommen_sonstige?: number | null
+          eltern2_email?: string | null
+          eltern2_erwerbstaetig_ja?: boolean | null
+          eltern2_erwerbstaetig_nein?: boolean | null
+          eltern2_geburtsdatum?: string | null
+          eltern2_geschlecht_divers?: boolean | null
+          eltern2_geschlecht_maennlich?: boolean | null
+          eltern2_geschlecht_ohne_angabe?: boolean | null
+          eltern2_geschlecht_weiblich?: boolean | null
+          eltern2_nachname?: string | null
+          eltern2_selbststaendig_ja?: boolean | null
+          eltern2_selbststaendig_nein?: boolean | null
+          eltern2_staatsangehoerigkeit?: string | null
+          eltern2_steuer_id?: string | null
+          eltern2_telefon?: string | null
+          eltern2_vorname?: string | null
+          eltern2_wohnsitz_de_ja?: boolean | null
+          eltern2_wohnsitz_de_nein?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_adoptiv?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_andere?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_leiblich?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_partnerkind?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_adoptiv?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_andere?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_leiblich?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_partnerkind?: boolean | null
+          geschwisterbonus_kind1_gdb_flag?: boolean | null
+          geschwisterbonus_kind1_geburtsdatum?: string | null
+          geschwisterbonus_kind1_nachname?: string | null
+          geschwisterbonus_kind1_vorname?: string | null
+          geschwisterbonus_kind2_beziehung_eltern1_adoptiv?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_andere?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_leiblich?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_partnerkind?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_adoptiv?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_andere?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_leiblich?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_partnerkind?: boolean | null
+          geschwisterbonus_kind2_gdb_flag?: boolean | null
+          geschwisterbonus_kind2_geburtsdatum?: string | null
+          geschwisterbonus_kind2_nachname?: string | null
+          geschwisterbonus_kind2_vorname?: string | null
+          geschwisterbonus_kind3_beziehung_eltern1_adoptiv?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_andere?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_leiblich?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_partnerkind?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_adoptiv?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_andere?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_leiblich?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_partnerkind?: boolean | null
+          geschwisterbonus_kind3_gdb_flag?: boolean | null
+          geschwisterbonus_kind3_geburtsdatum?: string | null
+          geschwisterbonus_kind3_nachname?: string | null
+          geschwisterbonus_kind3_vorname?: string | null
+          haushalt_weitere_kinder_anzahl?: number | null
+          haushalt_weitere_kinder_keine?: boolean | null
+          haushalt_weitere_kinder_vorhanden?: boolean | null
+          id?: string
+          kind_behinderung?: boolean | null
+          kind_errechneter_termin?: string | null
+          kind_fruehgeburt?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          antrag_id?: string | null
+          created_at?: string | null
+          eltern_alleinerziehend?: boolean | null
+          eltern_alleinerziehend_kindeswohl?: boolean | null
+          eltern_alleinerziehend_nichtbetreuung?: boolean | null
+          eltern1_adresse_hausnr?: string | null
+          eltern1_adresse_ort?: string | null
+          eltern1_adresse_plz?: string | null
+          eltern1_adresse_strasse?: string | null
+          eltern1_aufenthalt_drittstaat?: boolean | null
+          eltern1_aufenthalt_eu_efta?: boolean | null
+          eltern1_einkommen_nichtselbststaendig?: number | null
+          eltern1_einkommen_selbststaendig?: number | null
+          eltern1_einkommen_sonstige?: number | null
+          eltern1_email?: string | null
+          eltern1_erwerbstaetig_ja?: boolean | null
+          eltern1_erwerbstaetig_nein?: boolean | null
+          eltern1_geburtsdatum?: string | null
+          eltern1_geschlecht_divers?: boolean | null
+          eltern1_geschlecht_maennlich?: boolean | null
+          eltern1_geschlecht_ohne_angabe?: boolean | null
+          eltern1_geschlecht_weiblich?: boolean | null
+          eltern1_nachname?: string | null
+          eltern1_selbststaendig_ja?: boolean | null
+          eltern1_selbststaendig_nein?: boolean | null
+          eltern1_staatsangehoerigkeit?: string | null
+          eltern1_steuer_id?: string | null
+          eltern1_telefon?: string | null
+          eltern1_vorname?: string | null
+          eltern1_wohnsitz_de_ja?: boolean | null
+          eltern1_wohnsitz_de_nein?: boolean | null
+          eltern2_adresse_hausnr?: string | null
+          eltern2_adresse_ort?: string | null
+          eltern2_adresse_plz?: string | null
+          eltern2_adresse_strasse?: string | null
+          eltern2_aufenthalt_drittstaat?: boolean | null
+          eltern2_aufenthalt_eu_efta?: boolean | null
+          eltern2_einkommen_nichtselbststaendig?: number | null
+          eltern2_einkommen_selbststaendig?: number | null
+          eltern2_einkommen_sonstige?: number | null
+          eltern2_email?: string | null
+          eltern2_erwerbstaetig_ja?: boolean | null
+          eltern2_erwerbstaetig_nein?: boolean | null
+          eltern2_geburtsdatum?: string | null
+          eltern2_geschlecht_divers?: boolean | null
+          eltern2_geschlecht_maennlich?: boolean | null
+          eltern2_geschlecht_ohne_angabe?: boolean | null
+          eltern2_geschlecht_weiblich?: boolean | null
+          eltern2_nachname?: string | null
+          eltern2_selbststaendig_ja?: boolean | null
+          eltern2_selbststaendig_nein?: boolean | null
+          eltern2_staatsangehoerigkeit?: string | null
+          eltern2_steuer_id?: string | null
+          eltern2_telefon?: string | null
+          eltern2_vorname?: string | null
+          eltern2_wohnsitz_de_ja?: boolean | null
+          eltern2_wohnsitz_de_nein?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_adoptiv?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_andere?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_leiblich?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern1_partnerkind?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_adoptiv?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_andere?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_leiblich?: boolean | null
+          geschwisterbonus_kind1_beziehung_eltern2_partnerkind?: boolean | null
+          geschwisterbonus_kind1_gdb_flag?: boolean | null
+          geschwisterbonus_kind1_geburtsdatum?: string | null
+          geschwisterbonus_kind1_nachname?: string | null
+          geschwisterbonus_kind1_vorname?: string | null
+          geschwisterbonus_kind2_beziehung_eltern1_adoptiv?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_andere?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_leiblich?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern1_partnerkind?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_adoptiv?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_andere?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_leiblich?: boolean | null
+          geschwisterbonus_kind2_beziehung_eltern2_partnerkind?: boolean | null
+          geschwisterbonus_kind2_gdb_flag?: boolean | null
+          geschwisterbonus_kind2_geburtsdatum?: string | null
+          geschwisterbonus_kind2_nachname?: string | null
+          geschwisterbonus_kind2_vorname?: string | null
+          geschwisterbonus_kind3_beziehung_eltern1_adoptiv?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_andere?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_leiblich?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern1_partnerkind?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_adoptiv?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_andere?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_leiblich?: boolean | null
+          geschwisterbonus_kind3_beziehung_eltern2_partnerkind?: boolean | null
+          geschwisterbonus_kind3_gdb_flag?: boolean | null
+          geschwisterbonus_kind3_geburtsdatum?: string | null
+          geschwisterbonus_kind3_nachname?: string | null
+          geschwisterbonus_kind3_vorname?: string | null
+          haushalt_weitere_kinder_anzahl?: number | null
+          haushalt_weitere_kinder_keine?: boolean | null
+          haushalt_weitere_kinder_vorhanden?: boolean | null
+          id?: string
+          kind_behinderung?: boolean | null
+          kind_errechneter_termin?: string | null
+          kind_fruehgeburt?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elterngeldantrag_data_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: false
+            referencedRelation: "antraege"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       elterngeldantrag_progress: {
         Row: {
           completed_steps: number[] | null
@@ -801,6 +1311,83 @@ export type Database = {
           },
         ]
       }
+      kindergeld_bescheide: {
+        Row: {
+          antrag_id: string | null
+          bescheiddatum: string | null
+          betrag_monatlich: number | null
+          confidence_scores: Json | null
+          created_at: string | null
+          familienkasse: string | null
+          file_path: string | null
+          iban: string | null
+          id: string
+          kind_geburtsdatum: string | null
+          kind_nachname: string | null
+          kind_ordnungszahl: number | null
+          kind_vorname: string | null
+          kindergeld_nummer: string | null
+          kontoinhaber: string | null
+          person_type: Database["public"]["Enums"]["person_type_enum"] | null
+          updated_at: string | null
+          user_id: string
+          zahlungsbeginn: string | null
+          zahlungsende: string | null
+        }
+        Insert: {
+          antrag_id?: string | null
+          bescheiddatum?: string | null
+          betrag_monatlich?: number | null
+          confidence_scores?: Json | null
+          created_at?: string | null
+          familienkasse?: string | null
+          file_path?: string | null
+          iban?: string | null
+          id?: string
+          kind_geburtsdatum?: string | null
+          kind_nachname?: string | null
+          kind_ordnungszahl?: number | null
+          kind_vorname?: string | null
+          kindergeld_nummer?: string | null
+          kontoinhaber?: string | null
+          person_type?: Database["public"]["Enums"]["person_type_enum"] | null
+          updated_at?: string | null
+          user_id: string
+          zahlungsbeginn?: string | null
+          zahlungsende?: string | null
+        }
+        Update: {
+          antrag_id?: string | null
+          bescheiddatum?: string | null
+          betrag_monatlich?: number | null
+          confidence_scores?: Json | null
+          created_at?: string | null
+          familienkasse?: string | null
+          file_path?: string | null
+          iban?: string | null
+          id?: string
+          kind_geburtsdatum?: string | null
+          kind_nachname?: string | null
+          kind_ordnungszahl?: number | null
+          kind_vorname?: string | null
+          kindergeld_nummer?: string | null
+          kontoinhaber?: string | null
+          person_type?: Database["public"]["Enums"]["person_type_enum"] | null
+          updated_at?: string | null
+          user_id?: string
+          zahlungsbeginn?: string | null
+          zahlungsende?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kindergeld_bescheide_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: false
+            referencedRelation: "antraege"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       krankenversicherung_nachweise: {
         Row: {
           antrag_id: string | null
@@ -859,52 +1446,103 @@ export type Database = {
       }
       leistungsbescheide: {
         Row: {
+          aktenzeichen: string | null
           antrag_id: string | null
+          arbeitgeber: string | null
+          arbeitsunfaehig_seit: string | null
+          bedarfsgemeinschaft_groesse: number | null
+          bemessungsentgelt: number | null
           bescheiddatum: string | null
           bewilligungsstelle: string | null
+          bruttolohn_bemessung: number | null
           confidence_scores: Json | null
           created_at: string
           file_path: string | null
+          heizkosten: number | null
           id: string
+          kosten_unterkunft: number | null
+          krankenkasse: string | null
+          kundennummer: string | null
           leistungsart: string | null
           leistungsbeginn: string | null
           leistungsende: string | null
+          leistungssatz_prozent: number | null
+          mehrbedarf: number | null
           monatsbetrag: number | null
           person_type: Database["public"]["Enums"]["person_type_enum"]
+          qualifizierungszeit_bis: string | null
+          qualifizierungszeit_von: string | null
+          regelsatz: number | null
+          tagessatz: number | null
           updated_at: string
           user_id: string
+          versichertennummer: string | null
         }
         Insert: {
+          aktenzeichen?: string | null
           antrag_id?: string | null
+          arbeitgeber?: string | null
+          arbeitsunfaehig_seit?: string | null
+          bedarfsgemeinschaft_groesse?: number | null
+          bemessungsentgelt?: number | null
           bescheiddatum?: string | null
           bewilligungsstelle?: string | null
+          bruttolohn_bemessung?: number | null
           confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
+          heizkosten?: number | null
           id?: string
+          kosten_unterkunft?: number | null
+          krankenkasse?: string | null
+          kundennummer?: string | null
           leistungsart?: string | null
           leistungsbeginn?: string | null
           leistungsende?: string | null
+          leistungssatz_prozent?: number | null
+          mehrbedarf?: number | null
           monatsbetrag?: number | null
           person_type: Database["public"]["Enums"]["person_type_enum"]
+          qualifizierungszeit_bis?: string | null
+          qualifizierungszeit_von?: string | null
+          regelsatz?: number | null
+          tagessatz?: number | null
           updated_at?: string
           user_id: string
+          versichertennummer?: string | null
         }
         Update: {
+          aktenzeichen?: string | null
           antrag_id?: string | null
+          arbeitgeber?: string | null
+          arbeitsunfaehig_seit?: string | null
+          bedarfsgemeinschaft_groesse?: number | null
+          bemessungsentgelt?: number | null
           bescheiddatum?: string | null
           bewilligungsstelle?: string | null
+          bruttolohn_bemessung?: number | null
           confidence_scores?: Json | null
           created_at?: string
           file_path?: string | null
+          heizkosten?: number | null
           id?: string
+          kosten_unterkunft?: number | null
+          krankenkasse?: string | null
+          kundennummer?: string | null
           leistungsart?: string | null
           leistungsbeginn?: string | null
           leistungsende?: string | null
+          leistungssatz_prozent?: number | null
+          mehrbedarf?: number | null
           monatsbetrag?: number | null
           person_type?: Database["public"]["Enums"]["person_type_enum"]
+          qualifizierungszeit_bis?: string | null
+          qualifizierungszeit_von?: string | null
+          regelsatz?: number | null
+          tagessatz?: number | null
           updated_at?: string
           user_id?: string
+          versichertennummer?: string | null
         }
         Relationships: [
           {
@@ -1046,51 +1684,147 @@ export type Database = {
           },
         ]
       }
+      nachweise_katalog: {
+        Row: {
+          ausloeser_bedingung: string | null
+          bezeichnung_de: string
+          created_at: string | null
+          erkennungslogik: string | null
+          hinweis: string | null
+          id: string
+          is_active: boolean | null
+          kategorie: string | null
+          nachweis_id: string
+          person_type: string | null
+          prioritaet: number | null
+          referenz_felder: string[] | null
+          seite: number | null
+          updated_at: string | null
+          validierung_typ: string | null
+          ziel_feld: string | null
+          ziel_tabelle: string | null
+        }
+        Insert: {
+          ausloeser_bedingung?: string | null
+          bezeichnung_de: string
+          created_at?: string | null
+          erkennungslogik?: string | null
+          hinweis?: string | null
+          id?: string
+          is_active?: boolean | null
+          kategorie?: string | null
+          nachweis_id: string
+          person_type?: string | null
+          prioritaet?: number | null
+          referenz_felder?: string[] | null
+          seite?: number | null
+          updated_at?: string | null
+          validierung_typ?: string | null
+          ziel_feld?: string | null
+          ziel_tabelle?: string | null
+        }
+        Update: {
+          ausloeser_bedingung?: string | null
+          bezeichnung_de?: string
+          created_at?: string | null
+          erkennungslogik?: string | null
+          hinweis?: string | null
+          id?: string
+          is_active?: boolean | null
+          kategorie?: string | null
+          nachweis_id?: string
+          person_type?: string | null
+          prioritaet?: number | null
+          referenz_felder?: string[] | null
+          seite?: number | null
+          updated_at?: string | null
+          validierung_typ?: string | null
+          ziel_feld?: string | null
+          ziel_tabelle?: string | null
+        }
+        Relationships: []
+      }
       pdf_field_mappings: {
         Row: {
           confidence_score: number | null
+          coord_x: number | null
+          coord_y: number | null
           created_at: string | null
           created_by: string | null
           document_type: string
+          field_label_de: string | null
+          field_type: string | null
           filter_condition: Json | null
+          format_hint: string | null
+          height: number | null
+          hint_de: string | null
           id: string
           is_active: boolean | null
           mapping_status: string | null
           notes: string | null
+          page_number: number | null
           pdf_field_name: string
+          reading_order: number | null
+          section_visual: string | null
           source_field: string
           source_table: string
           updated_at: string | null
+          validation_rule_de: string | null
+          width: number | null
         }
         Insert: {
           confidence_score?: number | null
+          coord_x?: number | null
+          coord_y?: number | null
           created_at?: string | null
           created_by?: string | null
           document_type: string
+          field_label_de?: string | null
+          field_type?: string | null
           filter_condition?: Json | null
+          format_hint?: string | null
+          height?: number | null
+          hint_de?: string | null
           id?: string
           is_active?: boolean | null
           mapping_status?: string | null
           notes?: string | null
+          page_number?: number | null
           pdf_field_name: string
+          reading_order?: number | null
+          section_visual?: string | null
           source_field: string
           source_table: string
           updated_at?: string | null
+          validation_rule_de?: string | null
+          width?: number | null
         }
         Update: {
           confidence_score?: number | null
+          coord_x?: number | null
+          coord_y?: number | null
           created_at?: string | null
           created_by?: string | null
           document_type?: string
+          field_label_de?: string | null
+          field_type?: string | null
           filter_condition?: Json | null
+          format_hint?: string | null
+          height?: number | null
+          hint_de?: string | null
           id?: string
           is_active?: boolean | null
           mapping_status?: string | null
           notes?: string | null
+          page_number?: number | null
           pdf_field_name?: string
+          reading_order?: number | null
+          section_visual?: string | null
           source_field?: string
           source_table?: string
           updated_at?: string | null
+          validation_rule_de?: string | null
+          width?: number | null
         }
         Relationships: []
       }
@@ -1201,6 +1935,131 @@ export type Database = {
           },
         ]
       }
+      sonstige_nachweise: {
+        Row: {
+          antrag_id: string | null
+          ausstelldatum: string | null
+          aussteller: string | null
+          beschreibung: string | null
+          betrag: number | null
+          confidence_scores: Json | null
+          created_at: string
+          dokument_typ: string
+          extracted_data: Json | null
+          file_path: string | null
+          gueltig_bis: string | null
+          gueltig_von: string | null
+          id: string
+          person_type: Database["public"]["Enums"]["person_type_enum"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          antrag_id?: string | null
+          ausstelldatum?: string | null
+          aussteller?: string | null
+          beschreibung?: string | null
+          betrag?: number | null
+          confidence_scores?: Json | null
+          created_at?: string
+          dokument_typ: string
+          extracted_data?: Json | null
+          file_path?: string | null
+          gueltig_bis?: string | null
+          gueltig_von?: string | null
+          id?: string
+          person_type?: Database["public"]["Enums"]["person_type_enum"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          antrag_id?: string | null
+          ausstelldatum?: string | null
+          aussteller?: string | null
+          beschreibung?: string | null
+          betrag?: number | null
+          confidence_scores?: Json | null
+          created_at?: string
+          dokument_typ?: string
+          extracted_data?: Json | null
+          file_path?: string | null
+          gueltig_bis?: string | null
+          gueltig_von?: string | null
+          id?: string
+          person_type?: Database["public"]["Enums"]["person_type_enum"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sonstige_nachweise_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: false
+            referencedRelation: "antraege"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_nachweise: {
+        Row: {
+          antrag_id: string | null
+          confidence_scores: Json | null
+          created_at: string | null
+          extracted_data: Json | null
+          file_path: string | null
+          id: string
+          nachweis_katalog_id: string | null
+          notes: string | null
+          status: string | null
+          updated_at: string | null
+          uploaded_at: string | null
+          user_id: string
+        }
+        Insert: {
+          antrag_id?: string | null
+          confidence_scores?: Json | null
+          created_at?: string | null
+          extracted_data?: Json | null
+          file_path?: string | null
+          id?: string
+          nachweis_katalog_id?: string | null
+          notes?: string | null
+          status?: string | null
+          updated_at?: string | null
+          uploaded_at?: string | null
+          user_id: string
+        }
+        Update: {
+          antrag_id?: string | null
+          confidence_scores?: Json | null
+          created_at?: string | null
+          extracted_data?: Json | null
+          file_path?: string | null
+          id?: string
+          nachweis_katalog_id?: string | null
+          notes?: string | null
+          status?: string | null
+          updated_at?: string | null
+          uploaded_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_nachweise_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: false
+            referencedRelation: "antraege"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_nachweise_nachweis_katalog_id_fkey"
+            columns: ["nachweis_katalog_id"]
+            isOneToOne: false
+            referencedRelation: "nachweise_katalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -1221,6 +2080,86 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vaterschaftsanerkennungen: {
+        Row: {
+          anerkennungsdatum: string | null
+          antrag_id: string | null
+          beurkundungsstelle: string | null
+          confidence_scores: Json | null
+          created_at: string | null
+          file_path: string | null
+          id: string
+          kind_geburtsdatum: string | null
+          kind_geburtsort: string | null
+          kind_nachname: string | null
+          kind_vorname: string | null
+          mutter_geburtsdatum: string | null
+          mutter_nachname: string | null
+          mutter_vorname: string | null
+          updated_at: string | null
+          urkundennummer: string | null
+          user_id: string
+          vater_geburtsdatum: string | null
+          vater_nachname: string | null
+          vater_vorname: string | null
+          zustimmungsdatum: string | null
+        }
+        Insert: {
+          anerkennungsdatum?: string | null
+          antrag_id?: string | null
+          beurkundungsstelle?: string | null
+          confidence_scores?: Json | null
+          created_at?: string | null
+          file_path?: string | null
+          id?: string
+          kind_geburtsdatum?: string | null
+          kind_geburtsort?: string | null
+          kind_nachname?: string | null
+          kind_vorname?: string | null
+          mutter_geburtsdatum?: string | null
+          mutter_nachname?: string | null
+          mutter_vorname?: string | null
+          updated_at?: string | null
+          urkundennummer?: string | null
+          user_id: string
+          vater_geburtsdatum?: string | null
+          vater_nachname?: string | null
+          vater_vorname?: string | null
+          zustimmungsdatum?: string | null
+        }
+        Update: {
+          anerkennungsdatum?: string | null
+          antrag_id?: string | null
+          beurkundungsstelle?: string | null
+          confidence_scores?: Json | null
+          created_at?: string | null
+          file_path?: string | null
+          id?: string
+          kind_geburtsdatum?: string | null
+          kind_geburtsort?: string | null
+          kind_nachname?: string | null
+          kind_vorname?: string | null
+          mutter_geburtsdatum?: string | null
+          mutter_nachname?: string | null
+          mutter_vorname?: string | null
+          updated_at?: string | null
+          urkundennummer?: string | null
+          user_id?: string
+          vater_geburtsdatum?: string | null
+          vater_nachname?: string | null
+          vater_vorname?: string | null
+          zustimmungsdatum?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaterschaftsanerkennungen_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: false
+            referencedRelation: "antraege"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
