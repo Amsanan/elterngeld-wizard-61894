@@ -806,17 +806,34 @@ export type Database = {
           eltern_alleinerziehend_kindeswohl: boolean | null
           eltern_alleinerziehend_nichtbetreuung: boolean | null
           eltern1_email: string | null
+          eltern1_familienstand_geschieden: boolean | null
+          eltern1_familienstand_ledig: boolean | null
+          eltern1_familienstand_verheiratet: boolean | null
+          eltern1_familienstand_verpartnert: boolean | null
+          eltern1_familienstand_verwitwet: boolean | null
           eltern1_geschlecht_divers: boolean | null
           eltern1_geschlecht_maennlich: boolean | null
           eltern1_geschlecht_weiblich: boolean | null
+          eltern1_staatenlos: boolean | null
           eltern1_staatsangehoerigkeit: string | null
+          eltern1_staatsangehoerigkeit_andere: boolean | null
+          eltern1_staatsangehoerigkeit_deutsch: boolean | null
           eltern1_telefon: string | null
           eltern1_wohnsitz_de_ja: boolean | null
           eltern2_email: string | null
+          eltern2_familienstand_geschieden: boolean | null
+          eltern2_familienstand_ledig: boolean | null
+          eltern2_familienstand_verheiratet: boolean | null
+          eltern2_familienstand_verpartnert: boolean | null
+          eltern2_familienstand_verwitwet: boolean | null
           eltern2_geschlecht_divers: boolean | null
           eltern2_geschlecht_maennlich: boolean | null
+          eltern2_geschlecht_ohne_angabe: boolean | null
           eltern2_geschlecht_weiblich: boolean | null
+          eltern2_staatenlos: boolean | null
           eltern2_staatsangehoerigkeit: string | null
+          eltern2_staatsangehoerigkeit_andere: boolean | null
+          eltern2_staatsangehoerigkeit_deutsch: boolean | null
           eltern2_telefon: string | null
           eltern2_wohnsitz_de_ja: boolean | null
           geschwisterbonus_kind1_beziehung_eltern1_adoptiv: boolean | null
@@ -868,17 +885,34 @@ export type Database = {
           eltern_alleinerziehend_kindeswohl?: boolean | null
           eltern_alleinerziehend_nichtbetreuung?: boolean | null
           eltern1_email?: string | null
+          eltern1_familienstand_geschieden?: boolean | null
+          eltern1_familienstand_ledig?: boolean | null
+          eltern1_familienstand_verheiratet?: boolean | null
+          eltern1_familienstand_verpartnert?: boolean | null
+          eltern1_familienstand_verwitwet?: boolean | null
           eltern1_geschlecht_divers?: boolean | null
           eltern1_geschlecht_maennlich?: boolean | null
           eltern1_geschlecht_weiblich?: boolean | null
+          eltern1_staatenlos?: boolean | null
           eltern1_staatsangehoerigkeit?: string | null
+          eltern1_staatsangehoerigkeit_andere?: boolean | null
+          eltern1_staatsangehoerigkeit_deutsch?: boolean | null
           eltern1_telefon?: string | null
           eltern1_wohnsitz_de_ja?: boolean | null
           eltern2_email?: string | null
+          eltern2_familienstand_geschieden?: boolean | null
+          eltern2_familienstand_ledig?: boolean | null
+          eltern2_familienstand_verheiratet?: boolean | null
+          eltern2_familienstand_verpartnert?: boolean | null
+          eltern2_familienstand_verwitwet?: boolean | null
           eltern2_geschlecht_divers?: boolean | null
           eltern2_geschlecht_maennlich?: boolean | null
+          eltern2_geschlecht_ohne_angabe?: boolean | null
           eltern2_geschlecht_weiblich?: boolean | null
+          eltern2_staatenlos?: boolean | null
           eltern2_staatsangehoerigkeit?: string | null
+          eltern2_staatsangehoerigkeit_andere?: boolean | null
+          eltern2_staatsangehoerigkeit_deutsch?: boolean | null
           eltern2_telefon?: string | null
           eltern2_wohnsitz_de_ja?: boolean | null
           geschwisterbonus_kind1_beziehung_eltern1_adoptiv?: boolean | null
@@ -930,17 +964,34 @@ export type Database = {
           eltern_alleinerziehend_kindeswohl?: boolean | null
           eltern_alleinerziehend_nichtbetreuung?: boolean | null
           eltern1_email?: string | null
+          eltern1_familienstand_geschieden?: boolean | null
+          eltern1_familienstand_ledig?: boolean | null
+          eltern1_familienstand_verheiratet?: boolean | null
+          eltern1_familienstand_verpartnert?: boolean | null
+          eltern1_familienstand_verwitwet?: boolean | null
           eltern1_geschlecht_divers?: boolean | null
           eltern1_geschlecht_maennlich?: boolean | null
           eltern1_geschlecht_weiblich?: boolean | null
+          eltern1_staatenlos?: boolean | null
           eltern1_staatsangehoerigkeit?: string | null
+          eltern1_staatsangehoerigkeit_andere?: boolean | null
+          eltern1_staatsangehoerigkeit_deutsch?: boolean | null
           eltern1_telefon?: string | null
           eltern1_wohnsitz_de_ja?: boolean | null
           eltern2_email?: string | null
+          eltern2_familienstand_geschieden?: boolean | null
+          eltern2_familienstand_ledig?: boolean | null
+          eltern2_familienstand_verheiratet?: boolean | null
+          eltern2_familienstand_verpartnert?: boolean | null
+          eltern2_familienstand_verwitwet?: boolean | null
           eltern2_geschlecht_divers?: boolean | null
           eltern2_geschlecht_maennlich?: boolean | null
+          eltern2_geschlecht_ohne_angabe?: boolean | null
           eltern2_geschlecht_weiblich?: boolean | null
+          eltern2_staatenlos?: boolean | null
           eltern2_staatsangehoerigkeit?: string | null
+          eltern2_staatsangehoerigkeit_andere?: boolean | null
+          eltern2_staatsangehoerigkeit_deutsch?: boolean | null
           eltern2_telefon?: string | null
           eltern2_wohnsitz_de_ja?: boolean | null
           geschwisterbonus_kind1_beziehung_eltern1_adoptiv?: boolean | null
@@ -1289,6 +1340,10 @@ export type Database = {
           file_path: string | null
           id: string
           krankenkasse_name: string | null
+          krankenkasse_ort: string | null
+          krankenkasse_plz: string | null
+          krankenkasse_strasse: string | null
+          mitgliedsnummer: string | null
           person_type: Database["public"]["Enums"]["person_type_enum"]
           updated_at: string
           user_id: string
@@ -1304,6 +1359,10 @@ export type Database = {
           file_path?: string | null
           id?: string
           krankenkasse_name?: string | null
+          krankenkasse_ort?: string | null
+          krankenkasse_plz?: string | null
+          krankenkasse_strasse?: string | null
+          mitgliedsnummer?: string | null
           person_type: Database["public"]["Enums"]["person_type_enum"]
           updated_at?: string
           user_id: string
@@ -1319,6 +1378,10 @@ export type Database = {
           file_path?: string | null
           id?: string
           krankenkasse_name?: string | null
+          krankenkasse_ort?: string | null
+          krankenkasse_plz?: string | null
+          krankenkasse_strasse?: string | null
+          mitgliedsnummer?: string | null
           person_type?: Database["public"]["Enums"]["person_type_enum"]
           updated_at?: string
           user_id?: string
