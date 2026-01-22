@@ -28,7 +28,7 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
   const [filterField, setFilterField] = useState<string>(
     existingFilter.person_type ? 'person_type' : 
     existingFilter.document_type ? 'document_type' : 
-    existingFilter.custom ? 'custom' : ''
+    existingFilter.custom ? 'custom' : 'none'
   );
   const [filterValue, setFilterValue] = useState<string>(
     existingFilter.person_type || existingFilter.document_type || ''
@@ -36,11 +36,11 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
   
   // Kind-specific filters
   const [kindOrdnungszahl, setKindOrdnungszahl] = useState<string>(
-    existingFilter.kind_ordnungszahl !== undefined ? String(existingFilter.kind_ordnungszahl) : ''
+    existingFilter.kind_ordnungszahl !== undefined ? String(existingFilter.kind_ordnungszahl) : '__none__'
   );
-  const [kindTyp, setKindTyp] = useState<string>(existingFilter.kind_typ || '');
+  const [kindTyp, setKindTyp] = useState<string>(existingFilter.kind_typ || '__none__');
   const [mehrlingNummer, setMehrlingNummer] = useState<string>(
-    existingFilter.mehrling_nummer !== undefined ? String(existingFilter.mehrling_nummer) : ''
+    existingFilter.mehrling_nummer !== undefined ? String(existingFilter.mehrling_nummer) : '__none__'
   );
 
   // Auto-generate notes when filter changes
@@ -82,13 +82,13 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
     }
     
     // Kind filters
-    if (kindOrdnungszahl !== '') {
+    if (kindOrdnungszahl !== '__none__' && kindOrdnungszahl !== '') {
       filterCondition.kind_ordnungszahl = parseInt(kindOrdnungszahl, 10);
     }
-    if (kindTyp && kindTyp !== 'none') {
+    if (kindTyp && kindTyp !== '__none__') {
       filterCondition.kind_typ = kindTyp;
     }
-    if (mehrlingNummer !== '') {
+    if (mehrlingNummer !== '__none__' && mehrlingNummer !== '') {
       filterCondition.mehrling_nummer = parseInt(mehrlingNummer, 10);
     }
     
@@ -224,7 +224,7 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
                     <SelectValue placeholder="Auswählen..." />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    <SelectItem value="">Keine Auswahl</SelectItem>
+                    <SelectItem value="__none__">Keine Auswahl</SelectItem>
                     <SelectItem value="0">👶 0 - Antragskind</SelectItem>
                     <SelectItem value="1">👧 1 - Jüngstes Geschwister</SelectItem>
                     <SelectItem value="2">👦 2 - Zweitjüngstes</SelectItem>
@@ -239,7 +239,7 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
                     <SelectValue placeholder="Auswählen..." />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    <SelectItem value="none">Keine Auswahl</SelectItem>
+                    <SelectItem value="__none__">Keine Auswahl</SelectItem>
                     <SelectItem value="primaer">👶 Primär (Antragskind)</SelectItem>
                     <SelectItem value="mehrling">👯 Mehrling (Zwilling etc.)</SelectItem>
                     <SelectItem value="geschwister">👨‍👩‍👧 Geschwister</SelectItem>
@@ -253,7 +253,7 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
                     <SelectValue placeholder="Auswählen..." />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    <SelectItem value="">Keine Auswahl</SelectItem>
+                    <SelectItem value="__none__">Keine Auswahl</SelectItem>
                     <SelectItem value="1">1 - Erster Mehrling</SelectItem>
                     <SelectItem value="2">2 - Zweiter Mehrling</SelectItem>
                     <SelectItem value="3">3 - Dritter Mehrling</SelectItem>
