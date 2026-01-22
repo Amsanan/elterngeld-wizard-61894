@@ -3,10 +3,9 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { EditableField } from "@/components/documents/EditableField";
-import { ConfidenceBadge } from "@/components/documents/ConfidenceBadge";
 
 interface KindergeldBescheidData {
   id: string;
@@ -31,6 +30,7 @@ const KindergeldBescheidResult = () => {
   const [searchParams] = useSearchParams();
   const [data, setData] = useState<KindergeldBescheidData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const id = searchParams.get("id");
@@ -47,7 +47,10 @@ const KindergeldBescheidResult = () => {
           .single();
 
         if (error) throw error;
-        setData(result);
+        setData({
+          ...result,
+          confidence_scores: result.confidence_scores as Record<string, number> | null,
+        });
       } catch (error: any) {
         toast({
           title: "Fehler",
@@ -61,28 +64,6 @@ const KindergeldBescheidResult = () => {
 
     fetchData();
   }, [id, toast]);
-
-  const handleFieldUpdate = async (field: string, value: string) => {
-    if (!id) return;
-
-    try {
-      const { error } = await supabase
-        .from("kindergeld_bescheide")
-        .update({ [field]: value })
-        .eq("id", id);
-
-      if (error) throw error;
-
-      setData((prev) => (prev ? { ...prev, [field]: value } : null));
-      toast({ title: "Gespeichert", description: "Feld wurde aktualisiert." });
-    } catch (error: any) {
-      toast({
-        title: "Fehler",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -106,14 +87,22 @@ const KindergeldBescheidResult = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/kindergeld-bescheide-list")}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Zurück zur Liste
-          </Button>
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/kindergeld-bescheide-list")}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Zurück zur Liste
+            </Button>
+            <Button
+              variant={isEditing ? "default" : "outline"}
+              onClick={() => setIsEditing(!isEditing)}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              {isEditing ? "Fertig" : "Bearbeiten"}
+            </Button>
+          </div>
           <div className="flex items-center gap-3">
             <FileText className="h-8 w-8 text-primary" />
             <div>
@@ -137,21 +126,31 @@ const KindergeldBescheidResult = () => {
             <CardContent className="space-y-4">
               <EditableField
                 label="Familienkasse"
-                value={data.familienkasse || ""}
-                onSave={(v) => handleFieldUpdate("familienkasse", v)}
-                badge={<ConfidenceBadge score={confidenceScores.familienkasse} />}
+                value={data.familienkasse}
+                isEditing={isEditing}
+                documentId={data.id}
+                tableName="kindergeld_bescheide"
+                fieldName="familienkasse"
+                confidenceScore={confidenceScores.familienkasse}
               />
               <EditableField
                 label="Kindergeld-Nr."
-                value={data.kindergeld_nummer || ""}
-                onSave={(v) => handleFieldUpdate("kindergeld_nummer", v)}
-                badge={<ConfidenceBadge score={confidenceScores.kindergeld_nummer} />}
+                value={data.kindergeld_nummer}
+                isEditing={isEditing}
+                documentId={data.id}
+                tableName="kindergeld_bescheide"
+                fieldName="kindergeld_nummer"
+                confidenceScore={confidenceScores.kindergeld_nummer}
               />
               <EditableField
                 label="Bescheiddatum"
-                value={data.bescheiddatum || ""}
-                onSave={(v) => handleFieldUpdate("bescheiddatum", v)}
-                badge={<ConfidenceBadge score={confidenceScores.bescheiddatum} />}
+                value={data.bescheiddatum}
+                isEditing={isEditing}
+                documentId={data.id}
+                tableName="kindergeld_bescheide"
+                fieldName="bescheiddatum"
+                type="date"
+                confidenceScore={confidenceScores.bescheiddatum}
               />
             </CardContent>
           </Card>
@@ -163,27 +162,41 @@ const KindergeldBescheidResult = () => {
             <CardContent className="space-y-4">
               <EditableField
                 label="Vorname"
-                value={data.kind_vorname || ""}
-                onSave={(v) => handleFieldUpdate("kind_vorname", v)}
-                badge={<ConfidenceBadge score={confidenceScores.kind_vorname} />}
+                value={data.kind_vorname}
+                isEditing={isEditing}
+                documentId={data.id}
+                tableName="kindergeld_bescheide"
+                fieldName="kind_vorname"
+                confidenceScore={confidenceScores.kind_vorname}
               />
               <EditableField
                 label="Nachname"
-                value={data.kind_nachname || ""}
-                onSave={(v) => handleFieldUpdate("kind_nachname", v)}
-                badge={<ConfidenceBadge score={confidenceScores.kind_nachname} />}
+                value={data.kind_nachname}
+                isEditing={isEditing}
+                documentId={data.id}
+                tableName="kindergeld_bescheide"
+                fieldName="kind_nachname"
+                confidenceScore={confidenceScores.kind_nachname}
               />
               <EditableField
                 label="Geburtsdatum"
-                value={data.kind_geburtsdatum || ""}
-                onSave={(v) => handleFieldUpdate("kind_geburtsdatum", v)}
-                badge={<ConfidenceBadge score={confidenceScores.kind_geburtsdatum} />}
+                value={data.kind_geburtsdatum}
+                isEditing={isEditing}
+                documentId={data.id}
+                tableName="kindergeld_bescheide"
+                fieldName="kind_geburtsdatum"
+                type="date"
+                confidenceScore={confidenceScores.kind_geburtsdatum}
               />
               <EditableField
                 label="Ordnungszahl (1., 2., 3. Kind)"
-                value={data.kind_ordnungszahl?.toString() || ""}
-                onSave={(v) => handleFieldUpdate("kind_ordnungszahl", v)}
-                badge={<ConfidenceBadge score={confidenceScores.kind_ordnungszahl} />}
+                value={data.kind_ordnungszahl?.toString() || null}
+                isEditing={isEditing}
+                documentId={data.id}
+                tableName="kindergeld_bescheide"
+                fieldName="kind_ordnungszahl"
+                type="number"
+                confidenceScore={confidenceScores.kind_ordnungszahl}
               />
             </CardContent>
           </Card>
@@ -195,21 +208,33 @@ const KindergeldBescheidResult = () => {
             <CardContent className="space-y-4">
               <EditableField
                 label="Monatsbetrag (€)"
-                value={data.betrag_monatlich?.toString() || ""}
-                onSave={(v) => handleFieldUpdate("betrag_monatlich", v)}
-                badge={<ConfidenceBadge score={confidenceScores.betrag_monatlich} />}
+                value={data.betrag_monatlich?.toString() || null}
+                isEditing={isEditing}
+                documentId={data.id}
+                tableName="kindergeld_bescheide"
+                fieldName="betrag_monatlich"
+                type="number"
+                confidenceScore={confidenceScores.betrag_monatlich}
               />
               <EditableField
                 label="Zahlungsbeginn"
-                value={data.zahlungsbeginn || ""}
-                onSave={(v) => handleFieldUpdate("zahlungsbeginn", v)}
-                badge={<ConfidenceBadge score={confidenceScores.zahlungsbeginn} />}
+                value={data.zahlungsbeginn}
+                isEditing={isEditing}
+                documentId={data.id}
+                tableName="kindergeld_bescheide"
+                fieldName="zahlungsbeginn"
+                type="date"
+                confidenceScore={confidenceScores.zahlungsbeginn}
               />
               <EditableField
                 label="Zahlungsende"
-                value={data.zahlungsende || ""}
-                onSave={(v) => handleFieldUpdate("zahlungsende", v)}
-                badge={<ConfidenceBadge score={confidenceScores.zahlungsende} />}
+                value={data.zahlungsende}
+                isEditing={isEditing}
+                documentId={data.id}
+                tableName="kindergeld_bescheide"
+                fieldName="zahlungsende"
+                type="date"
+                confidenceScore={confidenceScores.zahlungsende}
               />
             </CardContent>
           </Card>
@@ -221,15 +246,21 @@ const KindergeldBescheidResult = () => {
             <CardContent className="space-y-4">
               <EditableField
                 label="IBAN"
-                value={data.iban || ""}
-                onSave={(v) => handleFieldUpdate("iban", v)}
-                badge={<ConfidenceBadge score={confidenceScores.iban} />}
+                value={data.iban}
+                isEditing={isEditing}
+                documentId={data.id}
+                tableName="kindergeld_bescheide"
+                fieldName="iban"
+                confidenceScore={confidenceScores.iban}
               />
               <EditableField
                 label="Kontoinhaber"
-                value={data.kontoinhaber || ""}
-                onSave={(v) => handleFieldUpdate("kontoinhaber", v)}
-                badge={<ConfidenceBadge score={confidenceScores.kontoinhaber} />}
+                value={data.kontoinhaber}
+                isEditing={isEditing}
+                documentId={data.id}
+                tableName="kindergeld_bescheide"
+                fieldName="kontoinhaber"
+                confidenceScore={confidenceScores.kontoinhaber}
               />
             </CardContent>
           </Card>
