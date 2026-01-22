@@ -1,0 +1,637 @@
+{
+  "catalog_version": "2025-01-22",
+  "description": "Katalog aller uploadbaren Nachweise für den Elterngeldantrag",
+  "total_document_types": 16,
+  "categories": {
+    "kind": { "name_de": "Kind", "name_en": "Child" },
+    "eltern": { "name_de": "Eltern", "name_en": "Parents" },
+    "finanzen": { "name_de": "Finanzen", "name_en": "Finances" },
+    "einkommen": { "name_de": "Einkommen", "name_en": "Income" },
+    "sozialleistungen": { "name_de": "Sozialleistungen", "name_en": "Social Benefits" },
+    "versicherung": { "name_de": "Versicherung", "name_en": "Insurance" },
+    "familie": { "name_de": "Familie", "name_en": "Family" },
+    "gesundheit": { "name_de": "Gesundheit", "name_en": "Health" }
+  },
+  "nachweise": [
+    {
+      "id": "geburtsurkunde",
+      "name_de": "Geburtsurkunde",
+      "name_en": "Birth Certificate",
+      "category": "kind",
+      "required": true,
+      "person_type_applicable": false,
+      "subtypes": [],
+      "database": {
+        "table_name": "geburtsurkunden",
+        "edge_function": "extract-geburtsurkunde"
+      },
+      "upload": {
+        "route": "/upload-geburtsurkunde",
+        "result_route": "/geburtsurkunde-result/:id",
+        "list_route": "/geburtsurkunden-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "kind_vorname", "type": "text", "label_de": "Vorname des Kindes", "required": true },
+        { "name": "kind_nachname", "type": "text", "label_de": "Nachname des Kindes", "required": true },
+        { "name": "kind_geburtsdatum", "type": "date", "label_de": "Geburtsdatum des Kindes", "required": true },
+        { "name": "kind_geburtsort", "type": "text", "label_de": "Geburtsort des Kindes", "required": false },
+        { "name": "kind_geburtsnummer", "type": "text", "label_de": "Geburtsnummer", "required": false },
+        { "name": "mutter_vorname", "type": "text", "label_de": "Vorname der Mutter", "required": false },
+        { "name": "mutter_nachname", "type": "text", "label_de": "Nachname der Mutter", "required": false },
+        { "name": "mutter_geburtsname", "type": "text", "label_de": "Geburtsname der Mutter", "required": false },
+        { "name": "vater_vorname", "type": "text", "label_de": "Vorname des Vaters", "required": false },
+        { "name": "vater_nachname", "type": "text", "label_de": "Nachname des Vaters", "required": false },
+        { "name": "ausstelldatum", "type": "date", "label_de": "Ausstelldatum", "required": false },
+        { "name": "behoerde_name", "type": "text", "label_de": "Ausstellende Behörde", "required": false },
+        { "name": "urkundennummer", "type": "text", "label_de": "Urkundennummer", "required": false },
+        { "name": "verwendungszweck", "type": "text", "label_de": "Verwendungszweck", "required": false }
+      ]
+    },
+    {
+      "id": "eltern_dokument",
+      "name_de": "Eltern-Dokument",
+      "name_en": "Parent Document",
+      "category": "eltern",
+      "required": true,
+      "person_type_applicable": true,
+      "person_types": ["mutter", "vater"],
+      "subtypes": [
+        { "id": "personalausweis", "name_de": "Personalausweis", "name_en": "ID Card" },
+        { "id": "reisepass", "name_de": "Reisepass", "name_en": "Passport" },
+        { "id": "aufenthaltstitel", "name_de": "Aufenthaltstitel", "name_en": "Residence Permit" }
+      ],
+      "database": {
+        "table_name": "eltern_dokumente",
+        "edge_function": "extract-eltern-dokument"
+      },
+      "upload": {
+        "route": "/upload-eltern-dokument",
+        "result_route": "/eltern-dokument-result/:id",
+        "list_route": "/eltern-dokumente-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "document_type", "type": "text", "label_de": "Dokumenttyp", "required": true },
+        { "name": "vorname", "type": "text", "label_de": "Vorname", "required": true },
+        { "name": "nachname", "type": "text", "label_de": "Nachname", "required": true },
+        { "name": "geburtsname", "type": "text", "label_de": "Geburtsname", "required": false },
+        { "name": "geburtsdatum", "type": "date", "label_de": "Geburtsdatum", "required": true },
+        { "name": "geburtsort", "type": "text", "label_de": "Geburtsort", "required": false },
+        { "name": "staatsangehoerigkeit", "type": "text", "label_de": "Staatsangehörigkeit", "required": false },
+        { "name": "ausweisnummer", "type": "text", "label_de": "Ausweisnummer", "required": false },
+        { "name": "ausstelldatum", "type": "date", "label_de": "Ausstelldatum", "required": false },
+        { "name": "gueltig_bis", "type": "date", "label_de": "Gültig bis", "required": false },
+        { "name": "ausstellende_behoerde", "type": "text", "label_de": "Ausstellende Behörde", "required": false },
+        { "name": "ausstellort", "type": "text", "label_de": "Ausstellort", "required": false },
+        { "name": "strasse", "type": "text", "label_de": "Straße", "required": false },
+        { "name": "hausnummer", "type": "text", "label_de": "Hausnummer", "required": false },
+        { "name": "wohnungsnummer", "type": "text", "label_de": "Wohnungsnummer", "required": false },
+        { "name": "plz", "type": "text", "label_de": "PLZ", "required": false },
+        { "name": "wohnort", "type": "text", "label_de": "Wohnort", "required": false },
+        { "name": "aufenthaltstitel_art", "type": "text", "label_de": "Art des Aufenthaltstitels", "required": false },
+        { "name": "aufenthaltstitel_nummer", "type": "text", "label_de": "Aufenthaltstitel-Nummer", "required": false },
+        { "name": "aufenthaltstitel_zweck", "type": "text", "label_de": "Aufenthaltszweck", "required": false },
+        { "name": "aufenthaltstitel_gueltig_von", "type": "date", "label_de": "Aufenthaltstitel gültig von", "required": false },
+        { "name": "aufenthaltstitel_gueltig_bis", "type": "date", "label_de": "Aufenthaltstitel gültig bis", "required": false }
+      ]
+    },
+    {
+      "id": "meldebescheinigung",
+      "name_de": "Meldebescheinigung",
+      "name_en": "Registration Certificate",
+      "category": "eltern",
+      "required": true,
+      "person_type_applicable": true,
+      "person_types": ["mutter", "vater"],
+      "subtypes": [],
+      "database": {
+        "table_name": "meldebescheinigungen",
+        "edge_function": "extract-meldebescheinigung"
+      },
+      "upload": {
+        "route": "/upload-meldebescheinigung",
+        "result_route": "/meldebescheinigung-result/:id",
+        "list_route": "/meldebescheinigungen-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "vorname", "type": "text", "label_de": "Vorname", "required": true },
+        { "name": "nachname", "type": "text", "label_de": "Nachname", "required": true },
+        { "name": "geburtsdatum", "type": "date", "label_de": "Geburtsdatum", "required": false },
+        { "name": "strasse", "type": "text", "label_de": "Straße", "required": false },
+        { "name": "hausnummer", "type": "text", "label_de": "Hausnummer", "required": false },
+        { "name": "plz", "type": "text", "label_de": "PLZ", "required": false },
+        { "name": "wohnort", "type": "text", "label_de": "Wohnort", "required": false },
+        { "name": "meldedatum", "type": "date", "label_de": "Meldedatum", "required": false },
+        { "name": "ausstelldatum", "type": "date", "label_de": "Ausstelldatum", "required": false },
+        { "name": "behoerde", "type": "text", "label_de": "Ausstellende Behörde", "required": false }
+      ]
+    },
+    {
+      "id": "bankverbindung",
+      "name_de": "Bankverbindung",
+      "name_en": "Bank Details",
+      "category": "finanzen",
+      "required": true,
+      "person_type_applicable": false,
+      "subtypes": [],
+      "database": {
+        "table_name": "bankverbindungen",
+        "edge_function": "extract-bankverbindung"
+      },
+      "upload": {
+        "route": "/upload-bankverbindung",
+        "result_route": "/bankverbindung-result/:id",
+        "list_route": "/bankverbindungen-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "kontoinhaber", "type": "text", "label_de": "Kontoinhaber", "required": true },
+        { "name": "iban", "type": "text", "label_de": "IBAN", "required": true },
+        { "name": "bic", "type": "text", "label_de": "BIC", "required": false },
+        { "name": "bank_name", "type": "text", "label_de": "Bankname", "required": false }
+      ]
+    },
+    {
+      "id": "arbeitgeberbescheinigung",
+      "name_de": "Arbeitgeberbescheinigung",
+      "name_en": "Employer Certificate",
+      "category": "einkommen",
+      "required": true,
+      "person_type_applicable": true,
+      "person_types": ["mutter", "vater"],
+      "subtypes": [],
+      "database": {
+        "table_name": "arbeitgeberbescheinigungen",
+        "edge_function": "extract-arbeitgeberbescheinigung"
+      },
+      "upload": {
+        "route": "/upload-arbeitgeberbescheinigung",
+        "result_route": "/arbeitgeberbescheinigung-result/:id",
+        "list_route": "/arbeitgeberbescheinigungen-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "arbeitgeber_name", "type": "text", "label_de": "Arbeitgeber Name", "required": true },
+        { "name": "arbeitgeber_adresse", "type": "text", "label_de": "Arbeitgeber Adresse", "required": false },
+        { "name": "beschaeftigungsbeginn", "type": "date", "label_de": "Beschäftigungsbeginn", "required": false },
+        { "name": "beschaeftigungsende", "type": "date", "label_de": "Beschäftigungsende", "required": false },
+        { "name": "wochenstunden", "type": "numeric", "label_de": "Wochenstunden", "required": false },
+        { "name": "bruttogehalt", "type": "numeric", "label_de": "Bruttogehalt", "required": false },
+        { "name": "ausstelldatum", "type": "date", "label_de": "Ausstelldatum", "required": false },
+        { "name": "elternzeit_1_von", "type": "date", "label_de": "Elternzeit 1 von", "required": false },
+        { "name": "elternzeit_1_bis", "type": "date", "label_de": "Elternzeit 1 bis", "required": false },
+        { "name": "elternzeit_2_von", "type": "date", "label_de": "Elternzeit 2 von", "required": false },
+        { "name": "elternzeit_2_bis", "type": "date", "label_de": "Elternzeit 2 bis", "required": false },
+        { "name": "elternzeit_3_von", "type": "date", "label_de": "Elternzeit 3 von", "required": false },
+        { "name": "elternzeit_3_bis", "type": "date", "label_de": "Elternzeit 3 bis", "required": false },
+        { "name": "mutterschutz_beginn", "type": "date", "label_de": "Mutterschutz Beginn", "required": false },
+        { "name": "mutterschutz_ende", "type": "date", "label_de": "Mutterschutz Ende", "required": false },
+        { "name": "urlaub_1_von", "type": "date", "label_de": "Urlaub 1 von", "required": false },
+        { "name": "urlaub_1_bis", "type": "date", "label_de": "Urlaub 1 bis", "required": false },
+        { "name": "urlaub_2_von", "type": "date", "label_de": "Urlaub 2 von", "required": false },
+        { "name": "urlaub_2_bis", "type": "date", "label_de": "Urlaub 2 bis", "required": false },
+        { "name": "resturlaub_tage", "type": "integer", "label_de": "Resturlaub (Tage)", "required": false },
+        { "name": "ag_zuschuss_mutterschaftsgeld", "type": "numeric", "label_de": "AG-Zuschuss Mutterschaftsgeld", "required": false },
+        { "name": "ag_zuschuss_beginn", "type": "date", "label_de": "AG-Zuschuss Beginn", "required": false },
+        { "name": "ag_zuschuss_ende", "type": "date", "label_de": "AG-Zuschuss Ende", "required": false },
+        { "name": "ag_zuschuss_tagessatz", "type": "numeric", "label_de": "AG-Zuschuss Tagessatz", "required": false },
+        { "name": "sachbezuege_ja", "type": "boolean", "label_de": "Sachbezüge vorhanden", "required": false },
+        { "name": "sachbezuege_von", "type": "date", "label_de": "Sachbezüge von", "required": false },
+        { "name": "sachbezuege_bis", "type": "date", "label_de": "Sachbezüge bis", "required": false },
+        { "name": "sachbezuege_tagessatz", "type": "numeric", "label_de": "Sachbezüge Tagessatz", "required": false },
+        { "name": "teilzeit_elternzeit_ja", "type": "boolean", "label_de": "Teilzeit während Elternzeit", "required": false },
+        { "name": "teilzeit_von", "type": "date", "label_de": "Teilzeit von", "required": false },
+        { "name": "teilzeit_bis", "type": "date", "label_de": "Teilzeit bis", "required": false },
+        { "name": "teilzeit_stunden", "type": "numeric", "label_de": "Teilzeit Stunden", "required": false },
+        { "name": "teilzeit_brutto", "type": "numeric", "label_de": "Teilzeit Brutto", "required": false },
+        { "name": "teilzeit_netto", "type": "numeric", "label_de": "Teilzeit Netto", "required": false }
+      ]
+    },
+    {
+      "id": "gehaltsnachweis",
+      "name_de": "Gehaltsnachweis",
+      "name_en": "Salary Statement",
+      "category": "einkommen",
+      "required": true,
+      "person_type_applicable": true,
+      "person_types": ["mutter", "vater"],
+      "subtypes": [],
+      "database": {
+        "table_name": "gehaltsnachweise",
+        "edge_function": "extract-gehaltsnachweis"
+      },
+      "upload": {
+        "route": "/upload-gehaltsnachweis",
+        "result_route": "/gehaltsnachweis-result/:id",
+        "list_route": "/gehaltsnachweise-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "arbeitgeber_name", "type": "text", "label_de": "Arbeitgeber Name", "required": false },
+        { "name": "abrechnungsmonat", "type": "text", "label_de": "Abrechnungsmonat", "required": false },
+        { "name": "bruttogehalt", "type": "numeric", "label_de": "Bruttogehalt", "required": false },
+        { "name": "nettogehalt", "type": "numeric", "label_de": "Nettogehalt", "required": false },
+        { "name": "auszahlungsbetrag", "type": "numeric", "label_de": "Auszahlungsbetrag", "required": false },
+        { "name": "steuer_id", "type": "text", "label_de": "Steuer-ID", "required": false },
+        { "name": "sozialversicherungsnummer", "type": "text", "label_de": "Sozialversicherungsnummer", "required": false },
+        { "name": "lohnsteuer", "type": "numeric", "label_de": "Lohnsteuer", "required": false },
+        { "name": "kirchensteuer", "type": "numeric", "label_de": "Kirchensteuer", "required": false },
+        { "name": "solidaritaetszuschlag", "type": "numeric", "label_de": "Solidaritätszuschlag", "required": false },
+        { "name": "krankenversicherung", "type": "numeric", "label_de": "Krankenversicherung", "required": false },
+        { "name": "pflegeversicherung", "type": "numeric", "label_de": "Pflegeversicherung", "required": false },
+        { "name": "rentenversicherung", "type": "numeric", "label_de": "Rentenversicherung", "required": false },
+        { "name": "arbeitslosenversicherung", "type": "numeric", "label_de": "Arbeitslosenversicherung", "required": false },
+        { "name": "vermoegenswirksame_leistungen", "type": "numeric", "label_de": "Vermögenswirksame Leistungen", "required": false },
+        { "name": "sonstige_bezuege", "type": "numeric", "label_de": "Sonstige Bezüge", "required": false },
+        { "name": "sonstige_abzuege", "type": "numeric", "label_de": "Sonstige Abzüge", "required": false }
+      ]
+    },
+    {
+      "id": "einkommensteuerbescheid",
+      "name_de": "Einkommensteuerbescheid",
+      "name_en": "Income Tax Assessment",
+      "category": "einkommen",
+      "required": false,
+      "person_type_applicable": true,
+      "person_types": ["mutter", "vater", "beide"],
+      "subtypes": [],
+      "database": {
+        "table_name": "einkommensteuerbescheide",
+        "edge_function": "extract-steuerbescheid"
+      },
+      "upload": {
+        "route": "/upload-steuerbescheid",
+        "result_route": "/steuerbescheid-result/:id",
+        "list_route": "/steuerbescheide-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "steuerjahr", "type": "text", "label_de": "Steuerjahr", "required": true },
+        { "name": "steuernummer", "type": "text", "label_de": "Steuernummer", "required": false },
+        { "name": "steuer_id_nummer", "type": "text", "label_de": "Steuer-ID", "required": false },
+        { "name": "vorname", "type": "text", "label_de": "Vorname", "required": false },
+        { "name": "nachname", "type": "text", "label_de": "Nachname", "required": false },
+        { "name": "adresse", "type": "text", "label_de": "Adresse", "required": false },
+        { "name": "plz", "type": "text", "label_de": "PLZ", "required": false },
+        { "name": "wohnort", "type": "text", "label_de": "Wohnort", "required": false },
+        { "name": "bescheiddatum", "type": "date", "label_de": "Bescheiddatum", "required": false },
+        { "name": "finanzamt_name", "type": "text", "label_de": "Finanzamt Name", "required": false },
+        { "name": "finanzamt_adresse", "type": "text", "label_de": "Finanzamt Adresse", "required": false },
+        { "name": "gemeinsame_veranlagung", "type": "boolean", "label_de": "Gemeinsame Veranlagung", "required": false },
+        { "name": "partner1_vorname", "type": "text", "label_de": "Partner 1 Vorname", "required": false },
+        { "name": "partner1_nachname", "type": "text", "label_de": "Partner 1 Nachname", "required": false },
+        { "name": "partner1_steuer_id", "type": "text", "label_de": "Partner 1 Steuer-ID", "required": false },
+        { "name": "partner2_vorname", "type": "text", "label_de": "Partner 2 Vorname", "required": false },
+        { "name": "partner2_nachname", "type": "text", "label_de": "Partner 2 Nachname", "required": false },
+        { "name": "partner2_steuer_id", "type": "text", "label_de": "Partner 2 Steuer-ID", "required": false },
+        { "name": "jahreseinkommen", "type": "text", "label_de": "Jahreseinkommen", "required": false },
+        { "name": "gesamtbetrag_der_einkuenfte", "type": "text", "label_de": "Gesamtbetrag der Einkünfte", "required": false },
+        { "name": "summe_der_einkuenfte", "type": "text", "label_de": "Summe der Einkünfte", "required": false },
+        { "name": "zu_versteuerndes_einkommen", "type": "text", "label_de": "Zu versteuerndes Einkommen", "required": false },
+        { "name": "festgesetzte_steuer", "type": "text", "label_de": "Festgesetzte Steuer", "required": false },
+        { "name": "verbleibende_steuer", "type": "text", "label_de": "Verbleibende Steuer", "required": false },
+        { "name": "bruttoarbeitslohn", "type": "text", "label_de": "Bruttoarbeitslohn", "required": false },
+        { "name": "einkuenfte_nichtselbstaendig", "type": "text", "label_de": "Einkünfte nichtselbständig", "required": false },
+        { "name": "einkuenfte_selbstaendig", "type": "text", "label_de": "Einkünfte selbständig", "required": false },
+        { "name": "werbungskosten", "type": "text", "label_de": "Werbungskosten", "required": false },
+        { "name": "sonderausgaben", "type": "text", "label_de": "Sonderausgaben", "required": false },
+        { "name": "altersvorsorgeaufwendungen", "type": "text", "label_de": "Altersvorsorgeaufwendungen", "required": false },
+        { "name": "krankenversicherung", "type": "text", "label_de": "Krankenversicherung", "required": false },
+        { "name": "pflegeversicherung", "type": "text", "label_de": "Pflegeversicherung", "required": false },
+        { "name": "steuerabzug_vom_lohn", "type": "text", "label_de": "Steuerabzug vom Lohn", "required": false },
+        { "name": "solidaritaetszuschlag", "type": "text", "label_de": "Solidaritätszuschlag", "required": false },
+        { "name": "vorauszahlungen", "type": "text", "label_de": "Vorauszahlungen", "required": false }
+      ]
+    },
+    {
+      "id": "krankenversicherung",
+      "name_de": "Krankenversicherungsnachweis",
+      "name_en": "Health Insurance Certificate",
+      "category": "versicherung",
+      "required": true,
+      "person_type_applicable": true,
+      "person_types": ["mutter", "vater"],
+      "subtypes": [
+        { "id": "gesetzlich", "name_de": "Gesetzliche Krankenversicherung", "name_en": "Statutory Health Insurance" },
+        { "id": "freiwillig", "name_de": "Freiwillige Versicherung", "name_en": "Voluntary Insurance" },
+        { "id": "familie", "name_de": "Familienversicherung", "name_en": "Family Insurance" },
+        { "id": "privat", "name_de": "Private Krankenversicherung", "name_en": "Private Health Insurance" }
+      ],
+      "database": {
+        "table_name": "krankenversicherung_nachweise",
+        "edge_function": "extract-krankenversicherung"
+      },
+      "upload": {
+        "route": "/upload-krankenversicherung",
+        "result_route": "/krankenversicherung-result/:id",
+        "list_route": "/krankenversicherung-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "krankenkasse_name", "type": "text", "label_de": "Krankenkasse Name", "required": true },
+        { "name": "versichertennummer", "type": "text", "label_de": "Versichertennummer", "required": false },
+        { "name": "versicherungsart", "type": "text", "label_de": "Versicherungsart", "required": false },
+        { "name": "versicherungsbeginn", "type": "date", "label_de": "Versicherungsbeginn", "required": false },
+        { "name": "beitragssatz", "type": "numeric", "label_de": "Beitragssatz", "required": false }
+      ]
+    },
+    {
+      "id": "mutterschaftsgeld",
+      "name_de": "Mutterschaftsgeld-Bescheid",
+      "name_en": "Maternity Benefit Certificate",
+      "category": "sozialleistungen",
+      "required": false,
+      "person_type_applicable": false,
+      "subtypes": [],
+      "database": {
+        "table_name": "mutterschaftsgeld",
+        "edge_function": "extract-mutterschaftsgeld"
+      },
+      "upload": {
+        "route": "/upload-mutterschaftsgeld",
+        "result_route": "/mutterschaftsgeld-result/:id",
+        "list_route": "/mutterschaftsgeld-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "krankenkasse_name", "type": "text", "label_de": "Krankenkasse Name", "required": false },
+        { "name": "versichertennummer", "type": "text", "label_de": "Versichertennummer", "required": false },
+        { "name": "bescheiddatum", "type": "date", "label_de": "Bescheiddatum", "required": false },
+        { "name": "leistungsbeginn", "type": "date", "label_de": "Leistungsbeginn", "required": false },
+        { "name": "leistungsende", "type": "date", "label_de": "Leistungsende", "required": false },
+        { "name": "tagessatz", "type": "numeric", "label_de": "Tagessatz", "required": false },
+        { "name": "gesamtbetrag", "type": "numeric", "label_de": "Gesamtbetrag", "required": false }
+      ]
+    },
+    {
+      "id": "leistungsbescheid",
+      "name_de": "Leistungsbescheid",
+      "name_en": "Benefit Decision",
+      "category": "sozialleistungen",
+      "required": false,
+      "person_type_applicable": true,
+      "person_types": ["mutter", "vater"],
+      "subtypes": [
+        { "id": "arbeitslosengeld_1", "name_de": "Arbeitslosengeld I", "name_en": "Unemployment Benefit I" },
+        { "id": "buergergeld", "name_de": "Bürgergeld", "name_en": "Citizen's Benefit" },
+        { "id": "krankengeld", "name_de": "Krankengeld", "name_en": "Sickness Benefit" },
+        { "id": "wohngeld", "name_de": "Wohngeld", "name_en": "Housing Benefit" }
+      ],
+      "database": {
+        "table_name": "leistungsbescheide",
+        "edge_function": "extract-leistungsbescheid"
+      },
+      "upload": {
+        "route": "/upload-leistungsbescheid",
+        "result_route": "/leistungsbescheid-result/:id",
+        "list_route": "/leistungsbescheide-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "leistungsart", "type": "text", "label_de": "Leistungsart", "required": true },
+        { "name": "bewilligungsstelle", "type": "text", "label_de": "Bewilligungsstelle", "required": false },
+        { "name": "bescheiddatum", "type": "date", "label_de": "Bescheiddatum", "required": false },
+        { "name": "leistungsbeginn", "type": "date", "label_de": "Leistungsbeginn", "required": false },
+        { "name": "leistungsende", "type": "date", "label_de": "Leistungsende", "required": false },
+        { "name": "monatsbetrag", "type": "numeric", "label_de": "Monatsbetrag", "required": false },
+        { "name": "tagessatz", "type": "numeric", "label_de": "Tagessatz", "required": false },
+        { "name": "bemessungsentgelt", "type": "numeric", "label_de": "Bemessungsentgelt", "required": false },
+        { "name": "leistungssatz_prozent", "type": "numeric", "label_de": "Leistungssatz (%)", "required": false },
+        { "name": "qualifizierungszeit_von", "type": "date", "label_de": "Qualifizierungszeit von", "required": false },
+        { "name": "qualifizierungszeit_bis", "type": "date", "label_de": "Qualifizierungszeit bis", "required": false },
+        { "name": "regelsatz", "type": "numeric", "label_de": "Regelsatz", "required": false },
+        { "name": "kosten_unterkunft", "type": "numeric", "label_de": "Kosten der Unterkunft", "required": false },
+        { "name": "heizkosten", "type": "numeric", "label_de": "Heizkosten", "required": false },
+        { "name": "mehrbedarf", "type": "numeric", "label_de": "Mehrbedarf", "required": false },
+        { "name": "bedarfsgemeinschaft_groesse", "type": "integer", "label_de": "Größe der Bedarfsgemeinschaft", "required": false },
+        { "name": "arbeitsunfaehig_seit", "type": "date", "label_de": "Arbeitsunfähig seit", "required": false },
+        { "name": "bruttolohn_bemessung", "type": "numeric", "label_de": "Bruttolohn zur Bemessung", "required": false },
+        { "name": "arbeitgeber", "type": "text", "label_de": "Arbeitgeber", "required": false },
+        { "name": "krankenkasse", "type": "text", "label_de": "Krankenkasse", "required": false },
+        { "name": "versichertennummer", "type": "text", "label_de": "Versichertennummer", "required": false },
+        { "name": "kundennummer", "type": "text", "label_de": "Kundennummer", "required": false },
+        { "name": "aktenzeichen", "type": "text", "label_de": "Aktenzeichen", "required": false }
+      ]
+    },
+    {
+      "id": "selbststaendigen_nachweis",
+      "name_de": "Selbstständigennachweis",
+      "name_en": "Self-Employment Proof",
+      "category": "einkommen",
+      "required": false,
+      "person_type_applicable": true,
+      "person_types": ["mutter", "vater"],
+      "subtypes": [
+        { "id": "bwa", "name_de": "Betriebswirtschaftliche Auswertung (BWA)", "name_en": "Business Management Analysis" },
+        { "id": "euer", "name_de": "Einnahmen-Überschuss-Rechnung (EÜR)", "name_en": "Income-Surplus Calculation" },
+        { "id": "steuererklaerung", "name_de": "Steuererklärung", "name_en": "Tax Declaration" }
+      ],
+      "database": {
+        "table_name": "selbststaendigen_nachweise",
+        "edge_function": "extract-selbststaendigen-nachweis"
+      },
+      "upload": {
+        "route": "/upload-selbststaendigen-nachweis",
+        "result_route": "/selbststaendigen-nachweis-result/:id",
+        "list_route": "/selbststaendigen-nachweise-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "steuernummer", "type": "text", "label_de": "Steuernummer", "required": false },
+        { "name": "gewerbeart", "type": "text", "label_de": "Gewerbeart", "required": false },
+        { "name": "gewerbeanmeldung_datum", "type": "date", "label_de": "Gewerbeanmeldung Datum", "required": false },
+        { "name": "nachweiszeitraum_von", "type": "date", "label_de": "Nachweiszeitraum von", "required": false },
+        { "name": "nachweiszeitraum_bis", "type": "date", "label_de": "Nachweiszeitraum bis", "required": false },
+        { "name": "jahreseinkommen", "type": "numeric", "label_de": "Jahreseinkommen", "required": false }
+      ]
+    },
+    {
+      "id": "ehe_sorgerecht",
+      "name_de": "Ehe-/Sorgerechtsnachweis",
+      "name_en": "Marriage/Custody Certificate",
+      "category": "familie",
+      "required": false,
+      "person_type_applicable": false,
+      "subtypes": [
+        { "id": "heiratsurkunde", "name_de": "Heiratsurkunde", "name_en": "Marriage Certificate" },
+        { "id": "sorgerechtsbeschluss", "name_de": "Sorgerechtsbeschluss", "name_en": "Custody Decision" }
+      ],
+      "database": {
+        "table_name": "ehe_sorgerecht_nachweise",
+        "edge_function": "extract-ehe-sorgerecht"
+      },
+      "upload": {
+        "route": "/upload-ehe-sorgerecht",
+        "result_route": "/ehe-sorgerecht-result/:id",
+        "list_route": "/ehe-sorgerecht-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "dokument_typ", "type": "text", "label_de": "Dokumenttyp", "required": true },
+        { "name": "partner1_vorname", "type": "text", "label_de": "Partner 1 Vorname", "required": false },
+        { "name": "partner1_nachname", "type": "text", "label_de": "Partner 1 Nachname", "required": false },
+        { "name": "partner2_vorname", "type": "text", "label_de": "Partner 2 Vorname", "required": false },
+        { "name": "partner2_nachname", "type": "text", "label_de": "Partner 2 Nachname", "required": false },
+        { "name": "heiratsdatum", "type": "date", "label_de": "Heiratsdatum", "required": false },
+        { "name": "standesamt", "type": "text", "label_de": "Standesamt", "required": false },
+        { "name": "ausstelldatum", "type": "date", "label_de": "Ausstelldatum", "required": false },
+        { "name": "kind_vorname", "type": "text", "label_de": "Kind Vorname", "required": false },
+        { "name": "kind_nachname", "type": "text", "label_de": "Kind Nachname", "required": false },
+        { "name": "sorgerecht_art", "type": "text", "label_de": "Sorgerechtsart", "required": false }
+      ]
+    },
+    {
+      "id": "adoptions_pflege",
+      "name_de": "Adoptions-/Pflegedokument",
+      "name_en": "Adoption/Foster Care Document",
+      "category": "familie",
+      "required": false,
+      "person_type_applicable": false,
+      "subtypes": [
+        { "id": "adoptionsbeschluss", "name_de": "Adoptionsbeschluss", "name_en": "Adoption Decision" },
+        { "id": "pflegeerlaubnis", "name_de": "Pflegeerlaubnis", "name_en": "Foster Care Permit" },
+        { "id": "pflegevertrag", "name_de": "Pflegevertrag", "name_en": "Foster Care Contract" }
+      ],
+      "database": {
+        "table_name": "adoptions_pflege_dokumente",
+        "edge_function": "extract-adoptions-pflege"
+      },
+      "upload": {
+        "route": "/upload-adoptions-pflege",
+        "result_route": "/adoptions-pflege-result/:id",
+        "list_route": "/adoptions-pflege-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "dokument_typ", "type": "text", "label_de": "Dokumenttyp", "required": true },
+        { "name": "kind_vorname", "type": "text", "label_de": "Kind Vorname", "required": false },
+        { "name": "kind_nachname", "type": "text", "label_de": "Kind Nachname", "required": false },
+        { "name": "kind_geburtsdatum", "type": "date", "label_de": "Kind Geburtsdatum", "required": false },
+        { "name": "beschlussdatum", "type": "date", "label_de": "Beschlussdatum", "required": false },
+        { "name": "aufnahmedatum", "type": "date", "label_de": "Aufnahmedatum", "required": false },
+        { "name": "jugendamt", "type": "text", "label_de": "Jugendamt", "required": false },
+        { "name": "pflegestelle_name", "type": "text", "label_de": "Pflegestelle Name", "required": false }
+      ]
+    },
+    {
+      "id": "vaterschaftsanerkennung",
+      "name_de": "Vaterschaftsanerkennung",
+      "name_en": "Paternity Acknowledgment",
+      "category": "kind",
+      "required": false,
+      "person_type_applicable": false,
+      "subtypes": [],
+      "database": {
+        "table_name": "vaterschaftsanerkennungen",
+        "edge_function": "extract-vaterschaftsanerkennung"
+      },
+      "upload": {
+        "route": "/upload-vaterschaftsanerkennung",
+        "result_route": "/vaterschaftsanerkennung-result/:id",
+        "list_route": "/vaterschaftsanerkennungen-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "kind_vorname", "type": "text", "label_de": "Kind Vorname", "required": false },
+        { "name": "kind_nachname", "type": "text", "label_de": "Kind Nachname", "required": false },
+        { "name": "kind_geburtsdatum", "type": "date", "label_de": "Kind Geburtsdatum", "required": false },
+        { "name": "kind_geburtsort", "type": "text", "label_de": "Kind Geburtsort", "required": false },
+        { "name": "vater_vorname", "type": "text", "label_de": "Vater Vorname", "required": false },
+        { "name": "vater_nachname", "type": "text", "label_de": "Vater Nachname", "required": false },
+        { "name": "vater_geburtsdatum", "type": "date", "label_de": "Vater Geburtsdatum", "required": false },
+        { "name": "mutter_vorname", "type": "text", "label_de": "Mutter Vorname", "required": false },
+        { "name": "mutter_nachname", "type": "text", "label_de": "Mutter Nachname", "required": false },
+        { "name": "mutter_geburtsdatum", "type": "date", "label_de": "Mutter Geburtsdatum", "required": false },
+        { "name": "anerkennungsdatum", "type": "date", "label_de": "Anerkennungsdatum", "required": false },
+        { "name": "zustimmungsdatum", "type": "date", "label_de": "Zustimmungsdatum", "required": false },
+        { "name": "beurkundungsstelle", "type": "text", "label_de": "Beurkundungsstelle", "required": false },
+        { "name": "urkundennummer", "type": "text", "label_de": "Urkundennummer", "required": false }
+      ]
+    },
+    {
+      "id": "kindergeld_bescheid",
+      "name_de": "Kindergeld-Bescheid",
+      "name_en": "Child Benefit Certificate",
+      "category": "sozialleistungen",
+      "required": false,
+      "person_type_applicable": true,
+      "person_types": ["mutter", "vater"],
+      "subtypes": [],
+      "database": {
+        "table_name": "kindergeld_bescheide",
+        "edge_function": "extract-kindergeld-bescheid"
+      },
+      "upload": {
+        "route": "/upload-kindergeld-bescheid",
+        "result_route": "/kindergeld-bescheid-result/:id",
+        "list_route": "/kindergeld-bescheide-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "familienkasse", "type": "text", "label_de": "Familienkasse", "required": false },
+        { "name": "kindergeld_nummer", "type": "text", "label_de": "Kindergeld-Nummer", "required": false },
+        { "name": "kind_vorname", "type": "text", "label_de": "Kind Vorname", "required": false },
+        { "name": "kind_nachname", "type": "text", "label_de": "Kind Nachname", "required": false },
+        { "name": "kind_geburtsdatum", "type": "date", "label_de": "Kind Geburtsdatum", "required": false },
+        { "name": "kind_ordnungszahl", "type": "integer", "label_de": "Kind Ordnungszahl", "required": false },
+        { "name": "bescheiddatum", "type": "date", "label_de": "Bescheiddatum", "required": false },
+        { "name": "betrag_monatlich", "type": "numeric", "label_de": "Monatlicher Betrag", "required": false },
+        { "name": "zahlungsbeginn", "type": "date", "label_de": "Zahlungsbeginn", "required": false },
+        { "name": "zahlungsende", "type": "date", "label_de": "Zahlungsende", "required": false },
+        { "name": "iban", "type": "text", "label_de": "IBAN", "required": false },
+        { "name": "kontoinhaber", "type": "text", "label_de": "Kontoinhaber", "required": false }
+      ]
+    },
+    {
+      "id": "aerztliches_zeugnis",
+      "name_de": "Ärztliches Zeugnis",
+      "name_en": "Medical Certificate",
+      "category": "gesundheit",
+      "required": false,
+      "person_type_applicable": false,
+      "subtypes": [
+        { "id": "et_bescheinigung", "name_de": "ET-Bescheinigung", "name_en": "Due Date Certificate" },
+        { "id": "beschaeftigungsverbot", "name_de": "Beschäftigungsverbot", "name_en": "Employment Ban" }
+      ],
+      "database": {
+        "table_name": "aerztliche_zeugnisse",
+        "edge_function": "extract-aerztliches-zeugnis"
+      },
+      "upload": {
+        "route": "/upload-aerztliches-zeugnis",
+        "result_route": "/aerztliches-zeugnis-result/:id",
+        "list_route": "/aerztliche-zeugnisse-list",
+        "accepted_formats": ["pdf", "jpg", "jpeg", "png"],
+        "max_size_mb": 10
+      },
+      "fields": [
+        { "name": "zeugnis_typ", "type": "text", "label_de": "Zeugnistyp", "required": true },
+        { "name": "arzt_name", "type": "text", "label_de": "Arzt Name", "required": false },
+        { "name": "arzt_praxis", "type": "text", "label_de": "Arzt Praxis", "required": false },
+        { "name": "ausstelldatum", "type": "date", "label_de": "Ausstelldatum", "required": false },
+        { "name": "errechneter_geburtstermin", "type": "date", "label_de": "Errechneter Geburtstermin", "required": false },
+        { "name": "verbot_beginn", "type": "date", "label_de": "Verbot Beginn", "required": false },
+        { "name": "verbot_ende", "type": "date", "label_de": "Verbot Ende", "required": false },
+        { "name": "verbot_grund", "type": "text", "label_de": "Verbot Grund", "required": false },
+        { "name": "verbot_art", "type": "text", "label_de": "Verbot Art", "required": false }
+      ]
+    }
+  ]
+}
