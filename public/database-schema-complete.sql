@@ -1,6 +1,6 @@
 -- ============================================
 -- ELTERNGELD APPLICATION DATABASE SCHEMA
--- Generated: 2024-12-14
+-- Generated: 2025-01-22
 -- ============================================
 
 -- ============================================
@@ -210,7 +210,7 @@ CREATE TABLE public.bankverbindungen (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
--- Employer Certificates (Arbeitgeberbescheinigungen) Table
+-- Employer Certificates (Arbeitgeberbescheinigungen) Table - Extended
 CREATE TABLE public.arbeitgeberbescheinigungen (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
@@ -223,6 +223,39 @@ CREATE TABLE public.arbeitgeberbescheinigungen (
   wochenstunden NUMERIC,
   bruttogehalt NUMERIC,
   ausstelldatum DATE,
+  -- Elternzeit fields
+  elternzeit_1_von DATE,
+  elternzeit_1_bis DATE,
+  elternzeit_2_von DATE,
+  elternzeit_2_bis DATE,
+  elternzeit_3_von DATE,
+  elternzeit_3_bis DATE,
+  -- Mutterschutz fields
+  mutterschutz_beginn DATE,
+  mutterschutz_ende DATE,
+  -- Urlaub fields
+  urlaub_1_von DATE,
+  urlaub_1_bis DATE,
+  urlaub_2_von DATE,
+  urlaub_2_bis DATE,
+  resturlaub_tage INTEGER,
+  -- AG-Zuschuss Mutterschaftsgeld
+  ag_zuschuss_mutterschaftsgeld NUMERIC,
+  ag_zuschuss_beginn DATE,
+  ag_zuschuss_ende DATE,
+  ag_zuschuss_tagessatz NUMERIC,
+  -- Sachbezüge
+  sachbezuege_ja BOOLEAN DEFAULT false,
+  sachbezuege_von DATE,
+  sachbezuege_bis DATE,
+  sachbezuege_tagessatz NUMERIC,
+  -- Teilzeit während Elternzeit
+  teilzeit_elternzeit_ja BOOLEAN DEFAULT false,
+  teilzeit_von DATE,
+  teilzeit_bis DATE,
+  teilzeit_stunden NUMERIC,
+  teilzeit_brutto NUMERIC,
+  teilzeit_netto NUMERIC,
   file_path TEXT,
   confidence_scores JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -293,7 +326,7 @@ CREATE TABLE public.mutterschaftsgeld (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
--- Benefit Notices (Leistungsbescheide) Table
+-- Benefit Notices (Leistungsbescheide) Table - Extended
 CREATE TABLE public.leistungsbescheide (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
@@ -305,6 +338,27 @@ CREATE TABLE public.leistungsbescheide (
   leistungsende DATE,
   monatsbetrag NUMERIC,
   bescheiddatum DATE,
+  -- ALG I specific fields
+  bemessungsentgelt NUMERIC,
+  leistungssatz_prozent NUMERIC,
+  qualifizierungszeit_von DATE,
+  qualifizierungszeit_bis DATE,
+  -- ALG II / Bürgergeld specific fields
+  regelsatz NUMERIC,
+  kosten_unterkunft NUMERIC,
+  heizkosten NUMERIC,
+  mehrbedarf NUMERIC,
+  bedarfsgemeinschaft_groesse INTEGER,
+  -- Krankengeld specific fields
+  arbeitsunfaehig_seit DATE,
+  bruttolohn_bemessung NUMERIC,
+  tagessatz NUMERIC,
+  arbeitgeber TEXT,
+  krankenkasse TEXT,
+  versichertennummer TEXT,
+  -- Additional reference numbers
+  kundennummer TEXT,
+  aktenzeichen TEXT,
   file_path TEXT,
   confidence_scores JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -416,12 +470,93 @@ CREATE TABLE public.adoptions_pflege_dokumente (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
+-- Paternity Acknowledgement (Vaterschaftsanerkennungen) Table
+CREATE TABLE public.vaterschaftsanerkennungen (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  antrag_id UUID,
+  kind_vorname TEXT,
+  kind_nachname TEXT,
+  kind_geburtsdatum DATE,
+  kind_geburtsort TEXT,
+  vater_vorname TEXT,
+  vater_nachname TEXT,
+  vater_geburtsdatum DATE,
+  mutter_vorname TEXT,
+  mutter_nachname TEXT,
+  mutter_geburtsdatum DATE,
+  anerkennungsdatum DATE,
+  zustimmungsdatum DATE,
+  beurkundungsstelle TEXT,
+  urkundennummer TEXT,
+  file_path TEXT,
+  confidence_scores JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Child Benefit Notices (Kindergeld Bescheide) Table
+CREATE TABLE public.kindergeld_bescheide (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  antrag_id UUID,
+  person_type person_type_enum,
+  familienkasse TEXT,
+  kindergeld_nummer TEXT,
+  kind_vorname TEXT,
+  kind_nachname TEXT,
+  kind_geburtsdatum DATE,
+  kind_ordnungszahl INTEGER,
+  bescheiddatum DATE,
+  betrag_monatlich NUMERIC,
+  zahlungsbeginn DATE,
+  zahlungsende DATE,
+  iban TEXT,
+  kontoinhaber TEXT,
+  file_path TEXT,
+  confidence_scores JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Medical Certificates (Ärztliche Zeugnisse) Table
+CREATE TABLE public.aerztliche_zeugnisse (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  antrag_id UUID,
+  zeugnis_typ TEXT NOT NULL, -- 'et_bescheinigung' or 'beschaeftigungsverbot'
+  arzt_name TEXT,
+  arzt_praxis TEXT,
+  ausstelldatum DATE,
+  errechneter_geburtstermin DATE,
+  verbot_beginn DATE,
+  verbot_ende DATE,
+  verbot_grund TEXT,
+  verbot_art TEXT, -- 'individuell' or 'generell'
+  file_path TEXT,
+  confidence_scores JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
 -- Application-Birth Certificate Junction Table
 CREATE TABLE public.antrag_geburtsurkunden (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   antrag_id UUID NOT NULL,
   geburtsurkunde_id UUID NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+-- Application Progress Table
+CREATE TABLE public.antrag_progress (
+  antrag_id UUID PRIMARY KEY NOT NULL,
+  user_id UUID NOT NULL,
+  current_step INTEGER DEFAULT 1,
+  completed_steps INTEGER[] DEFAULT '{}',
+  field_mappings JSONB DEFAULT '{}',
+  partial_pdf_path TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 -- PDF Field Mappings Table
@@ -436,6 +571,18 @@ CREATE TABLE public.pdf_field_mappings (
   is_active BOOLEAN DEFAULT true,
   filter_condition JSONB,
   notes TEXT,
+  section_visual TEXT,
+  field_label_de TEXT,
+  field_type TEXT,
+  format_hint TEXT,
+  validation_rule_de TEXT,
+  hint_de TEXT,
+  page_number INTEGER,
+  coord_x NUMERIC,
+  coord_y NUMERIC,
+  width NUMERIC,
+  height NUMERIC,
+  reading_order INTEGER,
   created_by UUID,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
@@ -463,7 +610,7 @@ CREATE TABLE public.document_cleanup_settings (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
--- Elterngeld Application Progress Table
+-- Elterngeld Application Progress Table (legacy)
 CREATE TABLE public.elterngeldantrag_progress (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL UNIQUE,
@@ -495,7 +642,11 @@ ALTER TABLE public.selbststaendigen_nachweise ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.einkommensteuerbescheide ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ehe_sorgerecht_nachweise ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.adoptions_pflege_dokumente ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vaterschaftsanerkennungen ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.kindergeld_bescheide ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.aerztliche_zeugnisse ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.antrag_geburtsurkunden ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.antrag_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pdf_field_mappings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.document_audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.document_cleanup_settings ENABLE ROW LEVEL SECURITY;
@@ -706,6 +857,45 @@ CREATE POLICY "Users can update their own adoptions_pflege_dokumente" ON public.
 CREATE POLICY "Users can delete their own adoptions_pflege_dokumente" ON public.adoptions_pflege_dokumente
   FOR DELETE USING (auth.uid() = user_id);
 
+-- Vaterschaftsanerkennungen Policies
+CREATE POLICY "Users can view their own vaterschaftsanerkennungen" ON public.vaterschaftsanerkennungen
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own vaterschaftsanerkennungen" ON public.vaterschaftsanerkennungen
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own vaterschaftsanerkennungen" ON public.vaterschaftsanerkennungen
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own vaterschaftsanerkennungen" ON public.vaterschaftsanerkennungen
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Kindergeld Bescheide Policies
+CREATE POLICY "Users can view their own kindergeld_bescheide" ON public.kindergeld_bescheide
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own kindergeld_bescheide" ON public.kindergeld_bescheide
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own kindergeld_bescheide" ON public.kindergeld_bescheide
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own kindergeld_bescheide" ON public.kindergeld_bescheide
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Aerztliche Zeugnisse Policies
+CREATE POLICY "Users can view their own aerztliche_zeugnisse" ON public.aerztliche_zeugnisse
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own aerztliche_zeugnisse" ON public.aerztliche_zeugnisse
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own aerztliche_zeugnisse" ON public.aerztliche_zeugnisse
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own aerztliche_zeugnisse" ON public.aerztliche_zeugnisse
+  FOR DELETE USING (auth.uid() = user_id);
+
 -- Antrag Geburtsurkunden Policies
 CREATE POLICY "Users can view their own antrag_geburtsurkunden" ON public.antrag_geburtsurkunden
   FOR SELECT USING (EXISTS (
@@ -722,6 +912,19 @@ CREATE POLICY "Users can delete their own antrag_geburtsurkunden" ON public.antr
     SELECT 1 FROM antraege WHERE antraege.id = antrag_geburtsurkunden.antrag_id AND antraege.user_id = auth.uid()
   ));
 
+-- Antrag Progress Policies
+CREATE POLICY "Users can view own antrag progress" ON public.antrag_progress
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own antrag progress" ON public.antrag_progress
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own antrag progress" ON public.antrag_progress
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own antrag progress" ON public.antrag_progress
+  FOR DELETE USING (auth.uid() = user_id);
+
 -- PDF Field Mappings Policies
 CREATE POLICY "Users can view field mappings" ON public.pdf_field_mappings
   FOR SELECT USING (auth.uid() IS NOT NULL);
@@ -729,11 +932,11 @@ CREATE POLICY "Users can view field mappings" ON public.pdf_field_mappings
 CREATE POLICY "Users can insert field mappings" ON public.pdf_field_mappings
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND auth.uid() = created_by);
 
-CREATE POLICY "Users can update field mappings" ON public.pdf_field_mappings
-  FOR UPDATE USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Admins can update field mappings" ON public.pdf_field_mappings
+  FOR UPDATE USING (public.has_role(auth.uid(), 'admin'));
 
-CREATE POLICY "Users can delete field mappings" ON public.pdf_field_mappings
-  FOR DELETE USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Admins can delete field mappings" ON public.pdf_field_mappings
+  FOR DELETE USING (public.has_role(auth.uid(), 'admin'));
 
 -- Document Audit Log Policies
 CREATE POLICY "Users can view their own audit logs" ON public.document_audit_log
@@ -815,6 +1018,18 @@ CREATE TRIGGER update_ehe_sorgerecht_nachweise_updated_at BEFORE UPDATE ON publi
 CREATE TRIGGER update_adoptions_pflege_dokumente_updated_at BEFORE UPDATE ON public.adoptions_pflege_dokumente
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+CREATE TRIGGER update_vaterschaftsanerkennungen_updated_at BEFORE UPDATE ON public.vaterschaftsanerkennungen
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER update_kindergeld_bescheide_updated_at BEFORE UPDATE ON public.kindergeld_bescheide
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER update_aerztliche_zeugnisse_updated_at BEFORE UPDATE ON public.aerztliche_zeugnisse
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER update_antrag_progress_updated_at BEFORE UPDATE ON public.antrag_progress
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
 CREATE TRIGGER update_pdf_field_mappings_updated_at BEFORE UPDATE ON public.pdf_field_mappings
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
@@ -845,7 +1060,11 @@ CREATE INDEX idx_selbststaendigen_nachweise_user_id ON public.selbststaendigen_n
 CREATE INDEX idx_einkommensteuerbescheide_user_id ON public.einkommensteuerbescheide(user_id);
 CREATE INDEX idx_ehe_sorgerecht_nachweise_user_id ON public.ehe_sorgerecht_nachweise(user_id);
 CREATE INDEX idx_adoptions_pflege_dokumente_user_id ON public.adoptions_pflege_dokumente(user_id);
+CREATE INDEX idx_vaterschaftsanerkennungen_user_id ON public.vaterschaftsanerkennungen(user_id);
+CREATE INDEX idx_kindergeld_bescheide_user_id ON public.kindergeld_bescheide(user_id);
+CREATE INDEX idx_aerztliche_zeugnisse_user_id ON public.aerztliche_zeugnisse(user_id);
 CREATE INDEX idx_antraege_user_id ON public.antraege(user_id);
+CREATE INDEX idx_antrag_progress_user_id ON public.antrag_progress(user_id);
 CREATE INDEX idx_pdf_field_mappings_document_type ON public.pdf_field_mappings(document_type);
 CREATE INDEX idx_pdf_field_mappings_source_table ON public.pdf_field_mappings(source_table);
 CREATE INDEX idx_document_audit_log_user_id ON public.document_audit_log(user_id);
@@ -860,7 +1079,7 @@ CREATE INDEX idx_user_roles_user_id ON public.user_roles(user_id);
 -- Bucket: application-documents (private)
 -- Bucket: form-templates (public)
 -- Bucket: xml-schemas (public)
--- Bucket: elterngeldantrag-drafts (public)
+-- Bucket: elterngeldantrag-drafts (private)
 
 -- ============================================
 -- END OF SCHEMA
