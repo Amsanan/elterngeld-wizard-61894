@@ -4,10 +4,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Trash2, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, X, Info } from 'lucide-react';
 import { FilterBuilder } from './FilterBuilder';
 import { FilterCondition, ColumnDefinition } from './FilterConditionRow';
 import { ColumnMultiSelect } from './ColumnMultiSelect';
+import { PdfFieldSearchSelect, getFieldType, getFieldTypeBadge } from './PdfFieldSearchSelect';
+import { VariableSelector } from './VariableSelector';
+import { cn } from '@/lib/utils';
 
 export interface TableSchema {
   available_filters?: string[];
@@ -248,44 +252,101 @@ export function NodePropertiesPanel({
           </>
         );
 
-      case 'setField':
+      case 'setField': {
+        const selectedPdfField = (node.data as any).pdfField || '';
+        const fieldType = selectedPdfField ? getFieldType(selectedPdfField) : null;
+        const fieldBadge = fieldType ? getFieldTypeBadge(fieldType) : null;
+        const isCheckbox = fieldType === 'checkbox';
+        const isDateField = selectedPdfField && (
+          selectedPdfField.includes('datum') || 
+          selectedPdfField.includes('date') ||
+          selectedPdfField.includes('geburt') ||
+          selectedPdfField.includes('termin')
+        );
+        const currentValue = (node.data as any).value;
+        const autoFormat = (node.data as any).autoFormat ?? true;
+        
         return (
           <>
             <div className="space-y-2">
               <Label>PDF Feld</Label>
-              <Select 
-                value={(node.data as any).pdfField || ''} 
+              <PdfFieldSearchSelect
+                value={selectedPdfField}
                 onValueChange={(v) => updateData('pdfField', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Feld wählen" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {pdfFields.map((f) => (
-                    <SelectItem key={f} value={f} className="font-mono text-xs">
-                      {f}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Wert</Label>
-              <Input
-                value={String((node.data as any).value || '')}
-                onChange={(e) => updateData('value', e.target.value)}
-                placeholder="{{variable}} oder Text"
+                pdfFields={pdfFields}
+                placeholder="PDF-Feld suchen..."
               />
+              {selectedPdfField && fieldBadge && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", fieldBadge.className)}>
+                    {fieldBadge.label}
+                  </Badge>
+                  {isDateField && (
+                    <span className="flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      Erwartet Datum (DD.MM.YYYY)
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
+            
+            {isCheckbox ? (
+              <div className="space-y-2">
+                <Label>Checkbox-Wert</Label>
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
+                  <Switch
+                    checked={currentValue === true}
+                    onCheckedChange={(checked) => updateData('value', checked)}
+                  />
+                  <Label className="text-sm">
+                    {currentValue === true ? 'Angekreuzt (TRUE)' : 'Nicht angekreuzt (FALSE)'}
+                  </Label>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Wert</Label>
+                  <VariableSelector
+                    availableVariables={availableVariables}
+                    onSelect={(varRef) => {
+                      const current = String(currentValue || '');
+                      updateData('value', current + varRef);
+                    }}
+                  />
+                </div>
+                <Input
+                  value={String(currentValue || '')}
+                  onChange={(e) => updateData('value', e.target.value)}
+                  placeholder="{{variable}} oder fester Wert"
+                  className="font-mono text-sm"
+                />
+                {typeof currentValue === 'string' && currentValue.includes('{{') && (
+                  <div className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
+                    Variable erkannt: <code className="text-primary">{currentValue}</code>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="flex items-center gap-2 pt-2">
               <Switch
-                checked={(node.data as any).value === true}
-                onCheckedChange={(checked) => updateData('value', checked)}
+                checked={autoFormat}
+                onCheckedChange={(checked) => updateData('autoFormat', checked)}
               />
-              <Label className="text-sm">Boolean TRUE (Checkbox ankreuzen)</Label>
+              <Label className="text-sm">Automatische Formatierung</Label>
             </div>
+            {autoFormat && (
+              <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/30 rounded p-2">
+                {isDateField && 'Datum wird automatisch zu DD.MM.YYYY konvertiert'}
+                {isCheckbox && 'Boolean-Wert wird für Checkbox angepasst'}
+                {!isDateField && !isCheckbox && 'Wert wird für das Feldformat optimiert'}
+              </div>
+            )}
           </>
         );
+      }
 
       case 'variable':
         return (
