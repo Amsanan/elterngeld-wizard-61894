@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2, X } from 'lucide-react';
 import { FilterBuilder } from './FilterBuilder';
 import { FilterCondition, ColumnDefinition } from './FilterConditionRow';
+import { ColumnMultiSelect } from './ColumnMultiSelect';
 
 export interface TableSchema {
   available_filters?: string[];
@@ -81,6 +82,7 @@ export function NodePropertiesPanel({
     const columns = tableSchemas[table]?.fields || [];
     const filterConditions: FilterCondition[] = (node.data as any).filterConditions || [];
     const filterLogic: 'AND' | 'OR' = (node.data as any).filterLogic || 'AND';
+    const selectedColumns: string[] = (node.data as any).selectedColumns || [];
 
     return (
       <>
@@ -105,6 +107,15 @@ export function NodePropertiesPanel({
               </SelectContent>
             </Select>
           )}
+        </div>
+        <div className="space-y-2">
+          <Label>Output Spalten</Label>
+          <ColumnMultiSelect
+            columns={columns}
+            selectedColumns={selectedColumns}
+            onChange={(cols) => updateData('selectedColumns', cols)}
+            placeholder="Alle Spalten (Standard)"
+          />
         </div>
         <div className="space-y-2">
           <Label>Filter-Bedingungen</Label>
