@@ -148,12 +148,13 @@ export async function processPage1Logic(
     fieldValues['txt.anzahl 4'] = String(mehrlingeCount);
   }
 
-  // Handle Geschwister checkboxes
+  // Handle Geschwister checkboxes (Section 1.C - Weitere Kinder im Haushalt)
   if (geschwisterCount === 0) {
-    // No other siblings - cb.keine1c 3 is true
+    // No other siblings - check "keine" checkbox
     fieldValues['cb.keine1c 3'] = true;
   } else {
-    // Has siblings - cb.insgesamt1c 3 stays false, txt.anzahl1c 3 gets count
+    // Has siblings - check "insgesamt" checkbox AND fill count
+    fieldValues['cb.insgesamt1c 3'] = true;
     fieldValues['txt.anzahl1c 3'] = String(geschwisterCount);
   }
 
