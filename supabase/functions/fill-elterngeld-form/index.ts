@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PDFDocument } from "https://esm.sh/pdf-lib@1.17.1";
+import { processPage1Logic } from "./page1-logic.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -112,7 +113,22 @@ serve(async (req) => {
     const filteredMappings = mappingsData || [];
     
     console.log(`Loaded ${filteredMappings.length} mappings - will apply ALL available data from database`);
+
+    // ==========================================
+    // PROCESS PAGE 1 BUSINESS LOGIC
+    // ==========================================
+    console.log('\n=== EXECUTING PAGE 1 BUSINESS LOGIC ===');
+    const page1Result = await processPage1Logic(supabase, user.id);
     
+    if (page1Result.warnings.length > 0) {
+      console.log('Page 1 Warnings:', page1Result.warnings);
+    }
+    
+    // Store page 1 computed values to apply after mapping loop
+    const page1FieldValues = page1Result.fieldValues;
+    console.log('Page 1 computed fields:', Object.keys(page1FieldValues));
+    console.log('=== END PAGE 1 BUSINESS LOGIC ===\n');
+
     let filledFieldsCount = 0;
     const filledFieldsList: string[] = [];
     const skippedFields: string[] = [];
@@ -421,6 +437,51 @@ serve(async (req) => {
       }
     }
     
+    // ==========================================
+    // APPLY PAGE 1 COMPUTED VALUES
+    // ==========================================
+    console.log('\n=== APPLYING PAGE 1 COMPUTED VALUES ===');
+    
+    for (const [pdfFieldName, value] of Object.entries(page1FieldValues)) {
+      try {
+        let field;
+        try {
+          field = form.getField(pdfFieldName);
+        } catch (fieldError) {
+          console.log(`Page 1 field not found: ${pdfFieldName}`);
+          failedFields.push({ field: pdfFieldName, reason: 'Field not found in PDF' });
+          continue;
+        }
+        
+        const fieldType = field.constructor.name;
+        
+        if (fieldType === 'PDFTextField' || fieldType === 't') {
+          const textField = field as any;
+          textField.setText(String(value));
+          filledFieldsList.push(pdfFieldName);
+          filledFieldsCount++;
+          console.log(`✓ Page 1: Set ${pdfFieldName} = "${value}"`);
+        } else if (fieldType === 'PDFCheckBox' || fieldType === 'c' || fieldType === 'ch') {
+          const checkbox = field as any;
+          if (value === true) {
+            checkbox.check();
+            filledFieldsList.push(pdfFieldName);
+            filledFieldsCount++;
+            console.log(`✓ Page 1: Checked ${pdfFieldName}`);
+          }
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.log(`✗ Page 1 error for ${pdfFieldName}: ${errorMsg}`);
+        failedFields.push({ field: pdfFieldName, reason: errorMsg });
+      }
+    }
+    
+    // Add warnings to response if any
+    const page1Warnings = page1Result.warnings;
+    
+    console.log('=== END PAGE 1 APPLICATION ===\n');
+    
     console.log('========================================');
     console.log('STEP COMPLETION SUMMARY');
     console.log('========================================');
@@ -428,9 +489,14 @@ serve(async (req) => {
     console.log(`✓ Successfully Filled: ${filledFieldsCount} fields`);
     console.log(`⊘ Skipped (No Data): ${skippedFields.length} fields`);
     console.log(`✗ Failed: ${failedFields.length} fields`);
+    console.log(`⚠ Page 1 Warnings: ${page1Warnings.length}`);
     if (failedFields.length > 0) {
       console.log('\nFailed fields details:');
       failedFields.forEach(f => console.log(`  - ${f.field}: ${f.reason}`));
+    }
+    if (page1Warnings.length > 0) {
+      console.log('\nPage 1 warnings:');
+      page1Warnings.forEach(w => console.log(`  - ${w}`));
     }
     console.log('========================================\n');
 
@@ -512,7 +578,8 @@ serve(async (req) => {
         filledFields: filledFieldsList,
         filledFieldsCount,
         totalFields: allFields.length,
-        completionPercentage
+        completionPercentage,
+        warnings: page1Warnings
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
