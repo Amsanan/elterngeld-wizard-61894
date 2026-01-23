@@ -71,6 +71,11 @@ export function NodePropertiesPanel({
     onUpdate(node.id, { ...node.data, [key]: value });
   };
 
+  // Batch-Update: mehrere Felder in einem Call setzen (vermeidet stale state)
+  const updatePatch = (patch: Record<string, any>) => {
+    onUpdate(node.id, { ...node.data, ...patch });
+  };
+
   const renderDataSourceFields = () => {
     const table = (node.data as any).table || '';
     const columns = tableSchemas[table]?.fields || [];
@@ -87,8 +92,7 @@ export function NodePropertiesPanel({
             <Select 
               value={table} 
               onValueChange={(v) => {
-                updateData('table', v);
-                updateData('filterConditions', []);
+                updatePatch({ table: v, filterConditions: [], filterLogic: 'AND' });
               }}
             >
               <SelectTrigger>
@@ -110,8 +114,7 @@ export function NodePropertiesPanel({
             columns={columns}
             availableVariables={availableVariables}
             onChange={(conditions, logic) => {
-              updateData('filterConditions', conditions);
-              updateData('filterLogic', logic);
+              updatePatch({ filterConditions: conditions, filterLogic: logic });
             }}
           />
         </div>
@@ -143,8 +146,7 @@ export function NodePropertiesPanel({
             <Select 
               value={table} 
               onValueChange={(v) => {
-                updateData('table', v);
-                updateData('filterConditions', []);
+                updatePatch({ table: v, filterConditions: [], filterLogic: 'AND' });
               }}
             >
               <SelectTrigger>
@@ -166,8 +168,7 @@ export function NodePropertiesPanel({
             columns={columns}
             availableVariables={availableVariables}
             onChange={(conditions, logic) => {
-              updateData('filterConditions', conditions);
-              updateData('filterLogic', logic);
+              updatePatch({ filterConditions: conditions, filterLogic: logic });
             }}
           />
         </div>
