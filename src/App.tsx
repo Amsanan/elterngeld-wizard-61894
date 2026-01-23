@@ -54,6 +54,7 @@ import UploadSchwerbehindertenausweis from "./pages/UploadSchwerbehindertenauswe
 import SchwerbehindertenausweisResult from "./pages/SchwerbehindertenausweisResult";
 import SchwerbehindertenausweiseList from "./pages/SchwerbehindertenausweiseList";
 import ElterngeldantragAusfuellen from "./pages/ElterngeldantragAusfuellen";
+import ElterngeldRechner from "./pages/ElterngeldRechner";
 import AdminSetup from "./pages/AdminSetup";
 import AutoCleanupSettings from "./pages/AutoCleanupSettings";
 import AdminFieldMapper from "./pages/AdminFieldMapper";
@@ -120,6 +121,7 @@ function App() {
         <Route path="/schwerbehindertenausweis-result/:id" element={<SchwerbehindertenausweisResult />} />
         <Route path="/schwerbehindertenausweise" element={<SchwerbehindertenausweiseList />} />
         <Route path="/elterngeldantrag-ausfuellen" element={<ElterngeldantragAusfuellen />} />
+        <Route path="/elterngeld-rechner" element={<ElterngeldRechner />} />
         <Route path="/admin-setup" element={<AdminSetup />} />
         <Route path="/auto-cleanup-settings" element={<AutoCleanupSettings />} />
         <Route path="/admin/field-mapper" element={<AdminFieldMapper />} />
