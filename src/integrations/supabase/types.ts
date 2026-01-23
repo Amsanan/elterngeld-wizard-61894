@@ -1771,6 +1771,110 @@ export type Database = {
         }
         Relationships: []
       }
+      schwerbehindertenausweise: {
+        Row: {
+          aktenzeichen: string | null
+          antrag_id: string | null
+          ausstellende_behoerde: string | null
+          ausstellungsdatum: string | null
+          confidence_scores: Json | null
+          created_at: string
+          file_path: string | null
+          gdb_ab_datum: string | null
+          geburtsdatum: string | null
+          geschlecht: string | null
+          grad_der_behinderung: number | null
+          gueltig_bis: string | null
+          id: string
+          kind_ordnungszahl: number | null
+          merkzeichen_1kl: boolean | null
+          merkzeichen_ag: boolean | null
+          merkzeichen_b: boolean | null
+          merkzeichen_bl: boolean | null
+          merkzeichen_g: boolean | null
+          merkzeichen_gl: boolean | null
+          merkzeichen_h: boolean | null
+          merkzeichen_rf: boolean | null
+          merkzeichen_tbl: boolean | null
+          name_inhaber: string | null
+          person_type: string | null
+          unbefristet: boolean | null
+          updated_at: string
+          user_id: string
+          vorname_inhaber: string | null
+        }
+        Insert: {
+          aktenzeichen?: string | null
+          antrag_id?: string | null
+          ausstellende_behoerde?: string | null
+          ausstellungsdatum?: string | null
+          confidence_scores?: Json | null
+          created_at?: string
+          file_path?: string | null
+          gdb_ab_datum?: string | null
+          geburtsdatum?: string | null
+          geschlecht?: string | null
+          grad_der_behinderung?: number | null
+          gueltig_bis?: string | null
+          id?: string
+          kind_ordnungszahl?: number | null
+          merkzeichen_1kl?: boolean | null
+          merkzeichen_ag?: boolean | null
+          merkzeichen_b?: boolean | null
+          merkzeichen_bl?: boolean | null
+          merkzeichen_g?: boolean | null
+          merkzeichen_gl?: boolean | null
+          merkzeichen_h?: boolean | null
+          merkzeichen_rf?: boolean | null
+          merkzeichen_tbl?: boolean | null
+          name_inhaber?: string | null
+          person_type?: string | null
+          unbefristet?: boolean | null
+          updated_at?: string
+          user_id: string
+          vorname_inhaber?: string | null
+        }
+        Update: {
+          aktenzeichen?: string | null
+          antrag_id?: string | null
+          ausstellende_behoerde?: string | null
+          ausstellungsdatum?: string | null
+          confidence_scores?: Json | null
+          created_at?: string
+          file_path?: string | null
+          gdb_ab_datum?: string | null
+          geburtsdatum?: string | null
+          geschlecht?: string | null
+          grad_der_behinderung?: number | null
+          gueltig_bis?: string | null
+          id?: string
+          kind_ordnungszahl?: number | null
+          merkzeichen_1kl?: boolean | null
+          merkzeichen_ag?: boolean | null
+          merkzeichen_b?: boolean | null
+          merkzeichen_bl?: boolean | null
+          merkzeichen_g?: boolean | null
+          merkzeichen_gl?: boolean | null
+          merkzeichen_h?: boolean | null
+          merkzeichen_rf?: boolean | null
+          merkzeichen_tbl?: boolean | null
+          name_inhaber?: string | null
+          person_type?: string | null
+          unbefristet?: boolean | null
+          updated_at?: string
+          user_id?: string
+          vorname_inhaber?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schwerbehindertenausweise_antrag_id_fkey"
+            columns: ["antrag_id"]
+            isOneToOne: false
+            referencedRelation: "antraege"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       selbststaendigen_nachweise: {
         Row: {
           antrag_id: string | null

@@ -50,6 +50,9 @@ import KindergeldBescheideList from "./pages/KindergeldBescheideList";
 import UploadAerztlichesZeugnis from "./pages/UploadAerztlichesZeugnis";
 import AerztlichesZeugnisResult from "./pages/AerztlichesZeugnisResult";
 import AerztlicheZeugnisseList from "./pages/AerztlicheZeugnisseList";
+import UploadSchwerbehindertenausweis from "./pages/UploadSchwerbehindertenausweis";
+import SchwerbehindertenausweisResult from "./pages/SchwerbehindertenausweisResult";
+import SchwerbehindertenausweiseList from "./pages/SchwerbehindertenausweiseList";
 import ElterngeldantragAusfuellen from "./pages/ElterngeldantragAusfuellen";
 import AdminSetup from "./pages/AdminSetup";
 import AutoCleanupSettings from "./pages/AutoCleanupSettings";
@@ -112,6 +115,9 @@ function App() {
         <Route path="/upload-aerztliches-zeugnis" element={<UploadAerztlichesZeugnis />} />
         <Route path="/aerztliches-zeugnis-result" element={<AerztlichesZeugnisResult />} />
         <Route path="/aerztliche-zeugnisse-list" element={<AerztlicheZeugnisseList />} />
+        <Route path="/upload-schwerbehindertenausweis" element={<UploadSchwerbehindertenausweis />} />
+        <Route path="/schwerbehindertenausweis-result/:id" element={<SchwerbehindertenausweisResult />} />
+        <Route path="/schwerbehindertenausweise" element={<SchwerbehindertenausweiseList />} />
         <Route path="/elterngeldantrag-ausfuellen" element={<ElterngeldantragAusfuellen />} />
         <Route path="/admin-setup" element={<AdminSetup />} />
         <Route path="/auto-cleanup-settings" element={<AutoCleanupSettings />} />
