@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   FileText, User, Home, FileCheck, DollarSign, 
   Briefcase, Heart, CreditCard, Users, ChevronLeft, 
-  ChevronRight, Download, Loader2
+  ChevronRight, Download, Loader2, RefreshCw
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,17 +50,16 @@ export default function ElterngeldantragAusfuellen() {
     loadStepData();
   }, [currentStep]);
 
-  // Auto-refresh PDF every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (pdfUrl) {
-        console.log('Auto-refreshing PDF preview...');
-        setPdfKey(prev => prev + 1);
-      }
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [pdfUrl]);
+  // Manual refresh function
+  const handleRefreshPDF = async () => {
+    setIsLoading(true);
+    try {
+      await fillPDF(hasData ? editedData : null);
+      setPdfKey(prev => prev + 1);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadStepData = async () => {
     setIsLoading(true);
@@ -244,7 +243,18 @@ export default function ElterngeldantragAusfuellen() {
         <div className="space-y-6">
           {/* PDF Preview - Full Width on Top */}
           <Card className="p-6 w-full">
-            <h3 className="text-lg font-semibold mb-4">PDF Vorschau</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">PDF Vorschau</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshPDF}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Aktualisieren
+              </Button>
+            </div>
             <PdfViewer
               key={pdfKey}
               pdfUrl={pdfUrl}
