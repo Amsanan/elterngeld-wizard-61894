@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PDFDocument } from "https://esm.sh/pdf-lib@1.17.1";
 import { processPage1Logic } from "./page1-logic.ts";
+import { executeComputedFieldRules } from "./flow-interpreter.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -133,6 +134,22 @@ serve(async (req) => {
     console.log('Page 1 values:', JSON.stringify(page1FieldValues));
     console.log('=== END PAGE 1 BUSINESS LOGIC ===');
 
+    // ==========================================
+    // EXECUTE COMPUTED FIELD RULES (Visual Logic Designer)
+    // ==========================================
+    console.log('=== EXECUTING VISUAL LOGIC RULES ===');
+    const computedResult = await executeComputedFieldRules(supabase, user.id);
+    
+    if (computedResult.warnings.length > 0) {
+      console.log('Computed Rules Warnings:', computedResult.warnings);
+    }
+    
+    const computedFieldValues = computedResult.fieldValues;
+    console.log('Computed fields from rules:', Object.keys(computedFieldValues));
+    console.log('Computed values:', JSON.stringify(computedFieldValues));
+    console.log('Executed rules:', computedResult.executedRules);
+    console.log('=== END VISUAL LOGIC RULES ===');
+
     let filledFieldsCount = 0;
     const filledFieldsList: string[] = [];
     const skippedFields: string[] = [];
@@ -190,6 +207,57 @@ serve(async (req) => {
     
     console.log('=== END PAGE 1 APPLICATION ===');
     console.log(`Page 1 filled ${filledFieldsCount} fields so far`);
+
+    // ==========================================
+    // APPLY COMPUTED FIELD RULES VALUES
+    // ==========================================
+    console.log('=== APPLYING COMPUTED FIELD RULES VALUES ===');
+    
+    for (const [pdfFieldName, value] of Object.entries(computedFieldValues)) {
+      console.log(`Applying Computed Rule: ${pdfFieldName} = ${value}`);
+      try {
+        let fieldType = 'unknown';
+        try {
+          form.getCheckBox(pdfFieldName);
+          fieldType = 'checkbox';
+        } catch {
+          try {
+            form.getTextField(pdfFieldName);
+            fieldType = 'text';
+          } catch {
+            console.log(`  ERROR: Field not found in PDF: ${pdfFieldName}`);
+            failedFields.push({ field: pdfFieldName, reason: 'Field not found in PDF' });
+            continue;
+          }
+        }
+        
+        console.log(`  Found field: ${pdfFieldName}, type: ${fieldType}`);
+        
+        if (fieldType === 'text') {
+          const textField = form.getTextField(pdfFieldName);
+          const textValue = value === true ? 'X' : (value === false ? '' : String(value));
+          textField.setText(textValue);
+          filledFieldsList.push(pdfFieldName);
+          filledFieldsCount++;
+          console.log(`  SUCCESS: Set text = "${textValue}"`);
+        } else if (fieldType === 'checkbox') {
+          const checkbox = form.getCheckBox(pdfFieldName);
+          if (value === true) {
+            checkbox.check();
+            filledFieldsList.push(pdfFieldName);
+            filledFieldsCount++;
+            console.log(`  SUCCESS: Checked checkbox`);
+          }
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.log(`  ERROR: ${errorMsg}`);
+        failedFields.push({ field: pdfFieldName, reason: errorMsg });
+      }
+    }
+    
+    console.log('=== END COMPUTED RULES APPLICATION ===');
+    console.log(`Total filled so far: ${filledFieldsCount} fields`);
 
     console.log(`Processing ${filteredMappings.length} mapped fields for table: ${tableName}`);
 
