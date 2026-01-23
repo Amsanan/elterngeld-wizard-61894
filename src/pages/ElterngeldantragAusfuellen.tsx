@@ -119,8 +119,9 @@ export default function ElterngeldantragAusfuellen() {
       if (!result) throw new Error("No result returned from edge function");
       if (!result.pdfUrl) throw new Error("No PDF URL returned");
       
-      // Add cache-busting timestamp to force PDF refresh
-      const urlWithCacheBust = `${result.pdfUrl}?t=${Date.now()}`;
+      // Add cache-busting timestamp to force PDF refresh (use & if URL already has query params)
+      const separator = result.pdfUrl.includes('?') ? '&' : '?';
+      const urlWithCacheBust = `${result.pdfUrl}${separator}t=${Date.now()}`;
       setPdfUrl(urlWithCacheBust);
       setPreviousPdfPath(result.pdfPath);
 

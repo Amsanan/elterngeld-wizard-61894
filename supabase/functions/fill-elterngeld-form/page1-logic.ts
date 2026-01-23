@@ -9,12 +9,13 @@ export interface Page1Result {
 }
 
 interface Geburtsurkunde {
-  kind_vorname: string;
-  kind_nachname: string;
-  kind_geburtsdatum: string;
-  kind_typ: string;
-  kind_ordnungszahl: number;
+  kind_vorname: string | null;
+  kind_nachname: string | null;
+  kind_geburtsdatum: string | null;
+  kind_typ: string | null;
+  kind_ordnungszahl: number | null;
   mehrling_nummer: number | null;
+  created_at: string;
 }
 
 interface AerztlichesZeugnis {
@@ -72,11 +73,12 @@ export async function processPage1Logic(
 
   console.log('=== PROCESSING PAGE 1 BUSINESS LOGIC ===');
 
-  // Step 1: Fetch Geburtsurkunden
+  // Step 1: Fetch Geburtsurkunden (order by created_at for fallback)
   const { data: geburtsurkunden, error: gebError } = await supabase
     .from('geburtsurkunden')
-    .select('kind_vorname, kind_nachname, kind_geburtsdatum, kind_typ, kind_ordnungszahl, mehrling_nummer')
-    .eq('user_id', userId);
+    .select('kind_vorname, kind_nachname, kind_geburtsdatum, kind_typ, kind_ordnungszahl, mehrling_nummer, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
 
   if (gebError) {
     console.error('Error fetching Geburtsurkunden:', gebError);
@@ -90,20 +92,28 @@ export async function processPage1Logic(
     return { fieldValues, warnings };
   }
 
-  // Find primary child (Antragskind) - kind_typ = 'primaer' or kind_ordnungszahl = 0
-  const antragskind = geburtsurkunden.find(
-    g => g.kind_typ === 'primaer' || g.kind_ordnungszahl === 0
-  ) || geburtsurkunden[0];
+  // Find primary child (Antragskind):
+  // 1. kind_typ = 'primaer'
+  // 2. kind_ordnungszahl = 0
+  // 3. Fallback: first uploaded (earliest created_at, already sorted)
+  let antragskind = geburtsurkunden.find(g => g.kind_typ === 'primaer');
+  if (!antragskind) {
+    antragskind = geburtsurkunden.find(g => g.kind_ordnungszahl === 0);
+  }
+  if (!antragskind) {
+    // Fallback to first uploaded (list is sorted by created_at ascending)
+    antragskind = geburtsurkunden[0];
+    console.log('Using first uploaded Geburtsurkunde as primary child');
+  }
 
   console.log('Antragskind found:', antragskind);
 
   if (!antragskind.kind_vorname || !antragskind.kind_nachname) {
     console.log('Antragskind name incomplete');
     warnings.push('Antragskind Name unvollständig');
-    return { fieldValues, warnings };
   }
 
-  // Set Geburtsdatum for Antragskind
+  // Set Geburtsdatum for Antragskind (only if not null)
   if (antragskind.kind_geburtsdatum) {
     fieldValues['geburtsdatum1a3'] = formatDateGerman(antragskind.kind_geburtsdatum);
   }
@@ -233,8 +243,18 @@ export async function processPage1Logic(
   }
 
   console.log('=== PAGE 1 LOGIC COMPLETE ===');
-  console.log('Field values:', fieldValues);
+  console.log('Field values before cleanup:', fieldValues);
   console.log('Warnings:', warnings);
 
-  return { fieldValues, warnings };
+  // Filter out null, undefined, and empty string values
+  const cleanedFieldValues: Record<string, string | boolean> = {};
+  for (const [key, value] of Object.entries(fieldValues)) {
+    if (value !== null && value !== undefined && value !== '') {
+      cleanedFieldValues[key] = value;
+    }
+  }
+
+  console.log('Field values after cleanup:', cleanedFieldValues);
+
+  return { fieldValues: cleanedFieldValues, warnings };
 }
