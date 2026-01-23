@@ -34,7 +34,8 @@ serve(async (req) => {
       'adoptions_pflege_dokumente',
       'aerztliche_zeugnisse',
       'vaterschaftsanerkennungen',
-      'kindergeld_bescheide'
+      'kindergeld_bescheide',
+      'schwerbehindertenausweise'
     ];
 
     relevantTables.sort();
