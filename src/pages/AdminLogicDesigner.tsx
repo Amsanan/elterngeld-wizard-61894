@@ -47,25 +47,7 @@ interface ComputedFieldRule {
   execution_order: number;
 }
 
-const TABLES = [
-  'geburtsurkunden',
-  'eltern_dokumente',
-  'arbeitgeberbescheinigungen',
-  'gehaltsnachweise',
-  'steuerbescheide',
-  'meldebescheinigungen',
-  'bankverbindungen',
-  'krankenversicherungen',
-  'leistungsbescheide',
-  'mutterschaftsgeld_bescheide',
-  'selbststaendigen_nachweise',
-  'adoptions_pflege_dokumente',
-  'ehe_sorgerecht_dokumente',
-  'aerztliche_zeugnisse',
-  'schwerbehindertenausweise',
-  'vaterschaftsanerkennungen',
-  'kindergeld_bescheide',
-];
+// Tables are dynamically loaded from tableSchemas
 
 export default function AdminLogicDesigner() {
   const navigate = useNavigate();
@@ -473,7 +455,7 @@ export default function AdminLogicDesigner() {
           onUpdate={updateNodeData}
           onDelete={deleteNode}
           onClose={() => setSelectedNode(null)}
-          tables={TABLES}
+          tables={Object.keys(tableSchemas)}
           pdfFields={pdfFields}
           tableSchemas={tableSchemas}
           availableVariables={extractVariables(nodes)}
