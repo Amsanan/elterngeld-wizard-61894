@@ -58,6 +58,7 @@ import AdminSetup from "./pages/AdminSetup";
 import AutoCleanupSettings from "./pages/AutoCleanupSettings";
 import AdminFieldMapper from "./pages/AdminFieldMapper";
 import FieldDiagnostics from "./pages/FieldDiagnostics";
+import AdminLogicDesigner from "./pages/AdminLogicDesigner";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -123,6 +124,7 @@ function App() {
         <Route path="/auto-cleanup-settings" element={<AutoCleanupSettings />} />
         <Route path="/admin/field-mapper" element={<AdminFieldMapper />} />
         <Route path="/admin/field-diagnostics" element={<FieldDiagnostics />} />
+        <Route path="/admin/logic-designer" element={<AdminLogicDesigner />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

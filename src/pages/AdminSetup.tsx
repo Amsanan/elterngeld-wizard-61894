@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Upload, CheckCircle, AlertCircle, FileUp, Search, Loader2 } from "lucide-react";
+import { Upload, CheckCircle, AlertCircle, FileUp, Search, Loader2, Workflow } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const AdminSetup = () => {
@@ -428,6 +428,40 @@ const AdminSetup = () => {
             >
               <Search className="mr-2 h-4 w-4" />
               Open Field Diagnostics
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Workflow className="h-5 w-5" />
+              Visual Logic Designer
+            </CardTitle>
+            <CardDescription>
+              Erstelle komplexe Mapping-Logik per Drag & Drop
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
+              <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium mb-1">What this does:</p>
+                <p>
+                  Visuell IF/ELSE-Bedingungen, Schleifen und berechnete Felder definieren. 
+                  Ersetze hartcodierten Logic-Code durch konfigurierbare Flow-Definitionen.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => navigate('/admin/logic-designer')}
+              variant="default"
+              className="w-full"
+              size="lg"
+            >
+              <Workflow className="mr-2 h-4 w-4" />
+              Open Logic Designer
             </Button>
           </CardContent>
         </Card>

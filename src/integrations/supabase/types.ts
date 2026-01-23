@@ -432,6 +432,45 @@ export type Database = {
           },
         ]
       }
+      computed_field_rules: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          execution_order: number | null
+          flow_definition: Json
+          id: string
+          is_active: boolean | null
+          name: string
+          page_number: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          execution_order?: number | null
+          flow_definition?: Json
+          id?: string
+          is_active?: boolean | null
+          name: string
+          page_number?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          execution_order?: number | null
+          flow_definition?: Json
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          page_number?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       document_audit_log: {
         Row: {
           action: string
