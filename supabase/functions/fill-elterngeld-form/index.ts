@@ -117,22 +117,69 @@ serve(async (req) => {
     // ==========================================
     // PROCESS PAGE 1 BUSINESS LOGIC
     // ==========================================
-    console.log('\n=== EXECUTING PAGE 1 BUSINESS LOGIC ===');
+    console.log('=== EXECUTING PAGE 1 BUSINESS LOGIC ===');
     const page1Result = await processPage1Logic(supabase, user.id);
     
     if (page1Result.warnings.length > 0) {
       console.log('Page 1 Warnings:', page1Result.warnings);
     }
     
-    // Store page 1 computed values to apply after mapping loop
     const page1FieldValues = page1Result.fieldValues;
     console.log('Page 1 computed fields:', Object.keys(page1FieldValues));
-    console.log('=== END PAGE 1 BUSINESS LOGIC ===\n');
+    console.log('Page 1 values:', JSON.stringify(page1FieldValues));
+    console.log('=== END PAGE 1 BUSINESS LOGIC ===');
 
     let filledFieldsCount = 0;
     const filledFieldsList: string[] = [];
     const skippedFields: string[] = [];
     const failedFields: { field: string; reason: string }[] = [];
+
+    // ==========================================
+    // APPLY PAGE 1 COMPUTED VALUES FIRST
+    // ==========================================
+    console.log('=== APPLYING PAGE 1 COMPUTED VALUES ===');
+    
+    for (const [pdfFieldName, value] of Object.entries(page1FieldValues)) {
+      console.log(`Applying Page 1: ${pdfFieldName} = ${value}`);
+      try {
+        let field;
+        try {
+          field = form.getField(pdfFieldName);
+          console.log(`  Found field: ${pdfFieldName}, type: ${field.constructor.name}`);
+        } catch (fieldError) {
+          console.log(`  ERROR: Field not found in PDF: ${pdfFieldName}`);
+          failedFields.push({ field: pdfFieldName, reason: 'Field not found in PDF' });
+          continue;
+        }
+        
+        const fieldType = field.constructor.name;
+        
+        if (fieldType === 'PDFTextField' || fieldType === 't') {
+          const textField = field as any;
+          textField.setText(String(value));
+          filledFieldsList.push(pdfFieldName);
+          filledFieldsCount++;
+          console.log(`  SUCCESS: Set text = "${value}"`);
+        } else if (fieldType === 'PDFCheckBox' || fieldType === 'c' || fieldType === 'ch') {
+          const checkbox = field as any;
+          if (value === true) {
+            checkbox.check();
+            filledFieldsList.push(pdfFieldName);
+            filledFieldsCount++;
+            console.log(`  SUCCESS: Checked checkbox`);
+          }
+        } else {
+          console.log(`  WARNING: Unknown field type ${fieldType}`);
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.log(`  ERROR: ${errorMsg}`);
+        failedFields.push({ field: pdfFieldName, reason: errorMsg });
+      }
+    }
+    
+    console.log('=== END PAGE 1 APPLICATION ===');
+    console.log(`Page 1 filled ${filledFieldsCount} fields so far`);
 
     console.log(`Processing ${filteredMappings.length} mapped fields for table: ${tableName}`);
 
@@ -440,15 +487,18 @@ serve(async (req) => {
     // ==========================================
     // APPLY PAGE 1 COMPUTED VALUES
     // ==========================================
-    console.log('\n=== APPLYING PAGE 1 COMPUTED VALUES ===');
+    console.log('=== APPLYING PAGE 1 COMPUTED VALUES ===');
+    console.log('Page 1 values to apply:', JSON.stringify(page1FieldValues));
     
     for (const [pdfFieldName, value] of Object.entries(page1FieldValues)) {
+      console.log(`Applying Page 1 field: ${pdfFieldName} = ${value}`);
       try {
         let field;
         try {
           field = form.getField(pdfFieldName);
+          console.log(`  Field found: ${pdfFieldName}, type: ${field.constructor.name}`);
         } catch (fieldError) {
-          console.log(`Page 1 field not found: ${pdfFieldName}`);
+          console.log(`  ERROR: Field not found in PDF: ${pdfFieldName}`);
           failedFields.push({ field: pdfFieldName, reason: 'Field not found in PDF' });
           continue;
         }
@@ -460,22 +510,26 @@ serve(async (req) => {
           textField.setText(String(value));
           filledFieldsList.push(pdfFieldName);
           filledFieldsCount++;
-          console.log(`✓ Page 1: Set ${pdfFieldName} = "${value}"`);
+          console.log(`  SUCCESS: Set text ${pdfFieldName} = "${value}"`);
         } else if (fieldType === 'PDFCheckBox' || fieldType === 'c' || fieldType === 'ch') {
           const checkbox = field as any;
           if (value === true) {
             checkbox.check();
             filledFieldsList.push(pdfFieldName);
             filledFieldsCount++;
-            console.log(`✓ Page 1: Checked ${pdfFieldName}`);
+            console.log(`  SUCCESS: Checked ${pdfFieldName}`);
           }
+        } else {
+          console.log(`  WARNING: Unknown field type ${fieldType} for ${pdfFieldName}`);
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        console.log(`✗ Page 1 error for ${pdfFieldName}: ${errorMsg}`);
+        console.log(`  ERROR: ${pdfFieldName}: ${errorMsg}`);
         failedFields.push({ field: pdfFieldName, reason: errorMsg });
       }
     }
+    
+    console.log('=== END PAGE 1 APPLICATION ===');
     
     // Add warnings to response if any
     const page1Warnings = page1Result.warnings;

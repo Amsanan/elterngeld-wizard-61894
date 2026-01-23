@@ -54,15 +54,15 @@ function formatDateGerman(dateStr: string): string {
 /**
  * Process Page 1 logic for Elterngeld form
  * 
- * PDF Fields handled:
- * - geburtsdatum1a3: Antragskind Geburtsdatum
+ * PDF Fields handled (actual AcroForm names):
+ * - txt.geburtsdatum1a 3: Antragskind Geburtsdatum
  * - txt.anzahl 4: Anzahl der Mehrlinge
  * - cb.keine1c 3: Checkbox "keine weiteren Geschwister"
- * - cb.insgesamt1c 3: Checkbox "insgesamt Geschwister" (stays false if siblings exist)
+ * - cb.insgesamt1c 3: Checkbox "insgesamt Geschwister"
  * - txt.anzahl1c 3: Anzahl Geschwister
  * - cb.ja1b 3: Checkbox "Frühgeburt ja"
- * - txt.geburtsdatum_frueh1b 3: Errechneter Geburtstermin (if premature)
- * - cb.nein1b 3: Checkbox "Kind mit Behinderung" (actually means yes to disability question)
+ * - txt.geburtsdatum1b 3: Errechneter Geburtstermin (if premature)
+ * - cb.nein1b 3: Checkbox "Kind mit Behinderung"
  */
 export async function processPage1Logic(
   supabase: SupabaseClient,
@@ -113,9 +113,9 @@ export async function processPage1Logic(
     warnings.push('Antragskind Name unvollständig');
   }
 
-  // Set Geburtsdatum for Antragskind (only if not null)
+  // Set Geburtsdatum for Antragskind (correct PDF field name with space)
   if (antragskind.kind_geburtsdatum) {
-    fieldValues['geburtsdatum1a3'] = formatDateGerman(antragskind.kind_geburtsdatum);
+    fieldValues['txt.geburtsdatum1a 3'] = formatDateGerman(antragskind.kind_geburtsdatum);
   }
 
   // Count Mehrlinge (same birthdate, different name)
@@ -181,7 +181,7 @@ export async function processPage1Logic(
 
     if (isFruehgeburt) {
       fieldValues['cb.ja1b 3'] = true;
-      fieldValues['txt.geburtsdatum_frueh1b 3'] = formatDateGerman(aerztZeugnisse.errechneter_geburtstermin);
+      fieldValues['txt.geburtsdatum1b 3'] = formatDateGerman(aerztZeugnisse.errechneter_geburtstermin);
     }
   } else if (!aerztZeugnisse?.errechneter_geburtstermin) {
     warnings.push('Ärztliches Zeugnis fehlt - Frühgeburtsprüfung wird übersprungen');
