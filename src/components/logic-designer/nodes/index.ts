@@ -5,3 +5,4 @@ export { CountNode } from './CountNode';
 export { VariableNode } from './VariableNode';
 export { TransformNode } from './TransformNode';
 export { LoopNode } from './LoopNode';
+export { AggregateNode } from './AggregateNode';

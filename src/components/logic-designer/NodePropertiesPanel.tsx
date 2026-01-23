@@ -46,6 +46,13 @@ const TRANSFORM_OPERATIONS = [
   { value: 'formatDate', label: 'Datum formatieren' },
   { value: 'toUpperCase', label: 'Großbuchstaben' },
   { value: 'toLowerCase', label: 'Kleinbuchstaben' },
+  { value: 'countDistinct', label: 'Eindeutig zählen (COUNT DISTINCT)' },
+  { value: 'min', label: 'Minimum (MIN)' },
+  { value: 'max', label: 'Maximum (MAX)' },
+  { value: 'sum', label: 'Summe (SUM)' },
+  { value: 'avg', label: 'Durchschnitt (AVG)' },
+  { value: 'coalesce', label: 'Erster Nicht-Null (COALESCE)' },
+  { value: 'compareArrayElements', label: 'Array-Elemente vergleichen' },
 ];
 
 export function NodePropertiesPanel({ 
@@ -370,6 +377,129 @@ export function NodePropertiesPanel({
           </>
         );
 
+      case 'aggregate':
+        const aggTable = (node.data as any).table || '';
+        const aggColumns = tableSchemas[aggTable]?.fields || [];
+        const aggFilterConditions: FilterCondition[] = (node.data as any).filterConditions || [];
+        const aggFilterLogic: 'AND' | 'OR' = (node.data as any).filterLogic || 'AND';
+
+        return (
+          <>
+            <div className="space-y-2">
+              <Label>Aggregat-Funktion</Label>
+              <Select 
+                value={(node.data as any).aggregateFunction || ''} 
+                onValueChange={(v) => updateData('aggregateFunction', v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Funktion wählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="count">COUNT</SelectItem>
+                  <SelectItem value="countDistinct">COUNT DISTINCT</SelectItem>
+                  <SelectItem value="sum">SUM</SelectItem>
+                  <SelectItem value="avg">AVG (Durchschnitt)</SelectItem>
+                  <SelectItem value="min">MIN (Minimum)</SelectItem>
+                  <SelectItem value="max">MAX (Maximum)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Tabelle</Label>
+              {tables.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Lade Tabellen...</p>
+              ) : (
+                <Select 
+                  value={aggTable} 
+                  onValueChange={(v) => {
+                    updatePatch({ table: v, column: '', groupBy: '', filterConditions: [], filterLogic: 'AND' });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tabelle wählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tables.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            {aggTable && (
+              <>
+                <div className="space-y-2">
+                  <Label>Spalte (für SUM/AVG/MIN/MAX/COUNT DISTINCT)</Label>
+                  <Select 
+                    value={(node.data as any).column || ''} 
+                    onValueChange={(v) => updateData('column', v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Spalte wählen (optional)" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="">Keine (nur für COUNT)</SelectItem>
+                      {aggColumns.map((col) => (
+                        <SelectItem key={col.name} value={col.name} className="font-mono text-xs">
+                          {col.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>GROUP BY (optional)</Label>
+                  <Select 
+                    value={(node.data as any).groupBy || ''} 
+                    onValueChange={(v) => updateData('groupBy', v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Gruppieren nach..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="">Keine Gruppierung</SelectItem>
+                      {aggColumns.map((col) => (
+                        <SelectItem key={col.name} value={col.name} className="font-mono text-xs">
+                          {col.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>HAVING (optional)</Label>
+                  <Input
+                    value={(node.data as any).having || ''}
+                    onChange={(e) => updateData('having', e.target.value)}
+                    placeholder="> 1"
+                  />
+                  <p className="text-xs text-muted-foreground">Bedingung für gruppierte Ergebnisse</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Filter-Bedingungen</Label>
+                  <FilterBuilder
+                    conditions={aggFilterConditions}
+                    logic={aggFilterLogic}
+                    columns={aggColumns}
+                    availableVariables={availableVariables}
+                    onChange={(conditions, logic) => {
+                      updatePatch({ filterConditions: conditions, filterLogic: logic });
+                    }}
+                  />
+                </div>
+              </>
+            )}
+            <div className="space-y-2">
+              <Label>Output Variable</Label>
+              <Input
+                value={(node.data as any).output || ''}
+                onChange={(e) => updateData('output', e.target.value)}
+                placeholder="result"
+              />
+            </div>
+          </>
+        );
+
       default:
         return <p className="text-sm text-muted-foreground">Keine Eigenschaften für diesen Node-Typ</p>;
     }
@@ -383,6 +513,7 @@ export function NodePropertiesPanel({
     variable: 'Variable',
     transform: 'Berechnung',
     loop: 'Schleife',
+    aggregate: 'Aggregat',
   };
 
   return (
