@@ -431,14 +431,14 @@ export function NodePropertiesPanel({
                 <div className="space-y-2">
                   <Label>Spalte (für SUM/AVG/MIN/MAX/COUNT DISTINCT)</Label>
                   <Select 
-                    value={(node.data as any).column || ''} 
-                    onValueChange={(v) => updateData('column', v)}
+                    value={(node.data as any).column || '__none__'} 
+                    onValueChange={(v) => updateData('column', v === '__none__' ? '' : v)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Spalte wählen (optional)" />
                     </SelectTrigger>
                     <SelectContent className="max-h-60">
-                      <SelectItem value="">Keine (nur für COUNT)</SelectItem>
+                      <SelectItem value="__none__">Keine (nur für COUNT)</SelectItem>
                       {aggColumns.map((col) => (
                         <SelectItem key={col.name} value={col.name} className="font-mono text-xs">
                           {col.name}
@@ -450,14 +450,14 @@ export function NodePropertiesPanel({
                 <div className="space-y-2">
                   <Label>GROUP BY (optional)</Label>
                   <Select 
-                    value={(node.data as any).groupBy || ''} 
-                    onValueChange={(v) => updateData('groupBy', v)}
+                    value={(node.data as any).groupBy || '__none__'} 
+                    onValueChange={(v) => updateData('groupBy', v === '__none__' ? '' : v)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Gruppieren nach..." />
                     </SelectTrigger>
                     <SelectContent className="max-h-60">
-                      <SelectItem value="">Keine Gruppierung</SelectItem>
+                      <SelectItem value="__none__">Keine Gruppierung</SelectItem>
                       {aggColumns.map((col) => (
                         <SelectItem key={col.name} value={col.name} className="font-mono text-xs">
                           {col.name}
