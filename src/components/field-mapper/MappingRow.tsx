@@ -64,47 +64,6 @@ export function MappingRow({ mapping, onUpdate, onDelete, pdfFields }: MappingRo
             </Tooltip>
           </TooltipProvider>
         );
-      } else if (filterFieldStr === 'kind_ordnungszahl') {
-        const labels: Record<string, string> = {
-          '0': '👶 Antragskind',
-          '1': '👧 1. Geschwister',
-          '2': '👦 2. Geschwister',
-          '3': '🧒 3. Geschwister'
-        };
-        badges.push(
-          <TooltipProvider key={`kind-ord-${idx}`}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge variant="outline" className="gap-1 cursor-help bg-blue-500/10 text-blue-700 dark:text-blue-400">
-                  {labels[filterValueStr] || `Kind #${filterValueStr}`}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="font-medium">Kind-Ordnungszahl: {filterValueStr}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  0 = Antragskind, 1+ = Geschwister nach Alter
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      } else if (filterFieldStr === 'kind_typ') {
-        const labels: Record<string, string> = {
-          'primaer': '👶 Primär',
-          'mehrling': '👯 Mehrling',
-          'geschwister': '👨‍👩‍👧 Geschwister'
-        };
-        badges.push(
-          <Badge key={`kind-typ-${idx}`} variant="outline" className="gap-1 bg-purple-500/10 text-purple-700 dark:text-purple-400">
-            {labels[filterValueStr] || filterValueStr}
-          </Badge>
-        );
-      } else if (filterFieldStr === 'mehrling_nummer') {
-        badges.push(
-          <Badge key={`mehrling-${idx}`} variant="outline" className="gap-1 bg-pink-500/10 text-pink-700 dark:text-pink-400">
-            👯 Mehrling #{filterValueStr}
-          </Badge>
-        );
       } else if (filterFieldStr === 'document_type') {
         const icons: Record<string, string> = {
           'personalausweis': '🪪',

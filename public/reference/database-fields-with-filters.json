@@ -17,37 +17,6 @@
         "selbststaendigen_nachweise"
       ]
     },
-    "kind_ordnungszahl": {
-      "description": "Index des Kindes für Geschwisterbonus und Mehrlinge",
-      "values": [0, 1, 2, 3],
-      "value_meanings": {
-        "0": "Antragskind (das Kind für das Elterngeld beantragt wird)",
-        "1": "Jüngstes Geschwisterkind",
-        "2": "Zweitjüngstes Geschwisterkind",
-        "3": "Drittjüngstes Geschwisterkind"
-      },
-      "applicable_tables": ["geburtsurkunden", "kindergeld_bescheide"]
-    },
-    "kind_typ": {
-      "description": "Art des Kindes",
-      "values": ["primaer", "mehrling", "geschwister"],
-      "value_meanings": {
-        "primaer": "Primäres Antragskind",
-        "mehrling": "Mehrlingskind (Zwilling, Drilling, etc.)",
-        "geschwister": "Geschwisterkind für Geschwisterbonus"
-      },
-      "applicable_tables": ["geburtsurkunden"]
-    },
-    "mehrling_nummer": {
-      "description": "Nummer des Mehrlings bei Mehrlingsgeburten",
-      "values": [1, 2, 3],
-      "value_meanings": {
-        "1": "Erster Mehrling",
-        "2": "Zweiter Mehrling",
-        "3": "Dritter Mehrling"
-      },
-      "applicable_tables": ["geburtsurkunden"]
-    },
     "document_type": {
       "description": "Art des Dokuments (bei eltern_dokumente)",
       "values": ["personalausweis", "reisepass"],
@@ -72,7 +41,7 @@
   "tables": {
     "geburtsurkunden": {
       "description": "Geburtsurkunden der Kinder",
-      "available_filters": ["kind_ordnungszahl", "kind_typ", "mehrling_nummer"],
+      "available_filters": [],
       "fields": [
         {"name": "kind_vorname", "type": "text", "description": "Vorname des Kindes"},
         {"name": "kind_nachname", "type": "text", "description": "Nachname des Kindes"},
@@ -233,7 +202,7 @@
     },
     "kindergeld_bescheide": {
       "description": "Kindergeldbescheide für Geschwisterbonus",
-      "available_filters": ["kind_ordnungszahl"],
+      "available_filters": [],
       "fields": [
         {"name": "familienkasse", "type": "text", "description": "Familienkasse"},
         {"name": "kindergeld_nummer", "type": "text", "description": "Kindergeldnummer"},
