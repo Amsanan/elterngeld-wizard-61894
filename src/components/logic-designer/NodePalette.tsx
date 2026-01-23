@@ -1,5 +1,5 @@
 import { DragEvent } from 'react';
-import { Database, Hash, GitBranch, Repeat, Calculator, FileOutput, Box } from 'lucide-react';
+import { Database, Hash, GitBranch, Repeat, Calculator, FileOutput, Box, BarChart3 } from 'lucide-react';
 
 interface NodeTypeConfig {
   type: string;
@@ -23,6 +23,13 @@ const nodeTypes: NodeTypeConfig[] = [
     icon: Hash, 
     color: 'green',
     description: 'Zähle Datensätze'
+  },
+  { 
+    type: 'aggregate', 
+    label: 'Aggregat', 
+    icon: BarChart3, 
+    color: 'teal',
+    description: 'COUNT DISTINCT, SUM, AVG, MIN, MAX'
   },
   { 
     type: 'condition', 
@@ -64,6 +71,7 @@ const nodeTypes: NodeTypeConfig[] = [
 const colorClasses: Record<string, { bg: string; border: string; text: string; hover: string }> = {
   blue: { bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-700', hover: 'hover:border-blue-500' },
   green: { bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-700', hover: 'hover:border-green-500' },
+  teal: { bg: 'bg-teal-50', border: 'border-teal-300', text: 'text-teal-700', hover: 'hover:border-teal-500' },
   yellow: { bg: 'bg-yellow-50', border: 'border-yellow-300', text: 'text-yellow-700', hover: 'hover:border-yellow-500' },
   orange: { bg: 'bg-orange-50', border: 'border-orange-300', text: 'text-orange-700', hover: 'hover:border-orange-500' },
   purple: { bg: 'bg-purple-50', border: 'border-purple-300', text: 'text-purple-700', hover: 'hover:border-purple-500' },

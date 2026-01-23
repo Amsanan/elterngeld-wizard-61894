@@ -22,6 +22,7 @@ import {
   VariableNode,
   TransformNode,
   LoopNode,
+  AggregateNode,
 } from './nodes';
 
 const nodeTypes = {
@@ -32,6 +33,7 @@ const nodeTypes = {
   variable: VariableNode,
   transform: TransformNode,
   loop: LoopNode,
+  aggregate: AggregateNode,
 };
 
 interface LogicCanvasProps {
@@ -136,6 +138,8 @@ function getDefaultDataForType(type: string): Record<string, any> {
       return { operation: '', inputs: [], output: 'result' };
     case 'loop':
       return { arrayVariable: 'items', itemVariable: 'item', indexVariable: '' };
+    case 'aggregate':
+      return { aggregateFunction: 'count', table: '', column: '', groupBy: '', having: '', output: 'aggregateResult' };
     default:
       return {};
   }

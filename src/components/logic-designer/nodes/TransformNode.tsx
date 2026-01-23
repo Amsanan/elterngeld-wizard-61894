@@ -18,6 +18,13 @@ const OPERATIONS: Record<string, string> = {
   'formatDate': 'Datum formatieren',
   'toUpperCase': 'GROSSBUCHSTABEN',
   'toLowerCase': 'kleinbuchstaben',
+  'countDistinct': 'Eindeutig zählen',
+  'min': 'Minimum',
+  'max': 'Maximum',
+  'sum': 'Summe',
+  'avg': 'Durchschnitt',
+  'coalesce': 'Erster Nicht-Null',
+  'compareArrayElements': 'Array-Elemente vergleichen',
 };
 
 export const TransformNode = memo(({ data, selected }: NodeProps) => {
