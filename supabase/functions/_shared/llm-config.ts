@@ -1,7 +1,7 @@
 // Central LLM configuration for all document extractors
 export const LLM_CONFIG = {
   // Model to use for extraction (using paid tier to avoid rate limits)
-  model: "mistralai/mistral-small-24b-instruct-2501:free",
+  model: "google/gemini-2.0-flash-exp:free",
 
   // Retry configuration
   maxRetries: 4,
