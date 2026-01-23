@@ -29,7 +29,7 @@ import {
 
 import { NodePalette } from '@/components/logic-designer/NodePalette';
 import { LogicCanvas } from '@/components/logic-designer/LogicCanvas';
-import { NodePropertiesPanel } from '@/components/logic-designer/NodePropertiesPanel';
+import { NodePropertiesPanel, TableSchema } from '@/components/logic-designer/NodePropertiesPanel';
 
 interface FlowDefinition {
   nodes: Node[];
@@ -85,13 +85,27 @@ export default function AdminLogicDesigner() {
   
   // Reference data
   const [pdfFields, setPdfFields] = useState<string[]>([]);
+  const [tableSchemas, setTableSchemas] = useState<Record<string, TableSchema>>({});
   const [loading, setLoading] = useState(false);
 
-  // Load rules on mount
+  // Load rules and schemas on mount
   useEffect(() => {
     loadRules();
     loadPdfFields();
+    loadTableSchemas();
   }, []);
+
+  const loadTableSchemas = async () => {
+    try {
+      const response = await fetch('/reference/database-fields-with-filters.json');
+      const data = await response.json();
+      if (data.tables) {
+        setTableSchemas(data.tables);
+      }
+    } catch (err) {
+      console.error('Error loading table schemas:', err);
+    }
+  };
 
   const loadRules = async () => {
     const { data, error } = await supabase
@@ -461,6 +475,8 @@ export default function AdminLogicDesigner() {
           onClose={() => setSelectedNode(null)}
           tables={TABLES}
           pdfFields={pdfFields}
+          tableSchemas={tableSchemas}
+          availableVariables={extractVariables(nodes)}
         />
       </div>
     </div>
