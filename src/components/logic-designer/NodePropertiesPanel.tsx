@@ -5,6 +5,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Trash2, X } from 'lucide-react';
+import { FilterBuilder } from './FilterBuilder';
+import { FilterCondition, ColumnDefinition } from './FilterConditionRow';
+
+export interface TableSchema {
+  available_filters?: string[];
+  fields: ColumnDefinition[];
+}
 
 interface NodePropertiesPanelProps {
   node: Node | null;
@@ -13,6 +20,8 @@ interface NodePropertiesPanelProps {
   onClose: () => void;
   tables: string[];
   pdfFields: string[];
+  tableSchemas: Record<string, TableSchema>;
+  availableVariables: string[];
 }
 
 const OPERATORS = [
@@ -44,7 +53,9 @@ export function NodePropertiesPanel({
   onDelete, 
   onClose,
   tables,
-  pdfFields 
+  pdfFields,
+  tableSchemas,
+  availableVariables,
 }: NodePropertiesPanelProps) {
   if (!node) {
     return (
@@ -60,97 +71,117 @@ export function NodePropertiesPanel({
     onUpdate(node.id, { ...node.data, [key]: value });
   };
 
+  const renderDataSourceFields = () => {
+    const table = (node.data as any).table || '';
+    const columns = tableSchemas[table]?.fields || [];
+    const filterConditions: FilterCondition[] = (node.data as any).filterConditions || [];
+    const filterLogic: 'AND' | 'OR' = (node.data as any).filterLogic || 'AND';
+
+    return (
+      <>
+        <div className="space-y-2">
+          <Label>Tabelle</Label>
+          <Select 
+            value={table} 
+            onValueChange={(v) => {
+              updateData('table', v);
+              updateData('filterConditions', []);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Tabelle wählen" />
+            </SelectTrigger>
+            <SelectContent>
+              {tables.map((t) => (
+                <SelectItem key={t} value={t}>{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Filter-Bedingungen</Label>
+          <FilterBuilder
+            conditions={filterConditions}
+            logic={filterLogic}
+            columns={columns}
+            availableVariables={availableVariables}
+            onChange={(conditions, logic) => {
+              updateData('filterConditions', conditions);
+              updateData('filterLogic', logic);
+            }}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Output Variable</Label>
+          <Input
+            value={(node.data as any).output || ''}
+            onChange={(e) => updateData('output', e.target.value)}
+            placeholder="variableName"
+          />
+        </div>
+      </>
+    );
+  };
+
+  const renderCountFields = () => {
+    const table = (node.data as any).table || '';
+    const columns = tableSchemas[table]?.fields || [];
+    const filterConditions: FilterCondition[] = (node.data as any).filterConditions || [];
+    const filterLogic: 'AND' | 'OR' = (node.data as any).filterLogic || 'AND';
+
+    return (
+      <>
+        <div className="space-y-2">
+          <Label>Tabelle</Label>
+          <Select 
+            value={table} 
+            onValueChange={(v) => {
+              updateData('table', v);
+              updateData('filterConditions', []);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Tabelle wählen" />
+            </SelectTrigger>
+            <SelectContent>
+              {tables.map((t) => (
+                <SelectItem key={t} value={t}>{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Filter-Bedingungen</Label>
+          <FilterBuilder
+            conditions={filterConditions}
+            logic={filterLogic}
+            columns={columns}
+            availableVariables={availableVariables}
+            onChange={(conditions, logic) => {
+              updateData('filterConditions', conditions);
+              updateData('filterLogic', logic);
+            }}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Output Variable</Label>
+          <Input
+            value={(node.data as any).output || ''}
+            onChange={(e) => updateData('output', e.target.value)}
+            placeholder="count"
+          />
+        </div>
+      </>
+    );
+  };
+
   const renderFields = () => {
     switch (node.type) {
       case 'dataSource':
-        return (
-          <>
-            <div className="space-y-2">
-              <Label>Tabelle</Label>
-              <Select 
-                value={(node.data as any).table || ''} 
-                onValueChange={(v) => updateData('table', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tabelle wählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tables.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Filter (JSON)</Label>
-              <Input
-                value={JSON.stringify((node.data as any).filter || {})}
-                onChange={(e) => {
-                  try {
-                    updateData('filter', JSON.parse(e.target.value));
-                  } catch {
-                    // ignore invalid JSON
-                  }
-                }}
-                placeholder='{"field": "value"}'
-                className="font-mono text-xs"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Output Variable</Label>
-              <Input
-                value={(node.data as any).output || ''}
-                onChange={(e) => updateData('output', e.target.value)}
-                placeholder="variableName"
-              />
-            </div>
-          </>
-        );
+        return renderDataSourceFields();
 
       case 'count':
-        return (
-          <>
-            <div className="space-y-2">
-              <Label>Tabelle</Label>
-              <Select 
-                value={(node.data as any).table || ''} 
-                onValueChange={(v) => updateData('table', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tabelle wählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tables.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Filter (JSON)</Label>
-              <Input
-                value={JSON.stringify((node.data as any).filter || {})}
-                onChange={(e) => {
-                  try {
-                    updateData('filter', JSON.parse(e.target.value));
-                  } catch {
-                    // ignore invalid JSON
-                  }
-                }}
-                placeholder='{"kind_typ": "geschwister"}'
-                className="font-mono text-xs"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Output Variable</Label>
-              <Input
-                value={(node.data as any).output || ''}
-                onChange={(e) => updateData('output', e.target.value)}
-                placeholder="count"
-              />
-            </div>
-          </>
-        );
+        return renderCountFields();
 
       case 'condition':
         return (
