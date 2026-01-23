@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Info, Baby } from "lucide-react";
+import { Info } from "lucide-react";
 
 interface MappingEditorProps {
   open: boolean;
@@ -34,14 +34,6 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
     existingFilter.person_type || existingFilter.document_type || ''
   );
   
-  // Kind-specific filters
-  const [kindOrdnungszahl, setKindOrdnungszahl] = useState<string>(
-    existingFilter.kind_ordnungszahl !== undefined ? String(existingFilter.kind_ordnungszahl) : '__none__'
-  );
-  const [kindTyp, setKindTyp] = useState<string>(existingFilter.kind_typ || '__none__');
-  const [mehrlingNummer, setMehrlingNummer] = useState<string>(
-    existingFilter.mehrling_nummer !== undefined ? String(existingFilter.mehrling_nummer) : '__none__'
-  );
 
   // Auto-generate notes when filter changes
   useEffect(() => {
@@ -81,16 +73,6 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
       filterCondition[filterField] = normalizedValue;
     }
     
-    // Kind filters
-    if (kindOrdnungszahl !== '__none__' && kindOrdnungszahl !== '') {
-      filterCondition.kind_ordnungszahl = parseInt(kindOrdnungszahl, 10);
-    }
-    if (kindTyp && kindTyp !== '__none__') {
-      filterCondition.kind_typ = kindTyp;
-    }
-    if (mehrlingNummer !== '__none__' && mehrlingNummer !== '') {
-      filterCondition.mehrling_nummer = parseInt(mehrlingNummer, 10);
-    }
     
     onSave({
       pdf_field_name: pdfFieldName,
@@ -207,61 +189,6 @@ export function MappingEditor({ open, onOpenChange, mapping, onSave, pdfFields }
             </div>
           </div>
           
-          {/* Kind Filter Section */}
-          <div className="border-t pt-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Baby className="h-4 w-4 text-primary" />
-              <Label className="text-sm font-semibold">Kind-Filter (Optional)</Label>
-            </div>
-            <p className="text-xs text-muted-foreground mb-3">
-              Für Tabellen mit Kind-Daten (geburtsurkunden, etc.) - wähle welches Kind gemeint ist
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label className="text-xs">Kind Ordnungszahl</Label>
-                <Select value={kindOrdnungszahl} onValueChange={setKindOrdnungszahl}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue placeholder="Auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    <SelectItem value="__none__">Keine Auswahl</SelectItem>
-                    <SelectItem value="0">👶 0 - Antragskind</SelectItem>
-                    <SelectItem value="1">👧 1 - Jüngstes Geschwister</SelectItem>
-                    <SelectItem value="2">👦 2 - Zweitjüngstes</SelectItem>
-                    <SelectItem value="3">🧒 3 - Drittjüngstes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Kind Typ</Label>
-                <Select value={kindTyp} onValueChange={setKindTyp}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue placeholder="Auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    <SelectItem value="__none__">Keine Auswahl</SelectItem>
-                    <SelectItem value="primaer">👶 Primär (Antragskind)</SelectItem>
-                    <SelectItem value="mehrling">👯 Mehrling (Zwilling etc.)</SelectItem>
-                    <SelectItem value="geschwister">👨‍👩‍👧 Geschwister</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Mehrling Nummer</Label>
-                <Select value={mehrlingNummer} onValueChange={setMehrlingNummer}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue placeholder="Auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    <SelectItem value="__none__">Keine Auswahl</SelectItem>
-                    <SelectItem value="1">1 - Erster Mehrling</SelectItem>
-                    <SelectItem value="2">2 - Zweiter Mehrling</SelectItem>
-                    <SelectItem value="3">3 - Dritter Mehrling</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
           
           <div>
             <Label>Notes</Label>
