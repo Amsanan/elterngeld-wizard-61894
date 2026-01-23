@@ -39,14 +39,28 @@ export default function ElterngeldantragAusfuellen() {
   const [isLoading, setIsLoading] = useState(false);
   const [previousPdfPath, setPreviousPdfPath] = useState<string | null>(null);
   const [hasData, setHasData] = useState(true);
+  const [pdfKey, setPdfKey] = useState(0); // Key to force PDF re-render
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const currentConfig = WORKFLOW_STEPS[currentStep - 1];
 
+  // Load step data on mount and step change
   useEffect(() => {
     loadStepData();
   }, [currentStep]);
+
+  // Auto-refresh PDF every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (pdfUrl) {
+        console.log('Auto-refreshing PDF preview...');
+        setPdfKey(prev => prev + 1);
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [pdfUrl]);
 
   const loadStepData = async () => {
     setIsLoading(true);
@@ -232,6 +246,7 @@ export default function ElterngeldantragAusfuellen() {
           <Card className="p-6 w-full">
             <h3 className="text-lg font-semibold mb-4">PDF Vorschau</h3>
             <PdfViewer
+              key={pdfKey}
               pdfUrl={pdfUrl}
               downloadUrl={pdfUrl}
             />
