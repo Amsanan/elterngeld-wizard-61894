@@ -50,13 +50,15 @@ const TRANSFORM_OPERATIONS = [
   { value: 'formatDate', label: 'Datum formatieren' },
   { value: 'toUpperCase', label: 'Großbuchstaben' },
   { value: 'toLowerCase', label: 'Kleinbuchstaben' },
+  { value: 'first', label: 'Erstes Element (FIRST)' },
+  { value: 'last', label: 'Letztes Element (LAST)' },
   { value: 'countDistinct', label: 'Eindeutig zählen (COUNT DISTINCT)' },
   { value: 'min', label: 'Minimum (MIN)' },
   { value: 'max', label: 'Maximum (MAX)' },
   { value: 'sum', label: 'Summe (SUM)' },
   { value: 'avg', label: 'Durchschnitt (AVG)' },
   { value: 'coalesce', label: 'Erster Nicht-Null (COALESCE)' },
-  { value: 'compareArrayElements', label: 'Array-Elemente vergleichen' },
+  { value: 'compareObjects', label: 'Objekte vergleichen' },
 ];
 
 export function NodePropertiesPanel({ 
@@ -370,13 +372,16 @@ export function NodePropertiesPanel({
           </>
         );
 
-      case 'transform':
+      case 'transform': {
+        const operation = (node.data as any).operation || '';
+        const isCompareObjects = operation === 'compareObjects';
+        
         return (
           <>
             <div className="space-y-2">
               <Label>Operation</Label>
               <Select 
-                value={(node.data as any).operation || ''} 
+                value={operation} 
                 onValueChange={(v) => updateData('operation', v)}
               >
                 <SelectTrigger>
@@ -389,24 +394,76 @@ export function NodePropertiesPanel({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Inputs (komma-getrennt)</Label>
-              <Input
-                value={((node.data as any).inputs || []).join(', ')}
-                onChange={(e) => updateData('inputs', e.target.value.split(',').map(s => s.trim()))}
-                placeholder="{{a}}, {{b}}"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Output Variable</Label>
-              <Input
-                value={(node.data as any).output || ''}
-                onChange={(e) => updateData('output', e.target.value)}
-                placeholder="result"
-              />
-            </div>
+            
+            {isCompareObjects ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Erstes Objekt (Input Variable)</Label>
+                  <Input
+                    value={(node.data as any).inputVariable || ''}
+                    onChange={(e) => updateData('inputVariable', e.target.value)}
+                    placeholder="mutter"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Zweites Objekt (Vergleichs-Variable)</Label>
+                  <Input
+                    value={(node.data as any).compareVariable || ''}
+                    onChange={(e) => updateData('compareVariable', e.target.value)}
+                    placeholder="vater"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Vergleichs-Felder (komma-getrennt)</Label>
+                  <Input
+                    value={(node.data as any).compareFields || ''}
+                    onChange={(e) => updateData('compareFields', e.target.value)}
+                    placeholder="plz, strasse, hausnummer, wohnort"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Felder die auf Gleichheit geprüft werden. Leer = alle Felder.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Output Variable (Boolean)</Label>
+                  <Input
+                    value={(node.data as any).outputVariable || ''}
+                    onChange={(e) => updateData('outputVariable', e.target.value)}
+                    placeholder="wohnenZusammen"
+                  />
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-950/30 rounded p-2 text-xs text-muted-foreground space-y-1">
+                  <p><strong>Logik:</strong></p>
+                  <ul className="list-disc pl-4 space-y-0.5">
+                    <li>Beide leer → <code>true</code></li>
+                    <li>Nur einer vorhanden → <code>true</code></li>
+                    <li>Beide vorhanden → Vergleich der Felder</li>
+                  </ul>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label>Input Variable</Label>
+                  <Input
+                    value={(node.data as any).inputVariable || ''}
+                    onChange={(e) => updateData('inputVariable', e.target.value)}
+                    placeholder="sourceData"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Output Variable</Label>
+                  <Input
+                    value={(node.data as any).outputVariable || ''}
+                    onChange={(e) => updateData('outputVariable', e.target.value)}
+                    placeholder="result"
+                  />
+                </div>
+              </>
+            )}
           </>
         );
+      }
 
       case 'loop':
         return (
