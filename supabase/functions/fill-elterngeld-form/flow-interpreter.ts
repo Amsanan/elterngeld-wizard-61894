@@ -51,6 +51,8 @@ interface NodeData {
   format?: string;
   separator?: string;
   template?: string;
+  compareVariable?: string;
+  compareFields?: string;
   
   // Loop node
   sourceVariable?: string;
@@ -515,6 +517,38 @@ function executeTransformNode(
     case 'coalesce':
       result = inputValue ?? '';
       break;
+    case 'compareObjects': {
+      // Compares two objects on specified fields
+      // Usage: inputVariable = first object, compareVariable = second object
+      // compareFields = comma-separated list of fields to compare
+      const obj1 = inputValue;
+      const obj2 = ctx.getVariable(node.data.compareVariable || '');
+      const fieldsToCompare = (node.data.compareFields || '').split(',').map((f: string) => f.trim()).filter(Boolean);
+      
+      console.log(`  [Transform] compareObjects:`, { obj1, obj2, fieldsToCompare });
+      
+      if (!obj1 && !obj2) {
+        // Both empty = equal (no data)
+        result = true;
+      } else if (!obj1 || !obj2) {
+        // Only one present = living together (single parent scenario)
+        result = true;
+      } else if (fieldsToCompare.length === 0) {
+        // No fields specified = compare entire objects
+        result = JSON.stringify(obj1) === JSON.stringify(obj2);
+      } else {
+        // Compare only specified fields
+        result = fieldsToCompare.every((field: string) => {
+          const val1 = obj1[field];
+          const val2 = obj2[field];
+          // Normalize: treat null/undefined/empty string as equal
+          const norm1 = val1 === null || val1 === undefined ? '' : String(val1).trim().toLowerCase();
+          const norm2 = val2 === null || val2 === undefined ? '' : String(val2).trim().toLowerCase();
+          return norm1 === norm2;
+        });
+      }
+      break;
+    }
     default:
       result = inputValue;
   }
