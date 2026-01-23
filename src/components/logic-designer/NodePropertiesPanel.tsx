@@ -81,22 +81,26 @@ export function NodePropertiesPanel({
       <>
         <div className="space-y-2">
           <Label>Tabelle</Label>
-          <Select 
-            value={table} 
-            onValueChange={(v) => {
-              updateData('table', v);
-              updateData('filterConditions', []);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Tabelle wählen" />
-            </SelectTrigger>
-            <SelectContent>
-              {tables.map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {tables.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Lade Tabellen...</p>
+          ) : (
+            <Select 
+              value={table} 
+              onValueChange={(v) => {
+                updateData('table', v);
+                updateData('filterConditions', []);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Tabelle wählen" />
+              </SelectTrigger>
+              <SelectContent>
+                {tables.map((t) => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         <div className="space-y-2">
           <Label>Filter-Bedingungen</Label>
@@ -133,22 +137,26 @@ export function NodePropertiesPanel({
       <>
         <div className="space-y-2">
           <Label>Tabelle</Label>
-          <Select 
-            value={table} 
-            onValueChange={(v) => {
-              updateData('table', v);
-              updateData('filterConditions', []);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Tabelle wählen" />
-            </SelectTrigger>
-            <SelectContent>
-              {tables.map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {tables.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Lade Tabellen...</p>
+          ) : (
+            <Select 
+              value={table} 
+              onValueChange={(v) => {
+                updateData('table', v);
+                updateData('filterConditions', []);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Tabelle wählen" />
+              </SelectTrigger>
+              <SelectContent>
+                {tables.map((t) => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         <div className="space-y-2">
           <Label>Filter-Bedingungen</Label>

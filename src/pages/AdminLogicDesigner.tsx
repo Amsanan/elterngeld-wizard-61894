@@ -69,6 +69,7 @@ export default function AdminLogicDesigner() {
   const [pdfFields, setPdfFields] = useState<string[]>([]);
   const [tableSchemas, setTableSchemas] = useState<Record<string, TableSchema>>({});
   const [loading, setLoading] = useState(false);
+  const [schemasLoading, setSchemasLoading] = useState(true);
 
   // Load rules and schemas on mount
   useEffect(() => {
@@ -78,14 +79,18 @@ export default function AdminLogicDesigner() {
   }, []);
 
   const loadTableSchemas = async () => {
+    setSchemasLoading(true);
     try {
       const response = await fetch('/reference/database-fields-with-filters.json');
       const data = await response.json();
       if (data.tables) {
         setTableSchemas(data.tables);
+        console.log('Loaded tables:', Object.keys(data.tables));
       }
     } catch (err) {
       console.error('Error loading table schemas:', err);
+    } finally {
+      setSchemasLoading(false);
     }
   };
 
