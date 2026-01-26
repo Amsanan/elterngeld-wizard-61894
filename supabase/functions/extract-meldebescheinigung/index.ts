@@ -40,7 +40,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing Meldebescheinigung for ${personType}, file: ${filePath}, LLM: ${useLLM}`);
+    // Calculate next upload_position automatically for this person_type
+    const { data: existingDocs, error: countError } = await supabase
+      .from('meldebescheinigungen')
+      .select('upload_position')
+      .eq('user_id', user.id)
+      .eq('person_type', personType.toLowerCase())
+      .order('upload_position', { ascending: false })
+      .limit(1);
+    
+    const uploadPosition = countError || !existingDocs?.length ? 0 : (existingDocs[0].upload_position + 1);
+
+    console.log(`Processing Meldebescheinigung for ${personType}, file: ${filePath}, LLM: ${useLLM}, position: ${uploadPosition}`);
 
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("application-documents")
@@ -79,8 +90,9 @@ Deno.serve(async (req) => {
 
       let extractedData: any = {
         user_id: user.id,
-        person_type: personType,
+        person_type: personType.toLowerCase(),
         file_path: filePath,
+        upload_position: uploadPosition,
       };
       let confidenceScores: any = {};
 

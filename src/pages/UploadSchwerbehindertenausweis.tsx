@@ -5,16 +5,38 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Upload, FileText, Loader2, Accessibility, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, Upload, FileText, Loader2, Accessibility, X, Info } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 
 export default function UploadSchwerbehindertenausweis() {
   const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [personType, setPersonType] = useState<string>("");
-  const [kindOrdnungszahl, setKindOrdnungszahl] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get current count to show which position this will be
+  const { data: existingCount = 0 } = useQuery({
+    queryKey: ["schwerbehindertenausweise-count"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+      
+      const { count } = await supabase
+        .from("schwerbehindertenausweise")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      
+      return count || 0;
+    },
+  });
+
+  const getPositionLabel = (position: number) => {
+    if (position === 0) return "Antragskind";
+    return `Geschwisterkind ${position}`;
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -39,7 +61,6 @@ export default function UploadSchwerbehindertenausweis() {
         return;
       }
 
-      // Upload file to storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/schwerbehindertenausweis_${Date.now()}.${fileExt}`;
 
@@ -53,12 +74,11 @@ export default function UploadSchwerbehindertenausweis() {
         return;
       }
 
-      // Call extraction function
+      // Position is calculated automatically - no need to send kindOrdnungszahl
       const { data, error } = await supabase.functions.invoke('extract-schwerbehindertenausweis', {
         body: { 
           filePath: fileName,
-          personType: personType || null,
-          kindOrdnungszahl: kindOrdnungszahl ? parseInt(kindOrdnungszahl) : null
+          personType: personType || null
         }
       });
 
@@ -102,37 +122,30 @@ export default function UploadSchwerbehindertenausweis() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Person</Label>
-                <Select value={personType} onValueChange={setPersonType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Person auswählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mutter">Mutter</SelectItem>
-                    <SelectItem value="vater">Vater</SelectItem>
-                    <SelectItem value="kind">Kind</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Upload-Position: {getPositionLabel(existingCount)}</strong>
+                <br />
+                {existingCount === 0 
+                  ? "Dies wird als Nachweis für das Antragskind gespeichert."
+                  : `Dies wird als Nachweis für Geschwisterkind ${existingCount} gespeichert.`
+                }
+              </AlertDescription>
+            </Alert>
 
-              {personType === "kind" && (
-                <div className="space-y-2">
-                  <Label>Kind Nr.</Label>
-                  <Select value={kindOrdnungszahl} onValueChange={setKindOrdnungszahl}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Kind auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">1. Kind</SelectItem>
-                      <SelectItem value="1">2. Kind</SelectItem>
-                      <SelectItem value="2">3. Kind</SelectItem>
-                      <SelectItem value="3">4. Kind</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+            <div className="space-y-2">
+              <Label>Person (optional)</Label>
+              <Select value={personType} onValueChange={setPersonType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Person auswählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mutter">Mutter</SelectItem>
+                  <SelectItem value="vater">Vater</SelectItem>
+                  <SelectItem value="kind">Kind</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* File Upload Area */}

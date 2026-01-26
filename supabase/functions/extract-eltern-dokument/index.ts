@@ -41,7 +41,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing ${documentType} for ${personType}, file: ${filePath}, LLM: ${useLLM}`);
+    // Calculate next upload_position automatically for this person_type
+    const { data: existingDocs, error: countError } = await supabase
+      .from('eltern_dokumente')
+      .select('upload_position')
+      .eq('user_id', user.id)
+      .eq('person_type', personType.toLowerCase())
+      .order('upload_position', { ascending: false })
+      .limit(1);
+    
+    const uploadPosition = countError || !existingDocs?.length ? 0 : (existingDocs[0].upload_position + 1);
+
+    console.log(`Processing ${documentType} for ${personType}, file: ${filePath}, LLM: ${useLLM}, position: ${uploadPosition}`);
 
     // Download file from storage
     const { data: fileData, error: downloadError } = await supabase.storage
@@ -54,13 +65,12 @@ Deno.serve(async (req) => {
     }
 
     // Perform OCR
-    // Extract original filename from path to preserve file extension
     const fileName = filePath.split("/").pop() || "document.pdf";
     const fileExtension = fileName.split(".").pop()?.toLowerCase() || "pdf";
 
     const formData = new FormData();
     formData.append("file", fileData, fileName);
-    formData.append("filetype", fileExtension.toUpperCase()); // Explicitly set file type (PDF, JPG, PNG, etc.)
+    formData.append("filetype", fileExtension.toUpperCase());
     formData.append("language", "auto");
     formData.append("isOverlayRequired", "true");
     formData.append("detectOrientation", "true");
@@ -78,17 +88,6 @@ Deno.serve(async (req) => {
     const ocrResult = await ocrResponse.json();
     console.log("OCR API response:", JSON.stringify(ocrResult, null, 2));
 
-    // Helper function to convert DD.MM.YYYY to YYYY-MM-DD
-    const convertDate = (dateStr: string): string => {
-      if (!dateStr) return "";
-      const match = dateStr.match(/(\d{2})\.(\d{2})\.(\d{4})/);
-      if (match) {
-        const [, day, month, year] = match;
-        return `${year}-${month}-${day}`;
-      }
-      return dateStr;
-    };
-
     if (ocrResult.ParsedResults?.length > 0 && !ocrResult.IsErroredOnProcessing) {
       const ocrText = ocrResult.ParsedResults.map((result: any) => result.ParsedText).join("\n\n");
       const overlayLines = ocrResult.ParsedResults[0].TextOverlay?.Lines || [];
@@ -97,8 +96,9 @@ Deno.serve(async (req) => {
       let extractedData: any = {
         user_id: user.id,
         document_type: documentType,
-        person_type: personType,
+        person_type: personType.toLowerCase(),
         file_path: filePath,
+        upload_position: uploadPosition,
       };
       let confidenceScores: any = {};
 
@@ -118,12 +118,10 @@ Deno.serve(async (req) => {
         const cleanedData: any = {};
         for (const [key, value] of Object.entries(llmDataWithoutTypes)) {
           if (dateFields.includes(key) && value) {
-            // Check if it's a valid date format (YYYY-MM-DD or DD.MM.YYYY)
             const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(value as string) || /^\d{2}\.\d{2}\.\d{4}$/.test(value as string);
             if (isValidDate) {
               cleanedData[key] = value;
             }
-            // Skip non-date values like "unbefristet"
           } else {
             cleanedData[key] = value;
           }

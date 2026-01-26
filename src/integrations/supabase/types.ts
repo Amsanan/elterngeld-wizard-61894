@@ -30,6 +30,7 @@ export type Database = {
           kind_vorname: string | null
           pflegestelle_name: string | null
           updated_at: string
+          upload_position: number
           user_id: string
         }
         Insert: {
@@ -47,6 +48,7 @@ export type Database = {
           kind_vorname?: string | null
           pflegestelle_name?: string | null
           updated_at?: string
+          upload_position?: number
           user_id: string
         }
         Update: {
@@ -64,6 +66,7 @@ export type Database = {
           kind_vorname?: string | null
           pflegestelle_name?: string | null
           updated_at?: string
+          upload_position?: number
           user_id?: string
         }
         Relationships: [
@@ -88,6 +91,7 @@ export type Database = {
           file_path: string | null
           id: string
           updated_at: string | null
+          upload_position: number
           user_id: string
           verbot_art: string | null
           verbot_beginn: string | null
@@ -106,6 +110,7 @@ export type Database = {
           file_path?: string | null
           id?: string
           updated_at?: string | null
+          upload_position?: number
           user_id: string
           verbot_art?: string | null
           verbot_beginn?: string | null
@@ -124,6 +129,7 @@ export type Database = {
           file_path?: string | null
           id?: string
           updated_at?: string | null
+          upload_position?: number
           user_id?: string
           verbot_art?: string | null
           verbot_beginn?: string | null
@@ -277,6 +283,7 @@ export type Database = {
           teilzeit_stunden: number | null
           teilzeit_von: string | null
           updated_at: string
+          upload_position: number
           urlaub_1_bis: string | null
           urlaub_1_von: string | null
           urlaub_2_bis: string | null
@@ -321,6 +328,7 @@ export type Database = {
           teilzeit_stunden?: number | null
           teilzeit_von?: string | null
           updated_at?: string
+          upload_position?: number
           urlaub_1_bis?: string | null
           urlaub_1_von?: string | null
           urlaub_2_bis?: string | null
@@ -365,6 +373,7 @@ export type Database = {
           teilzeit_stunden?: number | null
           teilzeit_von?: string | null
           updated_at?: string
+          upload_position?: number
           urlaub_1_bis?: string | null
           urlaub_1_von?: string | null
           urlaub_2_bis?: string | null
@@ -394,6 +403,7 @@ export type Database = {
           id: string
           kontoinhaber: string | null
           updated_at: string
+          upload_position: number
           user_id: string
         }
         Insert: {
@@ -407,6 +417,7 @@ export type Database = {
           id?: string
           kontoinhaber?: string | null
           updated_at?: string
+          upload_position?: number
           user_id: string
         }
         Update: {
@@ -420,6 +431,7 @@ export type Database = {
           id?: string
           kontoinhaber?: string | null
           updated_at?: string
+          upload_position?: number
           user_id?: string
         }
         Relationships: [
@@ -550,6 +562,7 @@ export type Database = {
           sorgerecht_art: string | null
           standesamt: string | null
           updated_at: string
+          upload_position: number
           user_id: string
         }
         Insert: {
@@ -570,6 +583,7 @@ export type Database = {
           sorgerecht_art?: string | null
           standesamt?: string | null
           updated_at?: string
+          upload_position?: number
           user_id: string
         }
         Update: {
@@ -590,6 +604,7 @@ export type Database = {
           sorgerecht_art?: string | null
           standesamt?: string | null
           updated_at?: string
+          upload_position?: number
           user_id?: string
         }
         Relationships: [
@@ -639,6 +654,7 @@ export type Database = {
           steuernummer: string | null
           summe_der_einkuenfte: string | null
           updated_at: string
+          upload_position: number
           user_id: string
           verbleibende_steuer: string | null
           vorauszahlungen: string | null
@@ -683,6 +699,7 @@ export type Database = {
           steuernummer?: string | null
           summe_der_einkuenfte?: string | null
           updated_at?: string
+          upload_position?: number
           user_id: string
           verbleibende_steuer?: string | null
           vorauszahlungen?: string | null
@@ -727,6 +744,7 @@ export type Database = {
           steuernummer?: string | null
           summe_der_einkuenfte?: string | null
           updated_at?: string
+          upload_position?: number
           user_id?: string
           verbleibende_steuer?: string | null
           vorauszahlungen?: string | null
@@ -765,6 +783,7 @@ export type Database = {
           staatsangehoerigkeit: string | null
           strasse: string | null
           updated_at: string
+          upload_position: number
           user_id: string
           vorname: string | null
           wohnort: string | null
@@ -797,6 +816,7 @@ export type Database = {
           staatsangehoerigkeit?: string | null
           strasse?: string | null
           updated_at?: string
+          upload_position?: number
           user_id: string
           vorname?: string | null
           wohnort?: string | null
@@ -829,6 +849,7 @@ export type Database = {
           staatsangehoerigkeit?: string | null
           strasse?: string | null
           updated_at?: string
+          upload_position?: number
           user_id?: string
           vorname?: string | null
           wohnort?: string | null
@@ -1139,6 +1160,7 @@ export type Database = {
           mutter_nachname: string | null
           mutter_vorname: string | null
           updated_at: string
+          upload_position: number
           urkundennummer: string | null
           user_id: string
           vater_nachname: string | null
@@ -1166,6 +1188,7 @@ export type Database = {
           mutter_nachname?: string | null
           mutter_vorname?: string | null
           updated_at?: string
+          upload_position?: number
           urkundennummer?: string | null
           user_id: string
           vater_nachname?: string | null
@@ -1193,6 +1216,7 @@ export type Database = {
           mutter_nachname?: string | null
           mutter_vorname?: string | null
           updated_at?: string
+          upload_position?: number
           urkundennummer?: string | null
           user_id?: string
           vater_nachname?: string | null
@@ -1226,6 +1250,7 @@ export type Database = {
           sozialversicherungsnummer: string | null
           steuer_id: string | null
           updated_at: string
+          upload_position: number
           user_id: string
           vermoegenswirksame_leistungen: number | null
         }
@@ -1253,6 +1278,7 @@ export type Database = {
           sozialversicherungsnummer?: string | null
           steuer_id?: string | null
           updated_at?: string
+          upload_position?: number
           user_id: string
           vermoegenswirksame_leistungen?: number | null
         }
@@ -1280,6 +1306,7 @@ export type Database = {
           sozialversicherungsnummer?: string | null
           steuer_id?: string | null
           updated_at?: string
+          upload_position?: number
           user_id?: string
           vermoegenswirksame_leistungen?: number | null
         }
@@ -1312,6 +1339,7 @@ export type Database = {
           kontoinhaber: string | null
           person_type: Database["public"]["Enums"]["person_type_enum"] | null
           updated_at: string | null
+          upload_position: number
           user_id: string
           zahlungsbeginn: string | null
           zahlungsende: string | null
@@ -1334,6 +1362,7 @@ export type Database = {
           kontoinhaber?: string | null
           person_type?: Database["public"]["Enums"]["person_type_enum"] | null
           updated_at?: string | null
+          upload_position?: number
           user_id: string
           zahlungsbeginn?: string | null
           zahlungsende?: string | null
@@ -1356,6 +1385,7 @@ export type Database = {
           kontoinhaber?: string | null
           person_type?: Database["public"]["Enums"]["person_type_enum"] | null
           updated_at?: string | null
+          upload_position?: number
           user_id?: string
           zahlungsbeginn?: string | null
           zahlungsende?: string | null
@@ -1385,6 +1415,7 @@ export type Database = {
           mitgliedsnummer: string | null
           person_type: Database["public"]["Enums"]["person_type_enum"]
           updated_at: string
+          upload_position: number
           user_id: string
           versichertennummer: string | null
           versicherungsart: string | null
@@ -1404,6 +1435,7 @@ export type Database = {
           mitgliedsnummer?: string | null
           person_type: Database["public"]["Enums"]["person_type_enum"]
           updated_at?: string
+          upload_position?: number
           user_id: string
           versichertennummer?: string | null
           versicherungsart?: string | null
@@ -1423,6 +1455,7 @@ export type Database = {
           mitgliedsnummer?: string | null
           person_type?: Database["public"]["Enums"]["person_type_enum"]
           updated_at?: string
+          upload_position?: number
           user_id?: string
           versichertennummer?: string | null
           versicherungsart?: string | null
@@ -1469,6 +1502,7 @@ export type Database = {
           regelsatz: number | null
           tagessatz: number | null
           updated_at: string
+          upload_position: number
           user_id: string
           versichertennummer: string | null
         }
@@ -1502,6 +1536,7 @@ export type Database = {
           regelsatz?: number | null
           tagessatz?: number | null
           updated_at?: string
+          upload_position?: number
           user_id: string
           versichertennummer?: string | null
         }
@@ -1535,6 +1570,7 @@ export type Database = {
           regelsatz?: number | null
           tagessatz?: number | null
           updated_at?: string
+          upload_position?: number
           user_id?: string
           versichertennummer?: string | null
         }
@@ -1565,6 +1601,7 @@ export type Database = {
           plz: string | null
           strasse: string | null
           updated_at: string
+          upload_position: number
           user_id: string
           vorname: string | null
           wohnort: string | null
@@ -1585,6 +1622,7 @@ export type Database = {
           plz?: string | null
           strasse?: string | null
           updated_at?: string
+          upload_position?: number
           user_id: string
           vorname?: string | null
           wohnort?: string | null
@@ -1605,6 +1643,7 @@ export type Database = {
           plz?: string | null
           strasse?: string | null
           updated_at?: string
+          upload_position?: number
           user_id?: string
           vorname?: string | null
           wohnort?: string | null
@@ -1633,6 +1672,7 @@ export type Database = {
           leistungsende: string | null
           tagessatz: number | null
           updated_at: string
+          upload_position: number
           user_id: string
           versichertennummer: string | null
         }
@@ -1649,6 +1689,7 @@ export type Database = {
           leistungsende?: string | null
           tagessatz?: number | null
           updated_at?: string
+          upload_position?: number
           user_id: string
           versichertennummer?: string | null
         }
@@ -1665,6 +1706,7 @@ export type Database = {
           leistungsende?: string | null
           tagessatz?: number | null
           updated_at?: string
+          upload_position?: number
           user_id?: string
           versichertennummer?: string | null
         }
@@ -1839,6 +1881,7 @@ export type Database = {
           person_type: string | null
           unbefristet: boolean | null
           updated_at: string
+          upload_position: number
           user_id: string
           vorname_inhaber: string | null
         }
@@ -1870,6 +1913,7 @@ export type Database = {
           person_type?: string | null
           unbefristet?: boolean | null
           updated_at?: string
+          upload_position?: number
           user_id: string
           vorname_inhaber?: string | null
         }
@@ -1901,6 +1945,7 @@ export type Database = {
           person_type?: string | null
           unbefristet?: boolean | null
           updated_at?: string
+          upload_position?: number
           user_id?: string
           vorname_inhaber?: string | null
         }
@@ -1929,6 +1974,7 @@ export type Database = {
           person_type: Database["public"]["Enums"]["person_type_enum"]
           steuernummer: string | null
           updated_at: string
+          upload_position: number
           user_id: string
         }
         Insert: {
@@ -1945,6 +1991,7 @@ export type Database = {
           person_type: Database["public"]["Enums"]["person_type_enum"]
           steuernummer?: string | null
           updated_at?: string
+          upload_position?: number
           user_id: string
         }
         Update: {
@@ -1961,6 +2008,7 @@ export type Database = {
           person_type?: Database["public"]["Enums"]["person_type_enum"]
           steuernummer?: string | null
           updated_at?: string
+          upload_position?: number
           user_id?: string
         }
         Relationships: [
@@ -2011,6 +2059,7 @@ export type Database = {
           mutter_nachname: string | null
           mutter_vorname: string | null
           updated_at: string | null
+          upload_position: number
           urkundennummer: string | null
           user_id: string
           vater_geburtsdatum: string | null
@@ -2034,6 +2083,7 @@ export type Database = {
           mutter_nachname?: string | null
           mutter_vorname?: string | null
           updated_at?: string | null
+          upload_position?: number
           urkundennummer?: string | null
           user_id: string
           vater_geburtsdatum?: string | null
@@ -2057,6 +2107,7 @@ export type Database = {
           mutter_nachname?: string | null
           mutter_vorname?: string | null
           updated_at?: string | null
+          upload_position?: number
           urkundennummer?: string | null
           user_id?: string
           vater_geburtsdatum?: string | null
