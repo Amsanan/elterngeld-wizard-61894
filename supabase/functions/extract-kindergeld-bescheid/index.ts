@@ -30,7 +30,17 @@ serve(async (req) => {
     
     if (!filePath) throw new Error('No file path provided');
 
-    console.log('Processing Kindergeld-Bescheid file:', filePath);
+    // Calculate next upload_position automatically
+    const { data: existingDocs, error: countError } = await supabase
+      .from('kindergeld_bescheide')
+      .select('upload_position')
+      .eq('user_id', user.id)
+      .order('upload_position', { ascending: false })
+      .limit(1);
+    
+    const uploadPosition = countError || !existingDocs?.length ? 0 : (existingDocs[0].upload_position + 1);
+
+    console.log('Processing Kindergeld-Bescheid file:', filePath, 'position:', uploadPosition);
 
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('application-documents')
@@ -118,8 +128,9 @@ serve(async (req) => {
       .from('kindergeld_bescheide')
       .insert({
         user_id: user.id,
-        person_type: personType,
+        person_type: personType.toLowerCase(),
         file_path: filePath,
+        upload_position: uploadPosition,
         ...extractedData,
       })
       .select()

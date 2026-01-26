@@ -27,7 +27,7 @@ serve(async (req) => {
     
     if (userError || !user) throw new Error('Unauthorized');
 
-    const { filePath, useLLM = true, kindTyp = 'primaer', kindOrdnungszahl = 0 } = await req.json();
+    const { filePath, useLLM = true } = await req.json();
     
     // Server-side file path validation
     const pathValidation = validateFilePath(filePath);
@@ -40,7 +40,18 @@ serve(async (req) => {
       throw new Error('Unauthorized - file does not belong to user');
     }
 
-    console.log('Processing validated file:', filePath, 'with LLM:', useLLM);
+    // Calculate next upload_position automatically
+    const { data: existingDocs, error: countError } = await supabase
+      .from('geburtsurkunden')
+      .select('upload_position')
+      .eq('user_id', user.id)
+      .order('upload_position', { ascending: false })
+      .limit(1);
+    
+    const uploadPosition = countError || !existingDocs?.length ? 0 : (existingDocs[0].upload_position + 1);
+    console.log('Calculated upload_position:', uploadPosition);
+
+    console.log('Processing validated file:', filePath, 'with LLM:', useLLM, 'position:', uploadPosition);
 
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('application-documents')
@@ -126,7 +137,6 @@ serve(async (req) => {
       }
     } else {
       console.log('LLM extraction not enabled, returning OCR text only');
-      // Minimal fallback - just return the file
     }
     
     // Add confidence scores if available
@@ -134,15 +144,14 @@ serve(async (req) => {
       extractedData.confidence_scores = confidenceScores;
     }
 
-    // Insert into database with kind_typ and kind_ordnungszahl
-    console.log('Inserting into database with kind_typ:', kindTyp, 'kind_ordnungszahl:', kindOrdnungszahl);
+    // Insert into database with upload_position (simplified system)
+    console.log('Inserting into database with upload_position:', uploadPosition);
     const { data: insertedData, error: insertError } = await supabase
       .from('geburtsurkunden')
       .insert({
         user_id: user.id,
         file_path: filePath,
-        kind_typ: kindTyp,
-        kind_ordnungszahl: kindOrdnungszahl,
+        upload_position: uploadPosition,
         ...extractedData,
       })
       .select()

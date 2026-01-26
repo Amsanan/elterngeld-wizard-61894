@@ -1,5 +1,6 @@
 // Page 1 Business Logic for Elterngeld Form
 // Handles: Mehrlinge counting, siblings, premature birth check, disability check
+// Updated to use upload_position instead of kind_typ/kind_ordnungszahl/mehrling_nummer
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -12,9 +13,7 @@ interface Geburtsurkunde {
   kind_vorname: string | null;
   kind_nachname: string | null;
   kind_geburtsdatum: string | null;
-  kind_typ: string | null;
-  kind_ordnungszahl: number | null;
-  mehrling_nummer: number | null;
+  upload_position: number;
   created_at: string;
 }
 
@@ -27,6 +26,7 @@ interface Schwerbehindertenausweis {
   name_inhaber: string | null;
   geburtsdatum: string | null;
   grad_der_behinderung: number | null;
+  upload_position: number;
 }
 
 /**
@@ -54,6 +54,11 @@ function formatDateGerman(dateStr: string): string {
 /**
  * Process Page 1 logic for Elterngeld form
  * 
+ * Upload Position Logic:
+ * - upload_position 0: Antragskind (primary child)
+ * - upload_position 1-3: Mehrlinge (twins/triplets)
+ * - upload_position 10-12: Geschwister (siblings for bonus)
+ * 
  * PDF Fields handled (actual AcroForm names):
  * - txt.geburtsdatum1a 3: Antragskind Geburtsdatum
  * - txt.anzahl 4: Anzahl der Mehrlinge
@@ -73,12 +78,12 @@ export async function processPage1Logic(
 
   console.log('=== PROCESSING PAGE 1 BUSINESS LOGIC ===');
 
-  // Step 1: Fetch Geburtsurkunden (order by created_at for fallback)
+  // Step 1: Fetch Geburtsurkunden (order by upload_position)
   const { data: geburtsurkunden, error: gebError } = await supabase
     .from('geburtsurkunden')
-    .select('kind_vorname, kind_nachname, kind_geburtsdatum, kind_typ, kind_ordnungszahl, mehrling_nummer, created_at')
+    .select('kind_vorname, kind_nachname, kind_geburtsdatum, upload_position, created_at')
     .eq('user_id', userId)
-    .order('created_at', { ascending: true });
+    .order('upload_position', { ascending: true });
 
   if (gebError) {
     console.error('Error fetching Geburtsurkunden:', gebError);
@@ -92,19 +97,8 @@ export async function processPage1Logic(
     return { fieldValues, warnings };
   }
 
-  // Find primary child (Antragskind):
-  // 1. kind_typ = 'primaer'
-  // 2. kind_ordnungszahl = 0
-  // 3. Fallback: first uploaded (earliest created_at, already sorted)
-  let antragskind = geburtsurkunden.find(g => g.kind_typ === 'primaer');
-  if (!antragskind) {
-    antragskind = geburtsurkunden.find(g => g.kind_ordnungszahl === 0);
-  }
-  if (!antragskind) {
-    // Fallback to first uploaded (list is sorted by created_at ascending)
-    antragskind = geburtsurkunden[0];
-    console.log('Using first uploaded Geburtsurkunde as primary child');
-  }
+  // Find primary child (Antragskind): upload_position = 0
+  const antragskind = geburtsurkunden.find(g => g.upload_position === 0) || geburtsurkunden[0];
 
   console.log('Antragskind found:', antragskind);
 
@@ -113,31 +107,26 @@ export async function processPage1Logic(
     warnings.push('Antragskind Name unvollständig');
   }
 
-  // Set Geburtsdatum for Antragskind (correct PDF field name with space)
+  // Set Geburtsdatum for Antragskind
   if (antragskind.kind_geburtsdatum) {
     fieldValues['txt.geburtsdatum1a 3'] = formatDateGerman(antragskind.kind_geburtsdatum);
   }
 
-  // Count Mehrlinge (same birthdate, different name)
+  // Count Mehrlinge (upload_position 1-3) and Geschwister (upload_position >= 10)
   let mehrlingeCount = 0;
   let geschwisterCount = 0;
 
   for (const geb of geburtsurkunden) {
-    // Skip the Antragskind itself
-    if (geb === antragskind) continue;
+    if (geb === antragskind || geb.upload_position === 0) continue;
     
-    const sameBirthdate = geb.kind_geburtsdatum === antragskind.kind_geburtsdatum;
-    const differentName = geb.kind_vorname !== antragskind.kind_vorname || 
-                          geb.kind_nachname !== antragskind.kind_nachname;
-
-    if (sameBirthdate && differentName) {
-      // This is a Mehrling (twin/triplet)
+    if (geb.upload_position >= 1 && geb.upload_position <= 3) {
+      // Mehrling (twin/triplet)
       mehrlingeCount++;
-      console.log(`Mehrling found: ${geb.kind_vorname} ${geb.kind_nachname}`);
-    } else if (differentName) {
-      // This is a sibling with different birthdate
+      console.log(`Mehrling found (position ${geb.upload_position}): ${geb.kind_vorname} ${geb.kind_nachname}`);
+    } else if (geb.upload_position >= 10) {
+      // Geschwister (sibling)
       geschwisterCount++;
-      console.log(`Geschwister found: ${geb.kind_vorname} ${geb.kind_nachname}`);
+      console.log(`Geschwister found (position ${geb.upload_position}): ${geb.kind_vorname} ${geb.kind_nachname}`);
     }
   }
 
@@ -190,7 +179,7 @@ export async function processPage1Logic(
   // Step 3: Check for disability (Schwerbehindertenausweis)
   const { data: schwerbehinderte, error: sbError } = await supabase
     .from('schwerbehindertenausweise')
-    .select('vorname_inhaber, name_inhaber, geburtsdatum, grad_der_behinderung')
+    .select('vorname_inhaber, name_inhaber, geburtsdatum, grad_der_behinderung, upload_position')
     .eq('user_id', userId);
 
   if (sbError) {
@@ -200,26 +189,18 @@ export async function processPage1Logic(
   let hasDisability = false;
 
   if (schwerbehinderte && schwerbehinderte.length > 0) {
-    // Check if any Schwerbehindertenausweis matches the Antragskind
+    // Check for disability at upload_position 0 (Antragskind) or match by name
     for (const sb of schwerbehinderte) {
+      const isAntragskindPosition = sb.upload_position === 0;
       const nameMatch = 
         sb.vorname_inhaber?.toLowerCase() === antragskind.kind_vorname?.toLowerCase() &&
         sb.name_inhaber?.toLowerCase() === antragskind.kind_nachname?.toLowerCase();
       
       const dateMatch = sb.geburtsdatum === antragskind.kind_geburtsdatum;
 
-      if (nameMatch && dateMatch) {
+      if (isAntragskindPosition || (nameMatch && dateMatch)) {
         console.log(`Disability document found for Antragskind: GdB=${sb.grad_der_behinderung}`);
         hasDisability = true;
-        
-        // Update the Schwerbehindertenausweis to mark as primary child
-        await supabase
-          .from('schwerbehindertenausweise')
-          .update({ kind_ordnungszahl: 0 })
-          .eq('user_id', userId)
-          .eq('vorname_inhaber', sb.vorname_inhaber)
-          .eq('name_inhaber', sb.name_inhaber);
-        
         break;
       }
     }

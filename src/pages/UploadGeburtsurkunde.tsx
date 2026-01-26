@@ -5,33 +5,44 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, ArrowLeft } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Upload, ArrowLeft, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { validateFile, createSecureFilePath } from "@/lib/file-validation";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-type KindTyp = "primaer" | "geschwister";
-type KindOrdnung = 0 | 1 | 2 | 3;
+import { useQuery } from "@tanstack/react-query";
 
 const UploadGeburtsurkunde = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [kindTyp, setKindTyp] = useState<KindTyp>("primaer");
-  const [kindOrdnung, setKindOrdnung] = useState<KindOrdnung>(0);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Get current count of birth certificates to show which position this will be
+  const { data: existingCount = 0 } = useQuery({
+    queryKey: ["geburtsurkunden-count"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+      
+      const { count } = await supabase
+        .from("geburtsurkunden")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      
+      return count || 0;
+    },
+  });
+
+  const getPositionLabel = (position: number) => {
+    if (position === 0) return "Antragskind";
+    if (position <= 3) return `Mehrling ${position}`;
+    return `Geschwisterkind ${position - 3}`;
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       
-      // Client-side validation
       const validation = validateFile(selectedFile);
       if (!validation.valid) {
         toast({
@@ -39,7 +50,6 @@ const UploadGeburtsurkunde = () => {
           description: validation.error,
           variant: "destructive",
         });
-        // Reset the input
         e.target.value = "";
         return;
       }
@@ -64,7 +74,6 @@ const UploadGeburtsurkunde = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Nicht angemeldet");
 
-      // Create secure file path with sanitized filename
       const fileName = createSecureFilePath(user.id, file.name);
       
       const { error: uploadError } = await supabase.storage
@@ -73,20 +82,16 @@ const UploadGeburtsurkunde = () => {
 
       if (uploadError) throw uploadError;
 
-      // Call extraction function
       toast({
         title: "Verarbeitung läuft",
         description: "Die Geburtsurkunde wird mit OCR verarbeitet...",
       });
 
+      // Position is now calculated automatically in the edge function
       const { data: extractData, error: extractError } = await supabase.functions.invoke(
         'extract-geburtsurkunde',
         {
-          body: { 
-            filePath: fileName,
-            kindTyp: kindTyp,
-            kindOrdnungszahl: kindOrdnung
-          }
+          body: { filePath: fileName }
         }
       );
 
@@ -103,7 +108,6 @@ const UploadGeburtsurkunde = () => {
           description: "Die Geburtsurkunde wurde extrahiert und gespeichert.",
         });
         
-        // Navigate to result page with the extracted data ID
         if (extractData?.data?.id) {
           navigate(`/geburtsurkunde-result?id=${extractData.data.id}`);
           return;
@@ -111,7 +115,6 @@ const UploadGeburtsurkunde = () => {
       }
 
       setFile(null);
-      // Reset file input
       const fileInput = document.getElementById("file-input") as HTMLInputElement;
       if (fileInput) fileInput.value = "";
       
@@ -140,6 +143,9 @@ const UploadGeburtsurkunde = () => {
             Zurück
           </Button>
           <h1 className="text-2xl font-bold text-foreground">Geburtsurkunde hochladen</h1>
+          <p className="text-muted-foreground mt-2">
+            Laden Sie die Geburtsurkunde hoch. Die Position wird automatisch bestimmt.
+          </p>
         </div>
       </header>
 
@@ -147,55 +153,22 @@ const UploadGeburtsurkunde = () => {
         <div className="max-w-2xl mx-auto">
           <Card className="p-8">
             <div className="space-y-6">
-              {/* Kind-Typ Auswahl */}
-              <div>
-                <Label htmlFor="kind-typ">Für welches Kind ist diese Urkunde?</Label>
-                <Select
-                  value={kindTyp}
-                  onValueChange={(value: KindTyp) => {
-                    setKindTyp(value);
-                    if (value === "primaer") {
-                      setKindOrdnung(0);
-                    } else {
-                      setKindOrdnung(1);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Kind-Typ auswählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="primaer">Antragskind (Kind für das Elterngeld beantragt wird)</SelectItem>
-                    <SelectItem value="geschwister">Geschwisterkind (für Geschwisterbonus)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Geschwister-Ordnung falls Geschwisterkind gewählt */}
-              {kindTyp === "geschwister" && (
-                <div>
-                  <Label htmlFor="kind-ordnung">Welches Geschwisterkind?</Label>
-                  <Select
-                    value={String(kindOrdnung)}
-                    onValueChange={(value) => setKindOrdnung(Number(value) as KindOrdnung)}
-                  >
-                    <SelectTrigger className="mt-2">
-                      <SelectValue placeholder="Geschwister-Position auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Jüngstes Geschwisterkind (Kind 1)</SelectItem>
-                      <SelectItem value="2">Zweitjüngstes Geschwisterkind (Kind 2)</SelectItem>
-                      <SelectItem value="3">Drittjüngstes Geschwisterkind (Kind 3)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Wählen Sie die Position des Geschwisterkindes nach Alter (jüngstes zuerst).
-                  </p>
-                </div>
-              )}
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Upload-Position: {getPositionLabel(existingCount)}</strong>
+                  <br />
+                  {existingCount === 0 
+                    ? "Dies wird als Geburtsurkunde des Antragskindes gespeichert."
+                    : existingCount <= 3
+                      ? `Dies wird als Geburtsurkunde für Mehrling ${existingCount} gespeichert.`
+                      : `Dies wird als Geburtsurkunde für Geschwisterkind ${existingCount - 3} gespeichert.`
+                  }
+                </AlertDescription>
+              </Alert>
 
               <div>
-                <Label htmlFor="file-input">Geburtsurkunde (PDF)</Label>
+                <Label htmlFor="file-input">Geburtsurkunde (PDF oder Bild)</Label>
                 <Input
                   id="file-input"
                   type="file"

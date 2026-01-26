@@ -43,7 +43,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing Steuerbescheid for ${personType}, gemeinsameVeranlagung: ${gemeinsameVeranlagung}, file: ${filePath}`);
+    // Calculate next upload_position automatically for this person_type
+    const { data: existingDocs, error: countError } = await supabase
+      .from('einkommensteuerbescheide')
+      .select('upload_position')
+      .eq('user_id', user.id)
+      .eq('person_type', personType.toLowerCase())
+      .order('upload_position', { ascending: false })
+      .limit(1);
+    
+    const uploadPosition = countError || !existingDocs?.length ? 0 : (existingDocs[0].upload_position + 1);
+
+    console.log(`Processing Steuerbescheid for ${personType}, gemeinsameVeranlagung: ${gemeinsameVeranlagung}, file: ${filePath}, position: ${uploadPosition}`);
 
     // Download file from storage
     const { data: fileData, error: downloadError } = await supabase.storage
@@ -197,17 +208,14 @@ Deno.serve(async (req) => {
     if (allOcrText.trim().length > 0) {
       console.log("Final combined OCR Text length:", allOcrText.length);
       console.log("Overlay lines collected:", allOverlayLines.length);
-      console.log("Combined OCR Space Response JSON:", JSON.stringify({
-        ocrText: allOcrText,
-        overlayLines: allOverlayLines
-      }, null, 2));
 
       // Extract data from tax assessment with confidence scores
       let extractedData: any = {
         user_id: user.id,
-        person_type: personType,
+        person_type: personType.toLowerCase(),
         gemeinsame_veranlagung: gemeinsameVeranlagung,
         file_path: filePath,
+        upload_position: uploadPosition,
       };
 
       let confidenceScores: any = {};

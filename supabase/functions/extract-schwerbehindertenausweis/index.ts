@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { filePath, antragId, personType, kindOrdnungszahl } = await req.json();
+    const { filePath, antragId, personType } = await req.json();
 
     if (!filePath) {
       return new Response(JSON.stringify({ error: 'filePath is required' }), {
@@ -45,7 +45,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing disability certificate: ${filePath}`);
+    // Calculate next upload_position automatically
+    const { data: existingDocs, error: countError } = await supabase
+      .from('schwerbehindertenausweise')
+      .select('upload_position')
+      .eq('user_id', user.id)
+      .order('upload_position', { ascending: false })
+      .limit(1);
+    
+    const uploadPosition = countError || !existingDocs?.length ? 0 : (existingDocs[0].upload_position + 1);
+
+    console.log(`Processing disability certificate: ${filePath}, position: ${uploadPosition}`);
 
     // Download file from storage
     const { data: fileData, error: downloadError } = await supabase.storage
@@ -118,12 +128,12 @@ Deno.serve(async (req) => {
     // Extract data with LLM
     const extractedData = await mapWithLLM({ ocrText, overlayLines });
 
-    // Prepare record for insertion
+    // Prepare record for insertion with upload_position
     const record: Record<string, any> = {
       user_id: user.id,
       file_path: filePath,
       person_type: personType || null,
-      kind_ordnungszahl: kindOrdnungszahl ?? null,
+      upload_position: uploadPosition,
       antrag_id: antragId || null,
       confidence_scores: {}
     };

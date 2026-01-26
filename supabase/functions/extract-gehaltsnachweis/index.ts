@@ -40,7 +40,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing Gehaltsnachweis for ${personType}, file: ${filePath}`);
+    // Calculate next upload_position automatically for this person_type
+    const { data: existingDocs, error: countError } = await supabase
+      .from('gehaltsnachweise')
+      .select('upload_position')
+      .eq('user_id', user.id)
+      .eq('person_type', personType.toLowerCase())
+      .order('upload_position', { ascending: false })
+      .limit(1);
+    
+    const uploadPosition = countError || !existingDocs?.length ? 0 : (existingDocs[0].upload_position + 1);
+
+    console.log(`Processing Gehaltsnachweis for ${personType}, file: ${filePath}, position: ${uploadPosition}`);
 
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("application-documents")
@@ -89,8 +100,9 @@ Deno.serve(async (req) => {
       // Build the final extracted data
       const extractedData: any = {
         user_id: user.id,
-        person_type: personType,
+        person_type: personType.toLowerCase(),
         file_path: filePath,
+        upload_position: uploadPosition,
         ...llmResult.data,
       };
 

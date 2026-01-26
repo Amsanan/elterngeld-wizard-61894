@@ -336,17 +336,11 @@ serve(async (req) => {
                   const normalizedValue = String(filterValue).toLowerCase();
                   countQuery = countQuery.eq(filterField, normalizedValue);
                   queryString += ` AND ${filterField} = '${normalizedValue}'`;
-                } else if (filterField === 'kind_ordnungszahl') {
-                  const ordnungszahl = Number(filterValue);
-                  countQuery = countQuery.eq(filterField, ordnungszahl);
-                  queryString += ` AND ${filterField} = ${ordnungszahl}`;
-                } else if (filterField === 'kind_typ') {
-                  countQuery = countQuery.eq(filterField, String(filterValue));
-                  queryString += ` AND ${filterField} = '${filterValue}'`;
-                } else if (filterField === 'mehrling_nummer') {
-                  const mehrlingNr = Number(filterValue);
-                  countQuery = countQuery.eq(filterField, mehrlingNr);
-                  queryString += ` AND ${filterField} = ${mehrlingNr}`;
+                } else if (filterField === 'upload_position') {
+                  // Simplified upload_position filter
+                  const position = Number(filterValue);
+                  countQuery = countQuery.eq('upload_position', position);
+                  queryString += ` AND upload_position = ${position}`;
                 } else {
                   countQuery = countQuery.eq(filterField, filterValue);
                   queryString += ` AND ${filterField} = '${filterValue}'`;
@@ -389,20 +383,11 @@ serve(async (req) => {
                   const normalizedValue = String(filterValue).toLowerCase();
                   query = query.eq(filterField, normalizedValue);
                   queryString += ` AND ${filterField} = '${normalizedValue}'`;
-                } else if (filterField === 'kind_ordnungszahl') {
-                  // Handle kind_ordnungszahl for distinguishing Antragskind (0) vs Geschwister (1-3)
-                  const ordnungszahl = Number(filterValue);
-                  query = query.eq(filterField, ordnungszahl);
-                  queryString += ` AND ${filterField} = ${ordnungszahl}`;
-                } else if (filterField === 'kind_typ') {
-                  // Handle kind_typ for 'primaer', 'geschwister', 'mehrling'
-                  query = query.eq(filterField, String(filterValue));
-                  queryString += ` AND ${filterField} = '${filterValue}'`;
-                } else if (filterField === 'mehrling_nummer') {
-                  // Handle mehrling_nummer for multiple births
-                  const mehrlingNr = Number(filterValue);
-                  query = query.eq(filterField, mehrlingNr);
-                  queryString += ` AND ${filterField} = ${mehrlingNr}`;
+                } else if (filterField === 'upload_position') {
+                  // Simplified upload_position filter
+                  const position = Number(filterValue);
+                  query = query.eq('upload_position', position);
+                  queryString += ` AND upload_position = ${position}`;
                 } else {
                   query = query.eq(filterField, filterValue);
                   queryString += ` AND ${filterField} = '${filterValue}'`;
