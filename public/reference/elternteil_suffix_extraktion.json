@@ -1,0 +1,142 @@
+{
+  "suffix_rules": {
+    "pattern_underscore": {
+      "elternteil_1_suffix": "_1",
+      "elternteil_2_suffix": "_2",
+      "count_field_bases": 42,
+      "examples": [
+        {
+          "elternteil_1": "txt.steuer2b_1",
+          "elternteil_2": "txt.steuer2b_2"
+        },
+        {
+          "elternteil_1": "cb.EGalt_1",
+          "elternteil_2": "cb.EGalt_2"
+        }
+      ]
+    },
+    "pattern_space_digit_right_column": {
+      "elternteil_1_suffix": "",
+      "elternteil_2_suffix": " 1",
+      "count_field_bases": 39,
+      "examples": [
+        {
+          "elternteil_1": "txt.vorname2b",
+          "elternteil_2": "txt.vorname2b 1"
+        },
+        {
+          "elternteil_1": "cb.ja2c",
+          "elternteil_2": "cb.ja2c 1"
+        }
+      ]
+    },
+    "pattern_space_digit_ausland": {
+      "elternteil_1_suffix": "",
+      "elternteil_2_suffix": " 2",
+      "count_field_bases": 17,
+      "examples": [
+        {
+          "elternteil_1": "txt.staat2c",
+          "elternteil_2": "txt.staat2c 2"
+        },
+        {
+          "elternteil_1": "cb.nein2c",
+          "elternteil_2": "cb.nein2c 2"
+        }
+      ]
+    },
+    "pattern_trailing_digit": {
+      "elternteil_1_suffix": "1",
+      "elternteil_2_suffix": "2",
+      "count_field_bases": 12,
+      "examples": [
+        {
+          "elternteil_1": "txt.bankcode1",
+          "elternteil_2": "txt.bankcode2"
+        },
+        {
+          "elternteil_1": "cb.kirche1",
+          "elternteil_2": "cb.kirche2"
+        },
+        {
+          "elternteil_1": "cb.ich1",
+          "elternteil_2": "cb.ich2"
+        }
+      ]
+    }
+  },
+  "sonderfaelle": [
+    {
+      "type": "offset_numbering_underscore",
+      "description": "Nummerierung startet nicht bei _1/_2, sondern ist verschoben.",
+      "pairs": [
+        {
+          "elternteil_1": "cb.andereErsatz_2",
+          "elternteil_2": "cb.andereErsatz_3"
+        },
+        {
+          "elternteil_1": "cb.wenigCorona_2",
+          "elternteil_2": "cb.wenigCorona_3"
+        },
+        {
+          "elternteil_1": "cb.pflichkk_3",
+          "elternteil_2": "cb.pflichkk_4"
+        }
+      ]
+    },
+    {
+      "type": "unexpected_parent2_digit",
+      "description": "Elternteil 2 verwendet unerwartete Endziffer (nicht ...2).",
+      "examples": [
+        {
+          "elternteil_1": "cb.bemessungnein1",
+          "elternteil_2": "cb.bemessungnein3"
+        }
+      ]
+    },
+    {
+      "type": "base_name_mismatch",
+      "description": "Gleiche Frage, aber unterschiedliche technische Feldbasen zwischen Elternteil 1 und 2.",
+      "examples": [
+        {
+          "elternteil_1": "cb.Gewinnja1_1 (Ja) / cb.Gewinneinkünftenein_1 (Nein)",
+          "elternteil_2": "cb.Gewinnja1_3 (Ja) / cb.Gewinnja1_2 (Nein)"
+        }
+      ]
+    },
+    {
+      "type": "internal_checkbox_ids",
+      "description": "Technisches Feld ist generisch ('Kontrollkästchen N'); die Zahl ist eine interne Acrobat-ID, kein Elternteil-Suffix.",
+      "examples": [
+        {
+          "elternteil_1": "Kontrollkästchen 59",
+          "elternteil_2": "Kontrollkästchen 69"
+        }
+      ]
+    },
+    {
+      "type": "lebensmonate_grids",
+      "description": "Bei Lebensmonat-Tabellen kodiert die Endnummer den Monat/Spaltenindex, nicht den Elternteil. Elternteil wird über Nummernbereiche abgeleitet.",
+      "examples": [
+        {
+          "elternteil_1_range": "cb_BG_1..cb_BG_18",
+          "elternteil_2_range": "cb_BG_20..cb_BG_37"
+        },
+        {
+          "elternteil_1_range": "cb_E+_1..cb_E+_18",
+          "elternteil_2_range": "cb_E+_34..cb_E+_55"
+        }
+      ]
+    },
+    {
+      "type": "unique_parent2_fields_no_suffix",
+      "description": "Einige Felder existieren nur für Elternteil 2 und haben kein ableitbares Suffix (nur über Label/Position erkennbar).",
+      "examples": [
+        {
+          "field": "cb.wohnezusammen2c",
+          "label": "Elternteil 2: gleiche Anschrift wie Elternteil 1"
+        }
+      ]
+    }
+  ]
+}

@@ -738,24 +738,70 @@ Filters determine WHICH record to use when multiple exist:
 
 ### 4.3 PDF Field Naming Convention
 
-The Elterngeld form uses specific naming patterns:
+The Elterngeld form uses specific naming patterns. **Reference file:** `public/reference/pdf-parent-field-patterns.json`
 
-#### Parent Field Suffixes
-| Parent | Suffix | Example |
-|--------|--------|---------|
-| Parent 1 (Father) | None | `txt.vorname2b` |
-| Parent 2 (Mother) | ` 1` | `txt.vorname2b 1` |
+#### 4.3.1 Parent Suffix Patterns (4 Main Types)
 
-#### Field Type Prefixes
+The PDF uses **4 different suffix patterns** to distinguish Elternteil 1 from Elternteil 2:
+
+| Pattern | Elternteil 1 | Elternteil 2 | Field Count | Example |
+|---------|--------------|--------------|-------------|---------|
+| **Underscore** | `_1` | `_2` | 42 | `txt.steuer2b_1` → `txt.steuer2b_2` |
+| **Space-Digit-1** | ∅ (no suffix) | ` 1` | 39 | `txt.vorname2b` → `txt.vorname2b 1` |
+| **Space-Digit-2** | ∅ (no suffix) | ` 2` | 17 | `txt.staat2c` → `txt.staat2c 2` |
+| **Trailing-Digit** | `1` | `2` | 12 | `txt.bankcode1` → `txt.bankcode2` |
+
+**Pattern 1: Underscore Suffix (`_1` / `_2`)**
+- Most common for income and tax sections
+- Examples: `cb.EGalt_1` → `cb.EGalt_2`
+
+**Pattern 2: Space-Digit Right Column (∅ / ` 1`)**
+- Used for personal data columns (right column = Parent 2)
+- Examples: `cb.ja2c` → `cb.ja2c 1`
+
+**Pattern 3: Space-Digit Ausland (∅ / ` 2`)**
+- Used for foreign residence sections
+- Examples: `cb.nein2c` → `cb.nein2c 2`
+
+**Pattern 4: Trailing Digit (`1` / `2`)**
+- Used for bank and church fields
+- Examples: `cb.kirche1` → `cb.kirche2`, `cb.ich1` → `cb.ich2`
+
+#### 4.3.2 Special Cases (Sonderfälle)
+
+**CRITICAL:** These edge cases MUST be handled individually in mappings:
+
+| Type | Description | Example |
+|------|-------------|---------|
+| **Offset Numbering** | Starts at `_2`/`_3` instead of `_1`/`_2` | `cb.andereErsatz_2` → `cb.andereErsatz_3` |
+| **Unexpected Digit** | Parent 2 uses `_3` instead of `_2` | `cb.bemessungnein1` → `cb.bemessungnein3` |
+| **Base Name Mismatch** | Different field bases for same question | `cb.Gewinnja1_1` vs `cb.Gewinneinkünftenein_1` |
+| **Internal IDs** | Generic Acrobat IDs (not derivable) | `Kontrollkästchen 59` vs `Kontrollkästchen 69` |
+| **Lebensmonat Grids** | Number = month, not parent | `cb_BG_1..18` (P1) vs `cb_BG_20..37` (P2) |
+| **Unique P2 Fields** | Only exists for Parent 2 | `cb.wohnezusammen2c` |
+
+#### 4.3.3 Lebensmonat Grid Ranges
+
+For Lebensmonat tables, the number encodes the month/column, NOT the parent:
+
+| Grid Type | Elternteil 1 Range | Elternteil 2 Range |
+|-----------|--------------------|--------------------|
+| BG (Basiselterngeld) | `cb_BG_1` .. `cb_BG_18` | `cb_BG_20` .. `cb_BG_37` |
+| E+ (ElterngeldPlus) | `cb_E+_1` .. `cb_E+_18` | `cb_E+_34` .. `cb_E+_55` |
+
+#### 4.3.4 Field Type Prefixes
+
 | Prefix | Meaning | Example |
 |--------|---------|---------|
 | `txt.` | Text field | `txt.vorname1A 4` |
-| `chk.` | Checkbox | `chk.mehrlinge3 1` |
+| `cb.` | Checkbox | `cb.mehrlinge3 1` |
+| `chk.` | Checkbox (alternate) | `chk.mehrlinge3 1` |
 | `btn.` | Radio button | `btn.geschlecht2b` |
 
-#### Page Numbering in Fields
+#### 4.3.5 Page Numbering in Fields
+
 - `1A`, `1B` = Page 1, Section A/B
-- `2a`, `2b` = Page 2, Section a/b
+- `2a`, `2b`, `2c` = Page 2, Sections a/b/c
 - Numbers after space = variant/instance
 
 ### 4.4 COUNT Mappings
