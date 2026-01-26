@@ -1804,6 +1804,60 @@ export type Database = {
         }
         Relationships: []
       }
+      pdf_field_registry: {
+        Row: {
+          base_field_name: string | null
+          coord_x: number | null
+          coord_y: number | null
+          created_at: string | null
+          field_type: string
+          id: string
+          label_de: string | null
+          page_number: number
+          pdf_field_name: string
+          reading_order: number | null
+          section_de: string | null
+          semantic_meaning: string | null
+          suffix_pattern: string | null
+          target_person: string
+          updated_at: string | null
+        }
+        Insert: {
+          base_field_name?: string | null
+          coord_x?: number | null
+          coord_y?: number | null
+          created_at?: string | null
+          field_type?: string
+          id?: string
+          label_de?: string | null
+          page_number?: number
+          pdf_field_name: string
+          reading_order?: number | null
+          section_de?: string | null
+          semantic_meaning?: string | null
+          suffix_pattern?: string | null
+          target_person: string
+          updated_at?: string | null
+        }
+        Update: {
+          base_field_name?: string | null
+          coord_x?: number | null
+          coord_y?: number | null
+          created_at?: string | null
+          field_type?: string
+          id?: string
+          label_de?: string | null
+          page_number?: number
+          pdf_field_name?: string
+          reading_order?: number | null
+          section_de?: string | null
+          semantic_meaning?: string | null
+          suffix_pattern?: string | null
+          target_person?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null

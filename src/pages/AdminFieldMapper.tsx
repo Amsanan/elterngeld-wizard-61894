@@ -4,13 +4,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Download, Upload, Sparkles, FileText, Eye, Scan } from "lucide-react";
+import { ArrowLeft, Save, Download, Upload, Sparkles, FileText, Eye, Scan, Database } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatabaseFieldsList } from "@/components/field-mapper/DatabaseFieldsList";
 import { PdfFieldsList } from "@/components/field-mapper/PdfFieldsList";
 import { MappingsList } from "@/components/field-mapper/MappingsList";
 import { MappingStats } from "@/components/field-mapper/MappingStats";
 import { AutoMapDialog } from "@/components/field-mapper/AutoMapDialog";
+import type { TargetPerson } from "@/components/field-mapper/TargetPersonBadge";
+
+interface RegistryField {
+  pdf_field_name: string;
+  target_person: TargetPerson;
+  semantic_meaning?: string;
+  label_de?: string;
+}
 
 export default function AdminFieldMapper() {
   const navigate = useNavigate();
@@ -21,6 +29,8 @@ export default function AdminFieldMapper() {
   const [loading, setLoading] = useState(false);
   const [autoMapDialogOpen, setAutoMapDialogOpen] = useState(false);
   const [fieldCoordinates, setFieldCoordinates] = useState<any[]>([]);
+  const [registry, setRegistry] = useState<RegistryField[]>([]);
+  const [loadingRegistry, setLoadingRegistry] = useState(false);
   // Track deleted mapping IDs for deletion on save
   const deletedMappingIds = useRef<string[]>([]);
 
@@ -104,6 +114,52 @@ export default function AdminFieldMapper() {
     } catch (error: any) {
       console.error('Error loading PDF fields:', error);
       toast.error('Failed to load PDF fields');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoadRegistry = async () => {
+    try {
+      setLoadingRegistry(true);
+      const { data, error } = await supabase
+        .from('pdf_field_registry')
+        .select('pdf_field_name, target_person, semantic_meaning, label_de');
+      
+      if (error) throw error;
+      
+      setRegistry((data || []) as RegistryField[]);
+      toast.success(`Loaded ${data?.length || 0} registry entries`);
+    } catch (error: any) {
+      console.error('Error loading registry:', error);
+      toast.error('Failed to load registry');
+    } finally {
+      setLoadingRegistry(false);
+    }
+  };
+
+  const handlePopulateRegistry = async () => {
+    try {
+      setLoading(true);
+      toast.info('Populating PDF field registry...');
+      
+      const { data, error } = await supabase.functions.invoke('populate-pdf-field-registry', {
+        body: { 
+          pdf_template_path: 'elterngeldantrag_bis_Maerz25.pdf',
+          clear_existing: true
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast.success(`Registry populated: ${data.total_fields} fields classified`);
+      console.log('Registry summary:', data.summary);
+      
+      // Reload registry
+      await handleLoadRegistry();
+    } catch (error: any) {
+      console.error('Error populating registry:', error);
+      toast.error('Failed to populate registry');
     } finally {
       setLoading(false);
     }
@@ -450,6 +506,10 @@ export default function AdminFieldMapper() {
               <FileText className="h-4 w-4 mr-2" />
               Export PDF Fields JSON
             </Button>
+            <Button variant="secondary" onClick={handlePopulateRegistry} disabled={loading}>
+              <Database className="h-4 w-4 mr-2" />
+              Populate Registry
+            </Button>
             <Button variant="outline" onClick={handleLoadPdfFields}>
               <FileText className="h-4 w-4 mr-2" />
               Load PDF Fields
@@ -544,7 +604,10 @@ export default function AdminFieldMapper() {
           <PdfFieldsList 
             fields={pdfFields}
             mappings={mappings}
+            registry={registry}
             onCreateMapping={handleCreateMapping}
+            onLoadRegistry={handleLoadRegistry}
+            loadingRegistry={loadingRegistry}
           />
         </div>
 
