@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { PDFDocument } from "https://esm.sh/pdf-lib@1.17.1";
+import { PDFDocument, PDFName, PDFRef, PDFArray } from "https://esm.sh/pdf-lib@1.17.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -153,6 +153,64 @@ function extractBaseFieldName(fieldName: string): string {
     .replace(/([a-z])([12])$/, '$1');
 }
 
+// Extract page number from field name patterns (fallback heuristic)
+function extractPageFromFieldName(fieldName: string): number {
+  const name = fieldName.toLowerCase();
+  
+  // Page-specific patterns based on German Elterngeld form structure
+  const patterns: { regex: RegExp; page: number }[] = [
+    // Seite 1: Deckblatt/Antragsinformationen
+    { regex: /^cb\.antrag/i, page: 1 },
+    { regex: /antragsteller/i, page: 1 },
+    
+    // Seite 2: Elternteil 1 - Persönliche Daten (2a, 2b)
+    { regex: /2a(?!\d)/i, page: 2 },
+    { regex: /2b(?!\d)/i, page: 2 },
+    
+    // Seite 3: Elternteil 2 - Persönliche Daten (2c)
+    { regex: /2c(?!\d)/i, page: 3 },
+    
+    // Seite 4: Adresse/Wohnung (2d)
+    { regex: /2d(?!\d)/i, page: 4 },
+    { regex: /wohnung|adress/i, page: 4 },
+    
+    // Seite 5: Kind (1A)
+    { regex: /1a\s*[34]/i, page: 5 },
+    { regex: /kind.*geb/i, page: 5 },
+    
+    // Seite 6-7: Geschwister (4)
+    { regex: /geschwister|4a|4b/i, page: 6 },
+    
+    // Seite 8-11: Einkommen (3a, 3b, 3c, 3d)
+    { regex: /3a(?!\d)/i, page: 8 },
+    { regex: /3b(?!\d)/i, page: 9 },
+    { regex: /3c(?!\d)/i, page: 10 },
+    { regex: /3d(?!\d)/i, page: 11 },
+    { regex: /eink|gehalt|arbeit/i, page: 8 },
+    
+    // Seite 12-13: Mutterschaftsgeld (5)
+    { regex: /5a|5b|mutter|mug/i, page: 12 },
+    
+    // Seite 14-17: Bezugszeitraum/Lebensmonate (6)
+    { regex: /^cb[._]bg[._]/i, page: 14 },
+    { regex: /^cb[._]e\+[._]/i, page: 15 },
+    { regex: /lebensmonat/i, page: 14 },
+    
+    // Seite 18-20: Bankverbindung (7)
+    { regex: /7a|7b|iban|bic|bank/i, page: 18 },
+    
+    // Seite 21-23: Erklärungen/Unterschrift (8, 9)
+    { regex: /8a|8b|erkl[aä]r/i, page: 21 },
+    { regex: /9a|9b|unterschrift/i, page: 22 },
+  ];
+  
+  for (const { regex, page } of patterns) {
+    if (regex.test(name)) return page;
+  }
+  
+  return 0; // Unknown page
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -199,17 +257,58 @@ serve(async (req) => {
 
     console.log(`Processing ${formFields.length} PDF fields across ${pages.length} pages`);
 
+    // Build a map of widget references to page numbers
+    // Each page has annotations (Annots) which include form field widgets
+    const widgetRefToPage = new Map<string, number>();
+    
+    for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+      const page = pages[pageIndex];
+      try {
+        // Get the Annots array from the page dictionary
+        const annotsRef = page.node.get(PDFName.of('Annots'));
+        if (annotsRef) {
+          let annots: PDFArray | null = null;
+          
+          // Handle both direct array and indirect reference
+          if (annotsRef instanceof PDFArray) {
+            annots = annotsRef;
+          } else if (annotsRef instanceof PDFRef) {
+            const resolved = pdfDoc.context.lookup(annotsRef);
+            if (resolved instanceof PDFArray) {
+              annots = resolved;
+            }
+          }
+          
+          if (annots) {
+            for (let i = 0; i < annots.size(); i++) {
+              const annotRef = annots.get(i);
+              if (annotRef instanceof PDFRef) {
+                widgetRefToPage.set(annotRef.toString(), pageIndex + 1);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.log(`Error processing page ${pageIndex + 1} annotations:`, err);
+      }
+    }
+    
+    console.log(`Built widget-to-page map with ${widgetRefToPage.size} entries`);
+
     // Collect all field names first (needed for pattern detection)
     const allFieldNames = formFields.map((field: any) => field.getName());
 
     // Process each field
     const registryEntries = [];
+    let pagesDetectedFromWidgets = 0;
+    let pagesDetectedFromNames = 0;
+    let pagesUnknown = 0;
     
     for (const field of formFields) {
       const fieldName = field.getName();
       const fieldType = field.constructor.name;
       
-      // Get widget for position (first widget)
+      // Get widget for position and page detection
       const widgets = field.acroField.getWidgets();
       let pageNumber = 0;
       let coordX = 0;
@@ -221,20 +320,37 @@ serve(async (req) => {
         coordX = rect.x;
         coordY = rect.y;
         
-        // Find page number by checking P entry in widget
+        // Try to find page number from widget reference
         try {
-          const pageRef = widget.dict.get(PDFDocument.prototype.context?.obj('P') as any);
-          if (pageRef) {
+          // Get the widget's dictionary reference
+          const widgetDict = widget.dict;
+          
+          // Method 1: Check the P (Parent page) reference directly
+          const pageRef = widgetDict.get(PDFName.of('P'));
+          if (pageRef instanceof PDFRef) {
+            // Find which page this reference belongs to
             for (let i = 0; i < pages.length; i++) {
-              if (pages[i].ref === pageRef) {
-                pageNumber = i;
+              if (pages[i].ref.toString() === pageRef.toString()) {
+                pageNumber = i + 1;
                 break;
               }
             }
           }
-        } catch {
-          // Fallback: just use page 0
-          pageNumber = 0;
+        } catch (err) {
+          console.log(`Error getting page for field ${fieldName}:`, err);
+        }
+      }
+
+      // Track detection method
+      if (pageNumber > 0) {
+        pagesDetectedFromWidgets++;
+      } else {
+        // Fallback: Extract from field name patterns
+        pageNumber = extractPageFromFieldName(fieldName);
+        if (pageNumber > 0) {
+          pagesDetectedFromNames++;
+        } else {
+          pagesUnknown++;
         }
       }
 
@@ -255,6 +371,8 @@ serve(async (req) => {
         base_field_name: baseFieldName,
       });
     }
+
+    console.log(`Page detection: ${pagesDetectedFromWidgets} from widgets, ${pagesDetectedFromNames} from names, ${pagesUnknown} unknown`);
 
     // Clear existing entries if requested
     if (clear_existing) {
@@ -288,11 +406,23 @@ serve(async (req) => {
       summary[entry.target_person] = (summary[entry.target_person] || 0) + 1;
     }
 
+    // Count by page for summary
+    const pagesSummary: Record<number, number> = {};
+    for (const entry of registryEntries) {
+      pagesSummary[entry.page_number] = (pagesSummary[entry.page_number] || 0) + 1;
+    }
+
     return new Response(JSON.stringify({ 
       success: true,
       total_fields: registryEntries.length,
       summary,
-      message: `Populated registry with ${registryEntries.length} fields`
+      pages_summary: pagesSummary,
+      detection_stats: {
+        from_widgets: pagesDetectedFromWidgets,
+        from_names: pagesDetectedFromNames,
+        unknown: pagesUnknown
+      },
+      message: `Populated registry with ${registryEntries.length} fields across ${Object.keys(pagesSummary).length} pages`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
