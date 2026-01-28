@@ -468,6 +468,78 @@ const AdminSetup = () => {
 
         <Card className="mt-6">
           <CardHeader>
+            <CardTitle>PDF Field Registry & Fill Modes</CardTitle>
+            <CardDescription>
+              Befülle die PDF-Feld-Registry und generiere Fill Modes für den Wizard
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
+              <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium mb-1">Wichtig - In dieser Reihenfolge ausführen:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li><strong>Populate Registry</strong> - Klassifiziert alle 657 PDF-Felder</li>
+                  <li><strong>Generate Fill Modes</strong> - Erstellt AUTO_FILL/SUGGEST/CONFIRM_ONLY Regeln</li>
+                </ol>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                onClick={async () => {
+                  try {
+                    toast({ title: "Starte...", description: "Registry wird befüllt..." });
+                    const { data, error } = await supabase.functions.invoke('populate-pdf-field-registry');
+                    if (error) throw error;
+                    toast({ 
+                      title: "Erfolgreich!", 
+                      description: `${data?.inserted || 0} Felder in Registry eingetragen` 
+                    });
+                  } catch (err: any) {
+                    toast({ title: "Fehler", description: err.message, variant: "destructive" });
+                  }
+                }}
+                variant="outline"
+                size="lg"
+              >
+                1. Populate Registry
+              </Button>
+              
+              <Button
+                onClick={async () => {
+                  try {
+                    toast({ title: "Starte...", description: "Fill Modes werden generiert..." });
+                    const { data, error } = await supabase.functions.invoke('generate-fill-modes');
+                    if (error) throw error;
+                    toast({ 
+                      title: "Erfolgreich!", 
+                      description: `${data?.stats?.total || 0} Fill Modes generiert` 
+                    });
+                  } catch (err: any) {
+                    toast({ title: "Fehler", description: err.message, variant: "destructive" });
+                  }
+                }}
+                variant="default"
+                size="lg"
+              >
+                2. Generate Fill Modes
+              </Button>
+            </div>
+
+            <Button
+              onClick={() => navigate('/elterngeld-wizard')}
+              variant="outline"
+              className="w-full"
+              size="lg"
+            >
+              → Zum Elterngeld Wizard
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
             <CardTitle>Storage Management</CardTitle>
             <CardDescription>
               Configure automatic cleanup of old documents
