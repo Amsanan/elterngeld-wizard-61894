@@ -280,8 +280,11 @@ export function useFillModeEngine(): UseFillModeEngineResult {
     }
   }, [fillModeConfigs, pdfFields, fieldStates]);
   
-  // Derived data
-  const pageFields = pdfFields.filter(f => f.page_number === currentPage);
+  // Derived data - Quick fix: Show page 0 fields on page 1 (fallback for undetected pages)
+  const pageFields = pdfFields.filter(f => 
+    f.page_number === currentPage || 
+    (currentPage === 1 && f.page_number === 0)
+  );
   
   const pageFieldStates: Record<string, FieldState> = {};
   const pageFieldConfigs: Record<string, FillModeConfig> = {};
