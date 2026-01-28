@@ -6,6 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Normalize field type codes
+function isTextField(fieldType: string): boolean {
+  return fieldType === 'PDFTextField' || fieldType === 't' || fieldType === 'text';
+}
+
+function isCheckbox(fieldType: string): boolean {
+  return fieldType === 'PDFCheckBox' || fieldType === 'cb' || fieldType === 'checkbox';
+}
+
 // Fill mode classification rules
 function determineFillMode(
   fieldName: string, 
@@ -15,7 +24,7 @@ function determineFillMode(
 ): { fill_mode: string; fill_reason: string; max_confidence: number } {
   
   // RULE 1: ALL checkboxes are CONFIRM_ONLY - NEVER auto-fill
-  if (fieldType === 'PDFCheckBox' || fieldName.startsWith('cb.') || fieldName.startsWith('cb_')) {
+  if (isCheckbox(fieldType) || fieldName.startsWith('cb.') || fieldName.startsWith('cb_')) {
     return {
       fill_mode: 'CONFIRM_ONLY',
       fill_reason: 'Checkbox/Entscheidungsfeld erfordert Benutzerbestätigung',
@@ -44,7 +53,7 @@ function determineFillMode(
   }
   
   // RULE 4: Text fields with high-confidence mappings get AUTO_FILL
-  if (fieldType === 'PDFTextField' && hasMapping && mappingConfidence >= 0.8) {
+  if (isTextField(fieldType) && hasMapping && mappingConfidence >= 0.8) {
     // High-confidence personal data fields
     if (fieldName.match(/vorname|nachname|name|geburt|strasse|hausnr|plz|ort|iban|bic|steuer/i)) {
       return {
@@ -65,7 +74,7 @@ function determineFillMode(
   }
   
   // RULE 6: Text fields with mapping but lower confidence get SUGGEST
-  if (fieldType === 'PDFTextField' && hasMapping) {
+  if (isTextField(fieldType) && hasMapping) {
     return {
       fill_mode: 'SUGGEST',
       fill_reason: 'Vorschlag basierend auf Dokumentenextraktion',
@@ -74,7 +83,7 @@ function determineFillMode(
   }
   
   // RULE 7: Text fields without mapping get SUGGEST (manual entry likely)
-  if (fieldType === 'PDFTextField') {
+  if (isTextField(fieldType)) {
     return {
       fill_mode: 'SUGGEST',
       fill_reason: 'Manuelle Eingabe oder Dokumentenupload erforderlich',
@@ -186,19 +195,29 @@ serve(async (req) => {
       throw new Error('pdf_field_registry is empty. Please run populate-pdf-field-registry first.');
     }
 
-    // Fetch existing mappings for confidence info
+    // Fetch existing mappings with ACTUAL confidence scores
     const { data: mappings, error: mappingsError } = await supabase
       .from('pdf_field_mappings')
-      .select('pdf_field_name');
+      .select('pdf_field_name, confidence_score, source_table, source_field');
 
     if (mappingsError) throw mappingsError;
 
-    const mappedFields = new Set((mappings || []).map(m => m.pdf_field_name));
+    // Build a map of field -> mapping info with actual confidence
+    const mappingMap = new Map<string, { confidence: number; source: string }>();
+    for (const m of mappings || []) {
+      mappingMap.set(m.pdf_field_name, {
+        confidence: (m.confidence_score || 0) / 100, // Convert 0-100 to 0-1
+        source: `${m.source_table}.${m.source_field}`
+      });
+    }
+
+    console.log(`Found ${mappingMap.size} mappings with confidence scores`);
 
     // Generate fill modes for each field
     const fillModes = registryFields.map(field => {
-      const hasMapping = mappedFields.has(field.pdf_field_name);
-      const mappingConfidence = hasMapping ? 0.85 : 0; // Default confidence for mapped fields
+      const mappingInfo = mappingMap.get(field.pdf_field_name);
+      const hasMapping = !!mappingInfo;
+      const mappingConfidence = mappingInfo?.confidence ?? 0;
       
       const { fill_mode, fill_reason, max_confidence } = determineFillMode(
         field.pdf_field_name,
