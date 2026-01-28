@@ -1,291 +1,559 @@
 
-# Plan: PDF-Feld Master-Tabelle mit Personen/Kind-Zuordnung
+# Plan: Elterngeld PDF Autofill Wizard mit Fill Modes
 
-## Problemanalyse
+## Projektübersicht
 
-### Aktuelle Probleme mit Auto-Mapper
-1. **Levenshtein-Distanz ist semantisch blind**: Der Auto-Mapper vergleicht nur Zeichenketten und versteht nicht, dass `txt.vorname2b` für Elternteil 1 und `txt.vorname2b 1` für Elternteil 2 ist
-2. **Keine Personen-Zuordnung beim PDF-Feld**: Die 657 PDF-Felder haben keine vorklassifizierte Information, für wen sie gelten
-3. **Fehlende Kontext-Anzeige**: Im Field Mapper sieht man nur den technischen Feldnamen, nicht die semantische Bedeutung
+Implementierung eines sicheren, schrittweisen Wizard-Systems für den Elterngeldantrag mit drei Fill-Modi:
 
-### User-Vorschlag
-Eine Master-Tabelle für alle PDF-Felder mit vorklassifizierter Personen-/Kind-Zuordnung:
-- `elternteil_1` (Vater/Antragsteller 1)
-- `elternteil_2` (Mutter/Antragsteller 2)  
-- `antragskind` (Kind für das Elterngeld beantragt wird)
-- `geschwister_1` bis `geschwister_3` (jüngste Kinder unter 6)
-- `universal` (Felder die für alle gelten, z.B. Unterschriften-Datum)
+| Fill Mode | Verhalten | Anwendung |
+|-----------|-----------|-----------|
+| **AUTO_FILL** | Automatisch befüllen | Text, Datum, Zahlen mit hoher Konfidenz |
+| **SUGGEST** | Vorschlag anzeigen | Niedrigere Konfidenz, Benutzerbestätigung erforderlich |
+| **CONFIRM_ONLY** | Niemals automatisch | Alle Checkboxen, Erklärungen, Lebensmonat-Grid |
+
+**Kritische Regel:** Checkboxen werden NIEMALS automatisch gesetzt.
 
 ---
 
-## Phase 1: Neue Datenbank-Tabelle `pdf_field_registry`
+## Phase 1: Reference Files & Datenbank
 
-### 1.1 Tabellen-Schema
+### 1.1 Neue Tabelle `field_fill_modes`
 
 ```sql
-CREATE TABLE pdf_field_registry (
+CREATE TABLE field_fill_modes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  
-  -- Identifikation
   pdf_field_name TEXT NOT NULL UNIQUE,
-  field_type TEXT NOT NULL, -- 'PDFTextField', 'PDFCheckBox', etc.
-  
-  -- Person/Kind-Zuordnung (DER KERN!)
-  target_person TEXT NOT NULL CHECK (target_person IN (
-    'elternteil_1',      -- Vater / Antragsteller 1
-    'elternteil_2',      -- Mutter / Antragsteller 2
-    'antragskind',       -- Das Kind für das EG beantragt wird
-    'geschwister_1',     -- 1. jüngstes Kind (unter 6)
-    'geschwister_2',     -- 2. jüngstes Kind
-    'geschwister_3',     -- 3. jüngstes Kind
-    'mehrling_1',        -- 1. Mehrling
-    'mehrling_2',        -- 2. Mehrling
-    'mehrling_3',        -- 3. Mehrling
-    'beide_eltern',      -- Feld gilt für beide
-    'universal'          -- Allgemeine Felder
-  )),
-  
-  -- Position im PDF
-  page_number INTEGER NOT NULL,
-  coord_x NUMERIC,
-  coord_y NUMERIC,
-  reading_order INTEGER,
-  
-  -- Semantische Information
-  section_de TEXT,           -- z.B. "2b Angaben zu den Eltern"
-  label_de TEXT,             -- z.B. "Nachname"
-  semantic_meaning TEXT,     -- z.B. "nachname", "geburtsdatum", "strasse"
-  
-  -- Suffix-Muster (für Validierung)
-  suffix_pattern TEXT,       -- 'underscore', 'space_digit_1', etc.
-  base_field_name TEXT,      -- Ohne Suffix, z.B. "txt.vorname2b"
-  
-  -- Meta
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
+  fill_mode TEXT NOT NULL CHECK (fill_mode IN ('AUTO_FILL', 'SUGGEST', 'CONFIRM_ONLY')),
+  fill_reason TEXT,
+  doc_types TEXT[],
+  entities TEXT[],
+  max_confidence NUMERIC DEFAULT 0.8,
+  has_analysis_link BOOLEAN DEFAULT false,
+  analysis_reference TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
 );
-
--- Index für schnelle Suche
-CREATE INDEX idx_pdf_field_target_person ON pdf_field_registry(target_person);
-CREATE INDEX idx_pdf_field_semantic ON pdf_field_registry(semantic_meaning);
 ```
 
-### 1.2 Personen-Zuordnungslogik (automatisch befüllen)
+### 1.2 Generierung der Fill Modes
 
-Basierend auf `pdf-parent-field-patterns.json`:
+Da die Reference-Dateien leer sind, wird ein Generator-Script erstellt:
 
-| Suffix-Muster | Beispiel | target_person |
-|---------------|----------|---------------|
-| Kein Suffix + hat ` 1` Variante | `txt.vorname2b` | `elternteil_1` |
-| ` 1` am Ende | `txt.vorname2b 1` | `elternteil_2` |
-| `_1` am Ende | `txt.steuer2b_1` | `elternteil_1` |
-| `_2` am Ende | `txt.steuer2b_2` | `elternteil_2` |
-| `1` nach Buchstabe | `txt.bankcode1` | `elternteil_1` |
-| `2` nach Buchstabe | `txt.bankcode2` | `elternteil_2` |
-| `txt.*1A 4` (Kind-Felder) | `txt.vorname1A 4` | `antragskind` |
-| `txt.*4` (1. Geschwister) | `txt.vorname4` | `geschwister_1` |
-| `txt.2*4` (2. Geschwister) | `txt.2vorname4` | `geschwister_2` |
-| `txt.3*4` (3. Geschwister) | `txt.3vorname4` | `geschwister_3` |
+**Regeln für automatische Klassifikation:**
 
----
+1. **CONFIRM_ONLY** (niemals auto-fill):
+   - Alle `PDFCheckBox` Felder
+   - Alle `cb.*` Felder
+   - Lebensmonat-Grid (`cb_BG_*`, `cb_E+_*`)
+   - Deklarationsfelder
 
-## Phase 2: Edge Function zum Befüllen der Registry
+2. **AUTO_FILL** (automatisch):
+   - Textfelder mit Mapping zu Dokumenten mit confidence > 80%
+   - Datumsfelder aus Geburtsurkunden, IDs
+   - Name, Adresse, IBAN aus Hochkonfidenz-Dokumenten
 
-### 2.1 Neue Edge Function `populate-pdf-field-registry`
+3. **SUGGEST** (Vorschlag):
+   - Einkommensfelder
+   - Felder ohne oder mit niedrigem Mapping-Confidence
 
-Diese Funktion:
-1. Lädt alle 657 PDF-Felder aus dem PDF
-2. Wendet die Suffix-Muster an um `target_person` zu bestimmen
-3. Extrahiert `semantic_meaning` aus dem Feldnamen
-4. Speichert alles in `pdf_field_registry`
+### 1.3 Progress-Tabelle erweitern
 
-```text
-Algorithmus für target_person:
+```sql
+ALTER TABLE elterngeldantrag_progress 
+ADD COLUMN field_states JSONB DEFAULT '{}';
+-- Format: { "pdf_field_name": { "status": "...", "value": "...", "source_doc": "..." } }
+```
 
-1. Prüfe spezielle Kind-Muster:
-   - "*1A 4", "*1a 3" → antragskind
-   - "txt.*4" (ohne Prefix-Zahl) → geschwister_1
-   - "txt.2*4" → geschwister_2
-   - "txt.3*4" → geschwister_3
-   - "txt.adoptiv4", "txt.2adoptiv4", "txt.3adoptiv4" → entsprechende Kategorie
+### 1.4 Document Provenance Tabelle
 
-2. Prüfe Eltern-Suffix-Muster (in Prioritäts-Reihenfolge):
-   - Endet mit "_1" → elternteil_1
-   - Endet mit "_2" → elternteil_2
-   - Endet mit " 1" → elternteil_2 (!)
-   - Endet mit " 2" → elternteil_2
-   - Endet mit "1" nach Buchstabe → elternteil_1
-   - Endet mit "2" nach Buchstabe → elternteil_2
-   - Hat Pendant mit " 1" Suffix → elternteil_1
-
-3. Lebensmonat-Grids:
-   - cb_BG_1..cb_BG_18 → elternteil_1
-   - cb_BG_20..cb_BG_37 → elternteil_2
-   - cb_E+_1..cb_E+_18 → elternteil_1
-   - cb_E+_34..cb_E+_55 → elternteil_2
-
-4. Fallback: universal
+```sql
+CREATE TABLE document_field_provenance (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users NOT NULL,
+  pdf_field_name TEXT NOT NULL,
+  source_document_type TEXT,
+  source_document_id UUID,
+  extracted_key TEXT,
+  extracted_value TEXT,
+  confidence NUMERIC,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, pdf_field_name)
+);
 ```
 
 ---
 
-## Phase 3: Frontend - Field Mapper Update
+## Phase 2: Reference Files generieren
 
-### 3.1 PdfFieldsList Komponente erweitern
+### 2.1 `public/reference/field_fill_modes.json`
 
-**Vorher:**
-```
-txt.vorname2b
-txt.vorname2b 1
-txt.geburt2b
-```
+Struktur:
 
-**Nachher:**
-```
-[E1] txt.vorname2b      → "Vorname" (Elternteil 1)
-[E2] txt.vorname2b 1    → "Vorname" (Elternteil 2)
-[E1] txt.geburt2b       → "Geburtsdatum" (Elternteil 1)
-[AK] txt.vorname1A 4    → "Vorname" (Antragskind)
-[G1] txt.vorname4       → "Vorname" (1. Geschwister)
-```
-
-### 3.2 Badges für target_person
-
-| target_person | Badge | Farbe |
-|--------------|-------|-------|
-| elternteil_1 | E1 | Blau |
-| elternteil_2 | E2 | Lila |
-| antragskind | AK | Grün |
-| geschwister_1 | G1 | Orange |
-| geschwister_2 | G2 | Orange |
-| geschwister_3 | G3 | Orange |
-| mehrling_1 | M1 | Cyan |
-| universal | — | Grau |
-
-### 3.3 Filter-Dropdown
-
-Neues Filter-Dropdown oberhalb der PDF-Feld-Liste:
-- Alle Felder
-- Nur Elternteil 1
-- Nur Elternteil 2
-- Nur Antragskind
-- Nur Geschwister
-- Nur Universal
-
----
-
-## Phase 4: Verbesserter Auto-Mapper
-
-### 4.1 Intelligentes Mapping mit Registry
-
-Der neue Auto-Mapper:
-
-1. **Lädt `pdf_field_registry`** mit vorklassifizierten Feldern
-2. **Matched nach `target_person`**:
-   - DB-Feld mit `person_type = 'vater'` → PDF-Felder mit `target_person = 'elternteil_1'`
-   - DB-Feld mit `person_type = 'mutter'` → PDF-Felder mit `target_person = 'elternteil_2'`
-   - DB-Feld aus `geburtsurkunden` mit `upload_position = 0` → `antragskind`
-3. **Matched nach `semantic_meaning`**:
-   - `vorname` → `vorname`
-   - `nachname` → `nachname`, `name`
-   - `geburtsdatum` → `geburt`, `geb`
-4. **Überspringt existierende Mappings** (User-Wunsch!)
-
-### 4.2 Mapping-Logik
-
-```text
-Für jedes Quell-Feld aus der Datenbank:
-  1. Bestimme Ziel-Person:
-     - person_type = 'vater' → suche in elternteil_1
-     - person_type = 'mutter' → suche in elternteil_2
-     - tabelle = 'geburtsurkunden' + upload_position = 0 → antragskind
-     
-  2. Filtere pdf_field_registry nach target_person
-  
-  3. Berechne semantic_meaning Match:
-     - Exakter Match: 100%
-     - Teilmatch: 80%
-     - Levenshtein: 0-70%
-     
-  4. Nimm bestes Match, aber NUR wenn:
-     - Noch kein Mapping für dieses PDF-Feld existiert
-     - Confidence > 60%
+```json
+{
+  "version": "2026-01-28",
+  "fields": {
+    "txt.vorname2b": {
+      "fill_mode": "AUTO_FILL",
+      "fill_reason": "Hochkonfidenz-Textfeld aus Personalausweis",
+      "doc_types": ["eltern_dokument"],
+      "entities": ["person.vorname"],
+      "max_confidence": 0.95,
+      "has_analysis_link": false
+    },
+    "cb.verheiratet2c": {
+      "fill_mode": "CONFIRM_ONLY",
+      "fill_reason": "Familienstand erfordert Benutzerentscheidung",
+      "doc_types": [],
+      "entities": [],
+      "max_confidence": 0,
+      "has_analysis_link": true
+    }
+  }
+}
 ```
 
----
+### 2.2 `public/reference/allfields_left_join_mapping.json`
 
-## Phase 5: Initiale Befüllung der Registry
-
-### 5.1 JSON-Referenz generieren
-
-Erstelle `public/reference/pdf-field-registry-seed.json` mit allen 657 Feldern, vorklassifiziert durch die Suffix-Muster:
+Vollständiges Inventar aller 657 PDF-Felder:
 
 ```json
 {
   "fields": [
     {
-      "pdf_field_name": "txt.vorname2b",
+      "technisches_feld": "txt.vorname2b",
+      "label_de": "Vorname Elternteil 1",
+      "page": 2,
       "field_type": "PDFTextField",
-      "target_person": "elternteil_1",
-      "semantic_meaning": "vorname",
-      "section_de": "2b Angaben zu den Eltern",
-      "label_de": "Vorname",
-      "page_number": 2
-    },
-    {
-      "pdf_field_name": "txt.vorname2b 1",
-      "field_type": "PDFTextField", 
-      "target_person": "elternteil_2",
-      "semantic_meaning": "vorname",
-      "section_de": "2b Angaben zu den Eltern",
-      "label_de": "Vorname",
-      "page_number": 2
+      "target_person": "elternteil_1"
     }
   ]
 }
 ```
 
-### 5.2 Migrations-Script
+### 2.3 `public/reference/nachweise_field_links.json`
 
-Die Datenbank wird initial aus dem JSON befüllt und kann dann manuell korrigiert werden.
+Mapping von Dokumenttypen zu PDF-Feldern:
+
+```json
+{
+  "geburtsurkunde": {
+    "kind_vorname": {
+      "pdf_targets": ["txt.vorname1A 4"],
+      "confidence": 0.95
+    },
+    "kind_geburtsdatum": {
+      "pdf_targets": ["txt.geburtsdatum1a 3"],
+      "confidence": 0.98
+    }
+  },
+  "eltern_dokument": {
+    "vorname": {
+      "pdf_targets": {
+        "vater": ["txt.vorname2b"],
+        "mutter": ["txt.vorname2b 1"]
+      },
+      "confidence": 0.95
+    }
+  }
+}
+```
+
+---
+
+## Phase 3: Fill Mode Engine (Core)
+
+### 3.1 Neue Edge Function `get-fill-mode-config`
+
+**Datei:** `supabase/functions/get-fill-mode-config/index.ts`
+
+API-Endpunkte:
+- `GET /get-fill-mode-config` - Lädt alle Fill Modes
+- `GET /get-fill-mode-config?field=txt.vorname2b` - Einzelnes Feld
+
+Response:
+```json
+{
+  "fill_mode": "AUTO_FILL",
+  "fill_reason": "...",
+  "doc_types": ["eltern_dokument"],
+  "entities": ["person.vorname"],
+  "max_confidence": 0.95,
+  "has_analysis_link": false
+}
+```
+
+### 3.2 Edge Function `generate-fill-modes`
+
+Generiert `field_fill_modes` Tabelle basierend auf:
+1. `pdf_field_registry` (target_person, field_type)
+2. `pdf_field_mappings` (bestehende Mappings)
+3. Hartcodierte Regeln für Checkboxen
+
+### 3.3 Modifikation `fill-elterngeld-form`
+
+**Neue Logik:**
+
+```typescript
+function applyFillPolicy(
+  fieldName: string,
+  fieldType: string,
+  extractedValue: any,
+  fillModeConfig: FillModeConfig
+): FillAction {
+  
+  // REGEL 1: Checkboxen NIEMALS automatisch
+  if (fieldType === 'PDFCheckBox' || fieldName.startsWith('cb.')) {
+    return { 
+      action: 'CONFIRM_ONLY', 
+      value: extractedValue, 
+      write: false,
+      reason: 'Checkbox erfordert Benutzerbestätigung' 
+    };
+  }
+  
+  // REGEL 2: Fill Mode aus Config
+  const { fill_mode, max_confidence } = fillModeConfig;
+  
+  if (fill_mode === 'AUTO_FILL') {
+    return { action: 'AUTO_FILL', value: extractedValue, write: true };
+  }
+  
+  if (fill_mode === 'SUGGEST') {
+    return { action: 'SUGGEST', value: extractedValue, write: false };
+  }
+  
+  return { action: 'CONFIRM_ONLY', value: null, write: false };
+}
+```
+
+---
+
+## Phase 4: Wizard UI Komponenten
+
+### 4.1 Neue Komponenten-Struktur
+
+```text
+src/components/wizard/
+├── FillModeFieldCard.tsx      # Feld-Karte mit Mode-Badge
+├── FillModeBadge.tsx          # Badge-Komponente (Auto/Suggest/Decision)
+├── PageSummary.tsx            # Zusammenfassung pro Seite
+├── EvidenceDisplay.tsx        # Document Evidence
+├── FinalReviewChecklist.tsx   # Abschluss-Prüfung
+├── ValidationAlert.tsx        # Validierungsfehler
+└── WhyAskedModal.tsx          # "Warum wird das gefragt?" Modal
+```
+
+### 4.2 FillModeFieldCard
+
+**Props:**
+```typescript
+interface FillModeFieldCardProps {
+  pdfFieldName: string;
+  labelDe: string;
+  currentValue: string | null;
+  suggestedValue: string | null;
+  fillMode: 'AUTO_FILL' | 'SUGGEST' | 'CONFIRM_ONLY';
+  fillReason: string;
+  docEvidence: { docType: string; confidence: number }[];
+  hasAnalysisLink: boolean;
+  status: 'empty' | 'auto_filled' | 'suggested_pending' | 'confirmed' | 'skipped';
+  fieldType: 'text' | 'checkbox' | 'date' | 'number';
+  onConfirm: (value: any) => void;
+  onEdit: (value: any) => void;
+  onSkip: () => void;
+  onUndo: () => void;
+}
+```
+
+**Buttons nach Fill Mode:**
+
+| Fill Mode | Buttons |
+|-----------|---------|
+| AUTO_FILL | [Rückgängig] [Bearbeiten] |
+| SUGGEST | [Bestätigen] [Bearbeiten] [Überspringen] |
+| CONFIRM_ONLY | [Eingabefeld/Checkbox] [Überspringen] |
+
+### 4.3 PageSummary
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  Seite 2: Angaben zu den Eltern                         │
+├─────────────────────────────────────────────────────────┤
+│  📊 Zusammenfassung:                                    │
+│    ✓ 12 Automatisch befüllt                            │
+│    ⏳ 5 Vorschläge ausstehend                          │
+│    ❗ 3 Entscheidungen erforderlich                    │
+├─────────────────────────────────────────────────────────┤
+│  [Filter: ○ Alle  ○ Ausstehend  ○ Auto-filled]          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 4.4 FillModeBadge
+
+| Fill Mode | Badge Text | Farbe |
+|-----------|------------|-------|
+| AUTO_FILL | "Auto" | Grün |
+| SUGGEST | "Vorschlag" | Gelb/Orange |
+| CONFIRM_ONLY | "Entscheidung" | Rot |
+
+---
+
+## Phase 5: Neue Wizard-Seite
+
+### 5.1 `src/pages/ElterngeldWizard.tsx`
+
+**Hauptfunktionen:**
+- Seitenbasierte Navigation (23 PDF-Seiten)
+- Lädt `field_fill_modes` und `pdf_field_registry`
+- Trackt `field_states` in `elterngeldantrag_progress`
+- Speichert Document Provenance
+
+**State-Management:**
+```typescript
+const [currentPage, setCurrentPage] = useState(1);
+const [fieldStates, setFieldStates] = useState<Record<string, FieldState>>({});
+const [pdfUrl, setPdfUrl] = useState<string>('');
+```
+
+**FieldState Typ:**
+```typescript
+type FieldStatus = 
+  | 'empty'
+  | 'auto_filled'
+  | 'suggested_pending'
+  | 'confirmed'
+  | 'user_edited'
+  | 'skipped';
+
+interface FieldState {
+  status: FieldStatus;
+  value: any;
+  suggestedValue?: any;
+  sourceDocType?: string;
+  sourceDocId?: string;
+  confidence?: number;
+  confirmedAt?: string;
+}
+```
+
+### 5.2 Wizard-Flow
+
+```text
+1. Start → Dokumente hochladen (optional)
+   ↓
+2. Für jede PDF-Seite:
+   a. Lade Felder dieser Seite
+   b. Wende Fill Mode Engine an
+   c. Zeige Felder nach Priorität:
+      1. CONFIRM_ONLY (rot)
+      2. SUGGEST (gelb)
+      3. AUTO_FILL (grün)
+   d. Benutzer bestätigt/bearbeitet
+   e. Speichere field_states
+   ↓
+3. Final Review
+   - Checkliste ausstehender Felder
+   - Validierungsfehler
+   ↓
+4. PDF Export
+   - Preview PDF
+   - Final Export
+```
+
+---
+
+## Phase 6: PDF Generation mit Fill Modes
+
+### 6.1 Zwei-Stufen Export
+
+**Preview PDF:**
+- Alle Werte (inkl. Suggested als Platzhalter)
+- Watermark "ENTWURF"
+
+**Final Export:**
+- Nur bestätigte Werte
+- Audit Log speichern
+
+### 6.2 Modifikation `fill-elterngeld-form`
+
+Neue Request-Parameter:
+```json
+{
+  "mode": "preview" | "final",
+  "field_states": { "txt.vorname2b": { "status": "confirmed", "value": "Max" } }
+}
+```
+
+Neue Logik:
+```typescript
+// Nur bestätigte Felder im Final-Export schreiben
+if (mode === 'final') {
+  for (const [fieldName, state] of Object.entries(fieldStates)) {
+    if (state.status === 'confirmed' || state.status === 'auto_filled') {
+      // Schreibe Wert ins PDF
+    }
+    // Überspringe 'suggested_pending' und 'skipped'
+  }
+}
+```
+
+---
+
+## Phase 7: Validation Engine
+
+### 7.1 Validierungsregeln
+
+```typescript
+const validationRules = [
+  {
+    id: 'child_birthdate_past',
+    check: (data) => new Date(data.kind_geburtsdatum) <= new Date(),
+    message: 'Geburtsdatum des Kindes muss in der Vergangenheit liegen'
+  },
+  {
+    id: 'parent_min_age',
+    check: (data) => /* Elternteil mindestens 16 Jahre alt */,
+    message: 'Elternteil muss mindestens 16 Jahre alt sein'
+  },
+  {
+    id: 'lebensmonat_selected',
+    check: (data) => /* Mindestens ein Lebensmonat ausgewählt */,
+    message: 'Bitte wählen Sie mindestens einen Lebensmonat'
+  },
+  {
+    id: 'employment_exclusive',
+    check: (data) => !(data.selbstaendig && data.angestellt),
+    message: 'Bitte nur eine Beschäftigungsart auswählen'
+  }
+];
+```
+
+### 7.2 Kontinuierliche Validierung
+
+- Validierung läuft bei jeder Feldänderung
+- Fehler werden inline angezeigt
+- Final Review zeigt alle Fehler
+
+---
+
+## Phase 8: Final Review & Export
+
+### 8.1 FinalReviewChecklist
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  📋 Abschluss-Prüfung                                   │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ❌ Noch ausstehend:                                    │
+│    • 3 Entscheidungsfelder nicht gesetzt               │
+│    • 2 Vorschläge nicht bestätigt                      │
+│                                                         │
+│  ⚠️ Validierungsfehler:                                │
+│    • Geburtsdatum Kind liegt in der Zukunft            │
+│    • Lebensmonat 1-2 nicht ausgewählt                  │
+│                                                         │
+│  ✓ Bereit zum Export:                                   │
+│    • 245 Felder auto-filled                            │
+│    • 67 Felder bestätigt                               │
+│    • 12 Felder übersprungen                            │
+│                                                         │
+│  [← Zurück zur Bearbeitung]  [📥 PDF Exportieren]      │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 8.2 Audit Log
+
+Bei Final Export speichern:
+- Alle Feldwerte
+- Quell-Dokumente pro Feld
+- Timestamp
+- User ID
+
+---
+
+## Phase 9: Populate PDF Field Registry
+
+Bevor der Wizard funktioniert, muss die `pdf_field_registry` Tabelle befüllt werden. Dies geschieht durch:
+
+1. Aufruf von `populate-pdf-field-registry` Edge Function
+2. Automatische Klassifikation aller 657 Felder
+3. Generierung der `field_fill_modes` basierend auf Registry
 
 ---
 
 ## Zusammenfassung der Änderungen
 
-| Bereich | Aktion | Priorität |
-|---------|--------|-----------|
-| Datenbank | Neue Tabelle `pdf_field_registry` | Hoch |
-| Edge Function | `populate-pdf-field-registry` | Hoch |
-| Referenz-JSON | `pdf-field-registry-seed.json` | Hoch |
-| Frontend | `PdfFieldsList` mit Badges und Filtern | Mittel |
-| Auto-Mapper | Intelligentes Mapping mit Registry | Mittel |
+| Bereich | Aktion | Dateien |
+|---------|--------|---------|
+| **Datenbank** | Neue Tabellen | 2 neue Tabellen, 1 Alter |
+| **Edge Functions** | Neue + Modifikation | 3 neue, 1 modifiziert |
+| **Reference Files** | Generieren | 3 JSON-Dateien |
+| **Frontend** | Neue Komponenten | 7 neue Komponenten |
+| **Wizard Seite** | Neue Seite | 1 neue Seite |
+| **Routing** | Neue Route | `/elterngeld-wizard` |
+
+### Datei-Übersicht
+
+**Neue Dateien:**
+- `supabase/migrations/xxx_fill_modes.sql`
+- `supabase/functions/get-fill-mode-config/index.ts`
+- `supabase/functions/generate-fill-modes/index.ts`
+- `src/components/wizard/FillModeFieldCard.tsx`
+- `src/components/wizard/FillModeBadge.tsx`
+- `src/components/wizard/PageSummary.tsx`
+- `src/components/wizard/EvidenceDisplay.tsx`
+- `src/components/wizard/FinalReviewChecklist.tsx`
+- `src/components/wizard/ValidationAlert.tsx`
+- `src/components/wizard/WhyAskedModal.tsx`
+- `src/pages/ElterngeldWizard.tsx`
+- `src/hooks/useFillModeEngine.ts`
+- `src/lib/fill-mode-engine.ts`
+- `src/lib/validation-rules.ts`
+- `public/reference/field_fill_modes.json`
+- `public/reference/allfields_left_join_mapping.json`
+- `public/reference/nachweise_field_links.json`
+
+**Modifizierte Dateien:**
+- `supabase/functions/fill-elterngeld-form/index.ts`
+- `src/App.tsx` (neue Route)
 
 ---
 
-## Vorteile
+## Acceptance Tests
 
-1. **Klare Personen-Zuordnung**: Jedes PDF-Feld hat eine definierte Zielgruppe
-2. **Bessere UX**: Badges zeigen sofort, für wen ein Feld ist
-3. **Präziseres Auto-Mapping**: Vater-Felder → Elternteil 1, Mutter-Felder → Elternteil 2
-4. **Keine Überschreibung**: Existierende Mappings werden respektiert
-5. **Erweiterbar**: Kann um weitere Metadaten erweitert werden
+| Test-Szenario | Erwartetes Verhalten |
+|---------------|---------------------|
+| Kein Upload | Wizard funktioniert mit manueller Eingabe |
+| Upload ID + Meldebescheinigung + Geburtsurkunde | AUTO_FILL für Name/Adresse/Geburtsdatum |
+| Upload Gehaltsnachweis | SUGGEST für Einkommensfelder |
+| Seite 18 Lebensmonat-Grid | Immer CONFIRM_ONLY |
+| Alle Checkbox-Felder | Niemals automatisch gesetzt |
+| Final Export | Checkliste mit ausstehenden Feldern |
+| Session-Resume | Progress wird beim Neuladen wiederhergestellt |
 
 ---
 
 ## Technische Details
 
-### Betroffene Dateien (Änderungen)
+### RLS Policies
 
-1. `supabase/migrations/...` - Neue Tabelle
-2. `supabase/functions/populate-pdf-field-registry/index.ts` - NEU
-3. `supabase/functions/auto-map-fields/index.ts` - Überarbeiten
-4. `src/components/field-mapper/PdfFieldsList.tsx` - Badges + Filter
-5. `src/pages/AdminFieldMapper.tsx` - Registry laden
-6. `public/reference/pdf-field-registry-seed.json` - NEU
+Neue Tabellen benötigen RLS:
+```sql
+ALTER TABLE field_fill_modes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read" ON field_fill_modes FOR SELECT USING (true);
 
-### Keine Änderungen an
+ALTER TABLE document_field_provenance ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own provenance" ON document_field_provenance
+  FOR ALL USING (auth.uid() = user_id);
+```
 
-- Bestehende `pdf_field_mappings` Tabelle (bleibt unverändert)
-- Existierende Mappings (werden nicht überschrieben)
-- Extraktions-Edge-Functions
+### Edge Function Dependencies
+
+Alle Edge Functions nutzen:
+- `@supabase/supabase-js@2`
+- `pdf-lib@1.17.1`
+
+### Frontend Dependencies
+
+Keine neuen Dependencies erforderlich - alle UI-Komponenten nutzen existierende shadcn/ui Komponenten.
