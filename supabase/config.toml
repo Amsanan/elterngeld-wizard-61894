@@ -83,3 +83,9 @@ verify_jwt = true
 
 [functions.populate-pdf-field-registry]
 verify_jwt = true
+
+[functions.generate-fill-modes]
+verify_jwt = true
+
+[functions.get-fill-mode-config]
+verify_jwt = false
