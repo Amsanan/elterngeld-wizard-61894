@@ -60,6 +60,7 @@ import AutoCleanupSettings from "./pages/AutoCleanupSettings";
 import AdminFieldMapper from "./pages/AdminFieldMapper";
 import FieldDiagnostics from "./pages/FieldDiagnostics";
 import AdminLogicDesigner from "./pages/AdminLogicDesigner";
+import ElterngeldWizard from "./pages/ElterngeldWizard";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -127,6 +128,7 @@ function App() {
         <Route path="/admin/field-mapper" element={<AdminFieldMapper />} />
         <Route path="/admin/field-diagnostics" element={<FieldDiagnostics />} />
         <Route path="/admin/logic-designer" element={<AdminLogicDesigner />} />
+        <Route path="/elterngeld-wizard" element={<ElterngeldWizard />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

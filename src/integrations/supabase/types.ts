@@ -543,6 +543,45 @@ export type Database = {
         }
         Relationships: []
       }
+      document_field_provenance: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          extracted_key: string | null
+          extracted_value: string | null
+          id: string
+          pdf_field_name: string
+          source_document_id: string | null
+          source_document_type: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          extracted_key?: string | null
+          extracted_value?: string | null
+          id?: string
+          pdf_field_name: string
+          source_document_id?: string | null
+          source_document_type?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          extracted_key?: string | null
+          extracted_value?: string | null
+          id?: string
+          pdf_field_name?: string
+          source_document_id?: string | null
+          source_document_type?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ehe_sorgerecht_nachweise: {
         Row: {
           antrag_id: string | null
@@ -1111,6 +1150,7 @@ export type Database = {
           created_at: string | null
           current_step: number | null
           field_mappings: Json | null
+          field_states: Json | null
           id: string
           partial_pdf_path: string | null
           updated_at: string | null
@@ -1121,6 +1161,7 @@ export type Database = {
           created_at?: string | null
           current_step?: number | null
           field_mappings?: Json | null
+          field_states?: Json | null
           id?: string
           partial_pdf_path?: string | null
           updated_at?: string | null
@@ -1131,10 +1172,53 @@ export type Database = {
           created_at?: string | null
           current_step?: number | null
           field_mappings?: Json | null
+          field_states?: Json | null
           id?: string
           partial_pdf_path?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      field_fill_modes: {
+        Row: {
+          analysis_reference: string | null
+          created_at: string | null
+          doc_types: string[] | null
+          entities: string[] | null
+          fill_mode: string
+          fill_reason: string | null
+          has_analysis_link: boolean | null
+          id: string
+          max_confidence: number | null
+          pdf_field_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          analysis_reference?: string | null
+          created_at?: string | null
+          doc_types?: string[] | null
+          entities?: string[] | null
+          fill_mode: string
+          fill_reason?: string | null
+          has_analysis_link?: boolean | null
+          id?: string
+          max_confidence?: number | null
+          pdf_field_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          analysis_reference?: string | null
+          created_at?: string | null
+          doc_types?: string[] | null
+          entities?: string[] | null
+          fill_mode?: string
+          fill_reason?: string | null
+          has_analysis_link?: boolean | null
+          id?: string
+          max_confidence?: number | null
+          pdf_field_name?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
