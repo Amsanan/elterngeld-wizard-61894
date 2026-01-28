@@ -168,7 +168,21 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { pdf_template_path, clear_existing } = await req.json();
+    // Parse body safely - handle empty body
+    let pdf_template_path = 'elterngeldantrag_bis_Maerz25.pdf';
+    let clear_existing = false;
+    
+    try {
+      const body = await req.text();
+      if (body && body.trim()) {
+        const parsed = JSON.parse(body);
+        pdf_template_path = parsed.pdf_template_path || pdf_template_path;
+        clear_existing = parsed.clear_existing || false;
+      }
+    } catch (e) {
+      // Use defaults if body parsing fails
+      console.log('No body provided, using defaults');
+    }
 
     // Download PDF template
     const { data: pdfData, error: downloadError } = await supabase.storage
